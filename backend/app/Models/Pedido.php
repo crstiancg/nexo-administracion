@@ -92,6 +92,12 @@ class Pedido extends Model
         return $this->comprobantes->first(fn (Comprobante $c) => $c->vigente());
     }
 
+    /** El saldo financiado en cuotas (si se dio a crédito). */
+    public function credito(): HasOne
+    {
+        return $this->hasOne(Credito::class);
+    }
+
     /** La orden de servicio que cobra este pedido (si es de servicio técnico). */
     public function ordenServicio(): HasOne
     {

@@ -3,11 +3,13 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ComisionController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ComprobanteController;
 use App\Http\Controllers\CotizacionController;
+use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\ConceptoFinancieroController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\EtiquetaController;
@@ -132,6 +134,10 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
             ->parameters(['movimientos-financieros' => 'movimiento'])
             ->only(['index', 'store', 'destroy']);
 
+        // Créditos: se otorgan sobre un pedido con saldo. Las cuotas se
+        // cobran como cualquier pedido (pedidos/{pedido}/pagos).
+        Route::apiResource('creditos', CreditoController::class)->only(['index', 'store', 'show']);
+
         // Una compra no se edita ni se borra: se anula.
         Route::apiResource('compras', CompraController::class)->only(['index', 'store', 'show']);
 
@@ -186,6 +192,11 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('cotizaciones/{cotizacion}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
 
     Route::get('ganancias', [GananciaController::class, 'index'])->name('ganancias.index');
+    // Comisiones del período: cálculo, porcentajes de cada empleado y pago
+    // (que queda como gasto "Comisiones").
+    Route::get('comisiones', [ComisionController::class, 'index'])->name('comisiones.index');
+    Route::put('comisiones/porcentajes', [ComisionController::class, 'porcentajes'])->name('comisiones.porcentajes');
+    Route::post('comisiones/pagar', [ComisionController::class, 'pagar'])->name('comisiones.pagar');
     Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('reportes/productos', [ReporteController::class, 'productos'])->name('reportes.productos');
     Route::get('reportes/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');

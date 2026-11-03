@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class Alertas
 {
-    public function __construct(private Cajas $cajas) {}
+    public function __construct(private Cajas $cajas, private Creditos $creditos) {}
 
     /**
      * @return list<array{clave: string, nivel: string, titulo: string, detalle: string, cantidad: int, to: string}>
@@ -80,6 +80,16 @@ class Alertas
                 $alertas[] = $this->alerta('taller_sin_tecnico', 'info',
                     $this->plural($sinTecnico, 'equipo sin técnico asignado', 'equipos sin técnico asignado'),
                     'Asígnalos para que nadie se quede esperando.', $sinTecnico, '/ordenes-servicio?estado=activas');
+            }
+        }
+
+        // ── Créditos ──
+        if ($puede('creditos.index')) {
+            $vencidos = $this->creditos->conCuotasVencidas($sedeId);
+            if ($vencidos) {
+                $alertas[] = $this->alerta('creditos_vencidos', 'warning',
+                    $this->plural($vencidos, 'crédito con cuotas vencidas', 'créditos con cuotas vencidas'),
+                    'Clientes atrasados en sus pagos: llámalos o escríbeles.', $vencidos, '/creditos?estado=vencidos');
             }
         }
 

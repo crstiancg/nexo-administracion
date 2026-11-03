@@ -287,6 +287,13 @@
           target="_blank"
         />
         <AppButton
+          v-if="detalle && Number(detalle.saldo) > 0 && !detalle.credito_id && userStore.hasPermission('creditos.store')"
+          variant="tertiary"
+          label="Dar a crédito"
+          icon="credit_score"
+          @click="creditoDialog = true"
+        />
+        <AppButton
           v-if="detalle && Number(detalle.saldo) > 0 && userStore.hasPermission('pedidos.pagos')"
           variant="secondary"
           label="Registrar abono"
@@ -343,10 +350,11 @@
           v-if="nuevoEstado === 'entregado'"
           class="os-cambio__ayuda"
         >
-          Al entregar se descuentan los repuestos del inventario y el saldo tiene que estar en cero
-          <template v-if="Number(detalle?.saldo) > 0">
-            (falta cobrar <strong>{{ formatearPrecio(detalle.saldo) }}</strong>)
-          </template>.
+          Al entregar se descuentan los repuestos del inventario<template v-if="detalle?.credito_id">;
+            el saldo de <strong>{{ formatearPrecio(detalle.saldo) }}</strong> queda a crédito</template><template v-else>
+            y el saldo tiene que estar en cero<template v-if="Number(detalle?.saldo) > 0">
+              (falta cobrar <strong>{{ formatearPrecio(detalle.saldo) }}</strong>, o dale crédito)
+            </template></template>.
         </p>
         <AppTextField
           v-model="notaEstado"
@@ -376,6 +384,35 @@
           :disable="!nuevoEstado"
           :loading="cambiandoEstado"
           @click="guardarEstado"
+        />
+      </template>
+    </AppDialog>
+
+    <!-- ── Dar a crédito: el saldo en cuotas (se puede entregar con saldo) ── -->
+    <AppDialog
+      v-model="creditoDialog"
+      title="Dar a crédito"
+      persistent
+    >
+      <DarCreditoForm
+        v-if="creditoDialog && detalle"
+        ref="creditoRef"
+        :pedido-id="detalle.pedido_id"
+        :saldo="detalle.saldo"
+        :cliente="detalle.cliente?.nombre"
+        @save="creditoOtorgado"
+      />
+      <template #actions>
+        <AppButton
+          variant="tertiary"
+          label="Cancelar"
+          @click="creditoDialog = false"
+        />
+        <AppButton
+          variant="primary"
+          label="Dar crédito"
+          :loading="creditoRef?.procesando"
+          @click="creditoRef.submit()"
         />
       </template>
     </AppDialog>
@@ -425,6 +462,7 @@ import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import PagoForm from '@/modules/Caja/PagoForm.vue'
+import DarCreditoForm from '@/modules/Creditos/DarCreditoForm.vue'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearPrecio } from '@/utils/moneda'
@@ -667,6 +705,17 @@ async function guardarEstado () {
   } finally {
     cambiandoEstado.value = false
   }
+}
+
+// ── Crédito ──
+const creditoDialog = ref(false)
+const creditoRef = ref()
+
+async function creditoOtorgado (credito) {
+  creditoDialog.value = false
+  await detalleRef.value.recargar()
+  refrescar()
+  $q.notify({ type: 'positive', message: `Crédito en ${credito.numero_cuotas} cuotas. Ya se puede entregar con saldo.`, position: 'top-right', timeout: 2500 })
 }
 
 // ── Abonos ──

@@ -48,6 +48,8 @@ class PedidoResource extends JsonResource
                 return $comprobante ? (new ComprobanteResource($comprobante))->resolve(request()) : null;
             }),
             'observacion' => $this->observacion,
+            // En el detalle: si el saldo se financió en cuotas.
+            'credito_id' => $this->when($this->relationLoaded('items'), fn () => $this->resource->credito()->value('id')),
             'items_count' => $this->whenCounted('items'),
             'items' => PedidoItemResource::collection($this->whenLoaded('items')),
             'ganancia' => $this->when($this->relationLoaded('items'), fn () => $this->ganancia()),

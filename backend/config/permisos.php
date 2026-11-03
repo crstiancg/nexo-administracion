@@ -104,12 +104,16 @@ return [
         // y el punto de venta lo lee para reimprimir el ticket.
         'pedidos.show' => ['pedidos.index', 'pedidos.update', 'ventas.store'],
         // Cobrar, devolver, mover caja o vender necesita saber si hay una abierta.
-        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store', 'ordenes-servicio.store', 'ordenes-servicio.show', 'movimientos-financieros.store'],
+        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store', 'ordenes-servicio.store', 'ordenes-servicio.show', 'movimientos-financieros.store', 'creditos.index', 'comisiones.pagar'],
         'cajas.show' => ['cajas.index', 'cajas.cerrar'],
         // Servicio técnico: quien ve la lista abre la orden; los formularios
         // eligen tipo de equipo, marca, técnico, cliente y repuestos.
         'ordenes-servicio.show' => ['ordenes-servicio.index', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         'ordenes-servicio.resumen' => ['ordenes-servicio.index'],
+        // Pagar una comisión necesita saber si hay caja (sale del cajón).
+        'comisiones.index' => ['comisiones.porcentajes', 'comisiones.pagar'],
+        // Quien ve los créditos abre su detalle.
+        'creditos.show' => ['creditos.index', 'creditos.store'],
         // Quien edita la configuración cambia también el logo.
         'configuracion.logo' => ['configuracion.update'],
         'configuracion.logo.quitar' => ['configuracion.update'],
@@ -159,6 +163,8 @@ return [
         'movimientos-financieros' => 'Ingresos y gastos',
         'ganancias' => 'Ganancias',
         'configuracion' => 'Configuración',
+        'creditos' => 'Créditos',
+        'comisiones' => 'Comisiones',
     ],
 
     'acciones' => [
@@ -215,6 +221,8 @@ return [
         'firma' => 'Registrar la firma del cliente',
         'logo' => 'Cambiar el logo',
         'logo.quitar' => 'Quitar el logo',
+        'porcentajes' => 'Cambiar porcentajes',
+        'pagar' => 'Pagar',
     ],
 
 ];

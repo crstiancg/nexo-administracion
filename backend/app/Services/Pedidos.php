@@ -163,8 +163,9 @@ class Pedidos
             $pedido = Pedido::query()->whereKey($pedido->id)->lockForUpdate()->firstOrFail();
             $this->exigirEstado($pedido, [Pedido::CONFIRMADO], 'marcar como entregado');
 
-            // No se entrega mercadería sin cobrar.
-            if (($saldo = $pedido->saldo()) > 0) {
+            // No se entrega mercadería sin cobrar (salvo que se dio a crédito:
+            // el saldo se cobra en cuotas).
+            if (($saldo = $pedido->saldo()) > 0 && ! $pedido->credito()->exists()) {
                 throw ValidationException::withMessages([
                     'estado' => 'Falta cobrar S/ '.number_format($saldo, 2).' antes de entregar.',
                 ])->status(409);

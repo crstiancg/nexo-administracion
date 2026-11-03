@@ -70,6 +70,8 @@ class OrdenServicioResource extends JsonResource
                 'estado' => $pedido->estado,
             ]),
             'total' => $pedido?->total,
+            // El saldo se financió en cuotas (null = sin crédito).
+            'credito_id' => $this->when($pedido !== null, fn () => $pedido->credito()->value('id')),
             'pagado' => $pagado === null ? null : number_format($pagado, 2, '.', ''),
             'saldo' => $pagado === null ? null : number_format((float) $pedido->total - $pagado, 2, '.', ''),
             'repuestos' => $this->when(

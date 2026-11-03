@@ -177,7 +177,10 @@ class Cajas
             $caja = $this->cajaAbiertaBloqueada($usuario);
             $pedido = Pedido::query()->whereKey($pedido->id)->lockForUpdate()->firstOrFail();
 
-            if (! in_array($pedido->estado, [Pedido::PENDIENTE, Pedido::CONFIRMADO], true)) {
+            // Uno entregado sólo si quedó a crédito (se cobran las cuotas).
+            $cobrable = in_array($pedido->estado, [Pedido::PENDIENTE, Pedido::CONFIRMADO], true)
+                || ($pedido->estado === Pedido::ENTREGADO && $pedido->credito()->exists());
+            if (! $cobrable) {
                 throw $this->conflicto('pedido', "No se cobra un pedido {$pedido->estado}.");
             }
 

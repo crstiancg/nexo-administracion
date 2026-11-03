@@ -248,9 +248,16 @@
           @click="editar(detalle)"
         />
         <AppButton
+          v-if="puede('credito')"
+          variant="tertiary"
+          label="Dar a crédito"
+          icon="credit_score"
+          @click="creditoDialog = true"
+        />
+        <AppButton
           v-if="puede('cobrar')"
           variant="secondary"
-          label="Cobrar"
+          :label="detalle?.credito_id ? 'Cobrar cuota' : 'Cobrar'"
           icon="payments"
           @click="abrirPago('cobrar')"
         />
@@ -274,6 +281,34 @@
             Falta cobrar {{ formatearPrecio(detalle.saldo) }}
           </q-tooltip>
         </AppButton>
+      </template>
+    </AppDialog>
+
+    <AppDialog
+      v-model="creditoDialog"
+      title="Dar a crédito"
+      persistent
+    >
+      <DarCreditoForm
+        v-if="creditoDialog && detalle"
+        ref="creditoRef"
+        :pedido-id="detalle.id"
+        :saldo="detalle.saldo"
+        :cliente="detalle.cliente?.nombre"
+        @save="creditoOtorgado"
+      />
+      <template #actions>
+        <AppButton
+          variant="tertiary"
+          label="Cancelar"
+          @click="creditoDialog = false"
+        />
+        <AppButton
+          variant="primary"
+          label="Dar crédito"
+          :loading="creditoRef?.procesando"
+          @click="creditoRef.submit()"
+        />
       </template>
     </AppDialog>
 
@@ -445,6 +480,7 @@ import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import PagoForm from '@/modules/Caja/PagoForm.vue'
+import DarCreditoForm from '@/modules/Creditos/DarCreditoForm.vue'
 import ImpresionTicket from '@/modules/Ventas/ImpresionTicket.vue'
 import PedidoService from '@/services/PedidoService'
 import { useUserStore } from '@/stores/user-store'
@@ -629,6 +665,8 @@ const REGLAS = {
   // Un pendiente puede recibir un adelanto.
   cobrar: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.pagos', saldo: true, servicio: true },
   devolver: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.devoluciones', pagado: true, servicio: true },
+  // El saldo en cuotas: con cliente y sin otro crédito.
+  credito: { estados: ['pendiente', 'confirmado'], permiso: 'creditos.store', saldo: true, servicio: true, sinCredito: true, conCliente: true },
   confirmar: { estados: ['pendiente'], permiso: 'pedidos.confirmar' },
   entregar: { estados: ['confirmado'], permiso: 'pedidos.entregar' },
   cancelar: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.cancelar' },
@@ -639,9 +677,13 @@ const REGLAS = {
 function puede (accion) {
   const regla = REGLAS[accion]
   const p = detalle.value
+  // Entregado a crédito: se siguen cobrando las cuotas.
+  const estados = accion === 'cobrar' && p?.credito_id ? [...regla.estados, 'entregado'] : regla.estados
   return Boolean(p) &&
     (regla.servicio || p.canal !== 'servicio') &&
-    regla.estados.includes(p.estado) &&
+    estados.includes(p.estado) &&
+    (!regla.sinCredito || !p.credito_id) &&
+    (!regla.conCliente || p.cliente_id) &&
     userStore.hasPermission(regla.permiso) &&
     (!regla.saldo || Number(p.saldo) > 0) &&
     (!regla.pagado || Number(p.pagado) > 0)
@@ -657,6 +699,17 @@ function abrirPago (modo) {
   modoPago.value = modo
   aperturasPago.value++
   pagoDialog.value = true
+}
+
+// ── Crédito ──
+const creditoDialog = ref(false)
+const creditoRef = ref()
+
+async function creditoOtorgado (credito) {
+  creditoDialog.value = false
+  detalleRef.value.actualizar(await PedidoService.get(detalle.value.id))
+  refrescar()
+  $q.notify({ type: 'positive', message: `Crédito en ${credito.numero_cuotas} cuotas. Ya se puede entregar con saldo.`, position: 'top-right', timeout: 2500 })
 }
 
 async function pagoGuardado () {

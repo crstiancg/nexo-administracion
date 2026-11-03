@@ -298,6 +298,7 @@ const MENU = [
       { to: '/pos', icon: 'point_of_sale', label: 'Punto de venta', permiso: 'ventas.store' },
       { to: '/pedidos', icon: 'receipt_long', label: 'Pedidos', permiso: 'pedidos.index', badge: 'pendientes' },
       { to: '/cotizaciones', icon: 'request_quote', label: 'Cotizaciones', permiso: 'cotizaciones.index' },
+      { to: '/creditos', icon: 'credit_score', label: 'Créditos', permiso: 'creditos.index' },
       { to: '/clientes', icon: 'groups', label: 'Clientes', permiso: 'clientes.index' },
       { to: '/caja', icon: 'account_balance_wallet', label: 'Caja', permiso: 'cajas.actual' },
       { to: '/ofertas', icon: 'local_offer', label: 'Ofertas', permiso: 'ofertas.index' }
@@ -309,7 +310,8 @@ const MENU = [
     icon: 'account_balance',
     items: [
       { to: '/ganancias', icon: 'trending_up', label: 'Ganancias', permiso: 'ganancias.index' },
-      { to: '/finanzas', icon: 'swap_horiz', label: 'Ingresos y gastos', permiso: 'movimientos-financieros.index' }
+      { to: '/finanzas', icon: 'swap_horiz', label: 'Ingresos y gastos', permiso: 'movimientos-financieros.index' },
+      { to: '/comisiones', icon: 'percent', label: 'Comisiones', permiso: 'comisiones.index' }
     ]
   },
   {

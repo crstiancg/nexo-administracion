@@ -30,6 +30,8 @@ class PermissionSeeder extends Seeder
         'productos.index', 'inventario.lotes',
         // Recepción del taller: recibe equipos, avisa y entrega
         'ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado',
+        // Créditos: ver, dar y cobrar cuotas
+        'creditos.index', 'creditos.store',
     ];
 
     /**
