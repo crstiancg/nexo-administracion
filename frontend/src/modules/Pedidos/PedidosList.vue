@@ -2,9 +2,17 @@
   <div class="app-list-page">
     <AppPageHeader
       title="Pedidos"
-      :subtitle="`${pagination.rowsNumber} pedidos`"
+      :subtitle="subtitulo"
     >
       <template #actions>
+        <AppButton
+          variant="secondary"
+          label="Exportar Excel"
+          icon="mdi-microsoft-excel"
+          :loading="exportando"
+          :disable="!pagination.rowsNumber"
+          @click="exportar"
+        />
         <AppButton
           v-if="userStore.hasPermission('pedidos.store')"
           variant="primary"
@@ -32,6 +40,16 @@
         v-model="canalFilter"
         label="Canal"
         :options="canalOptions"
+      />
+      <!-- Mes del pedido (vacío = todos). -->
+      <q-input
+        v-model="mesFilter"
+        type="month"
+        dense
+        outlined
+        clearable
+        aria-label="Mes"
+        class="pedido-mes"
       />
     </AppFilterBar>
 
@@ -430,6 +448,7 @@ import PagoForm from '@/modules/Caja/PagoForm.vue'
 import ImpresionTicket from '@/modules/Ventas/ImpresionTicket.vue'
 import PedidoService from '@/services/PedidoService'
 import { useUserStore } from '@/stores/user-store'
+import { descargarArchivo } from '@/utils/descargar'
 import { formatearPrecio } from '@/utils/moneda'
 import PedidoDetalle from './PedidoDetalle.vue'
 import PedidoForm from './PedidoForm.vue'
@@ -462,6 +481,40 @@ const search = ref('')
 const busqueda = ref('')
 const estadoFilter = ref(null)
 const canalFilter = ref(null)
+const mesFilter = ref(null)
+
+// El mes elegido como rango de días ({ desde, hasta } o nada).
+function rangoDelMes () {
+  if (!mesFilter.value) return {}
+  const [a, m] = mesFilter.value.split('-').map(Number)
+  const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate()
+  return { desde: `${mesFilter.value}-01`, hasta: `${mesFilter.value}-${String(ultimo).padStart(2, '0')}` }
+}
+
+// "1.284 pedidos · 14 requieren atención" (como en el diseño).
+const atencion = ref({ pendientes: 0, por_entregar: 0 })
+const subtitulo = computed(() => {
+  const n = pagination.value.rowsNumber
+  const base = `${n} ${n === 1 ? 'pedido' : 'pedidos'}`
+  const urgentes = atencion.value.pendientes + atencion.value.por_entregar
+  return urgentes ? `${base} · ${urgentes} requieren atención (${atencion.value.pendientes} sin confirmar, ${atencion.value.por_entregar} por entregar)` : base
+})
+
+// Excel con el mismo filtro que se ve.
+const exportando = ref(false)
+async function exportar () {
+  exportando.value = true
+  try {
+    const params = { search: busqueda.value, ...rangoDelMes() }
+    if (estadoFilter.value) params.estado = estadoFilter.value
+    if (canalFilter.value) params.canal = canalFilter.value
+    await descargarArchivo('api/pedidos/exportar', `pedidos${mesFilter.value ? `_${mesFilter.value}` : ''}.xlsx`, params)
+  } catch {
+    $q.notify({ type: 'negative', message: 'No se pudo generar el Excel.', position: 'top-right' })
+  } finally {
+    exportando.value = false
+  }
+}
 
 let searchTimer
 watch(search, (value) => {
@@ -475,16 +528,17 @@ const estadoOptions = [
 ]
 const canalOptions = [{ label: 'Todos', value: null }, ...CANALES]
 
-const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value || canalFilter.value))
+const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value || canalFilter.value || mesFilter.value))
 
 function limpiarFiltros () {
   search.value = ''
   estadoFilter.value = null
   canalFilter.value = null
+  mesFilter.value = null
 }
 
 // AppTable vuelve a la página 1 y pide datos cuando cambia `filter`.
-const filtroTabla = computed(() => JSON.stringify({ search: busqueda.value, estado: estadoFilter.value, canal: canalFilter.value }))
+const filtroTabla = computed(() => JSON.stringify({ search: busqueda.value, estado: estadoFilter.value, canal: canalFilter.value, mes: mesFilter.value }))
 
 // ── Tabla (paginación en el servidor) ──
 const tableRef = ref()
@@ -499,13 +553,14 @@ async function onRequest ({ pagination: requested }) {
 
   try {
     const columna = sortBy === 'codigo' ? 'id' : sortBy
-    const params = { rowsPerPage, page, search: busqueda.value, order_by: descending ? `-${columna}` : columna }
+    const params = { rowsPerPage, page, search: busqueda.value, order_by: descending ? `-${columna}` : columna, ...rangoDelMes() }
     if (estadoFilter.value) params.estado = estadoFilter.value
     if (canalFilter.value) params.canal = canalFilter.value
 
-    const { data, total = 0 } = await PedidoService.getData({ params })
+    const { data, total = 0, atencion: urgentes } = await PedidoService.getData({ params })
 
     rows.value = data
+    if (urgentes) atencion.value = urgentes
     pagination.value = { ...requested, rowsNumber: total }
   } finally {
     loading.value = false
@@ -789,6 +844,15 @@ async function ejecutar (accion) {
 
   strong {
     color: var(--app-ink);
+  }
+}
+
+.pedido-mes {
+  width: 180px;
+
+  :deep(.q-field__control) {
+    height: 40px;
+    border-radius: 10px;
   }
 }
 </style>

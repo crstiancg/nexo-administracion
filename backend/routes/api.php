@@ -145,6 +145,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
             ->parameters(['cotizaciones' => 'cotizacion'])
             ->except(['destroy']);
 
+        // Va antes del resource: si no, {pedido} captura "exportar".
+        Route::get('pedidos/exportar', [PedidoController::class, 'exportar'])->name('pedidos.exportar');
+
         // Sin destroy: un pedido es historial de ventas, se cancela.
         Route::apiResource('pedidos', PedidoController::class)->except(['destroy']);
 

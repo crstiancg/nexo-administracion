@@ -55,6 +55,14 @@ class OrdenServicio extends Model
         self::ABANDONADO => 'Abandonado',
     ];
 
+    /** Avisos del taller: listo y sin recoger / demasiado tiempo adentro. */
+    public const DIAS_SIN_RECOGER = 3;
+
+    public const DIAS_ATRASO = 7;
+
+    /** En el taller, sin terminar. */
+    public const ACTIVOS = [self::RECIBIDO, self::DIAGNOSTICO, self::ESPERANDO_REPUESTO, self::EN_REPARACION];
+
     /** Desde acá se puede entregar (con o sin reparar). */
     public const LISTOS = [self::REPARADO, self::SIN_REPARACION, self::ABANDONADO];
 

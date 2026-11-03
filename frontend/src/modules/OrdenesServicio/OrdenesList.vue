@@ -469,7 +469,8 @@ const tabs = computed(() => {
 
 const search = ref('')
 const busqueda = ref('')
-const estadoFilter = ref('activas')
+// ?estado=reparado (desde la campana o un enlace): abre en ese estado.
+const estadoFilter = ref(['activas', ...Object.keys(ESTADOS)].includes(route.query.estado) ? route.query.estado : 'activas')
 const tecnicoFilter = ref(null)
 const tecnicoOptions = ref([{ label: 'Todos', value: null }])
 

@@ -94,6 +94,7 @@ return [
         // Quien ve una cotización (o la lista de productos) la baja en Excel.
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
         'productos.exportar' => ['productos.index'],
+        'pedidos.exportar' => ['pedidos.index'],
         // El form de cotizaciones busca clientes y presentaciones.
         'inventario.variantes' => ['inventario.entradas', 'inventario.salidas', 'inventario.ajustes', 'inventario.traslados', 'pedidos.store', 'pedidos.update', 'ventas.store', 'compras.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-compra.store', 'ordenes-compra.update', 'inventario.index', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         // Autocompletar con RENIEC/SUNAT es parte de cargar un cliente.

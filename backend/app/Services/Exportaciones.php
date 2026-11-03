@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Cotizacion;
+use App\Models\Pedido;
 use App\Models\Variante;
+use App\Support\Fechas;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -189,6 +191,65 @@ class Exportaciones
         $hoja->getStyle("{$stockCol}5:{$minCol}{$fila}")->getNumberFormat()->setFormatCode(self::CANTIDAD);
 
         // Filtros y encabezado fijo: se ordena y busca dentro de Excel.
+        $hoja->setAutoFilter("A4:{$ultima}{$fila}");
+        $hoja->freezePane('A5');
+        foreach (range(1, count($columnas)) as $i) {
+            $hoja->getColumnDimensionByColumn($i)->setAutoSize(true);
+        }
+
+        return $libro;
+    }
+
+    /**
+     * Pedidos: uno por fila, con cliente, canal, estado, totales y saldo.
+     */
+    public function pedidos(Collection $pedidos, string $titulo): Spreadsheet
+    {
+        $libro = new Spreadsheet;
+        $hoja = $libro->getActiveSheet()->setTitle('Pedidos');
+
+        $hoja->setCellValue('A1', $titulo)->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $hoja->setCellValue('A2', 'Exportado el '.now()->format('d/m/Y H:i'));
+
+        $columnas = ['Pedido', 'Fecha', 'Cliente', 'Documento', 'Canal', 'Estado', 'Sede', 'Vendedor', 'Total', 'IGV', 'Pagado', 'Saldo'];
+        $fila = 4;
+        $this->cabecera($hoja, $fila, $columnas);
+
+        foreach ($pedidos as $p) {
+            $fila++;
+            $pagado = round((float) ($p->pagos_sum_monto ?? 0), 2);
+            $hoja->fromArray([
+                $p->codigo,
+                $p->created_at?->setTimezone(Fechas::zona())->format('d/m/Y H:i'),
+                $p->cliente?->nombre ?? 'Cliente varios',
+                trim(($p->cliente?->tipo_documento ?? '').' '.($p->cliente?->numero_documento ?? '')),
+                Pedido::CANALES[$p->canal] ?? $p->canal,
+                ucfirst($p->estado),
+                $p->sede?->nombre,
+                $p->usuario?->name,
+                (float) $p->total,
+                (float) $p->igv,
+                $pagado,
+                round((float) $p->total - $pagado, 2),
+            ], null, "A{$fila}");
+            // El documento como texto: un DNI con 0 adelante no pierde el 0.
+            $hoja->setCellValueExplicit("D{$fila}", trim(($p->cliente?->tipo_documento ?? '').' '.($p->cliente?->numero_documento ?? '')), DataType::TYPE_STRING);
+        }
+
+        $ultima = Coordinate::stringFromColumnIndex(count($columnas));
+        $this->bordes($hoja, "A4:{$ultima}{$fila}");
+        $hoja->getStyle("I5:L{$fila}")->getNumberFormat()->setFormatCode(self::SOLES);
+        if ($fila > 4) {
+            // Fila de totales (fórmulas: si se filtra en Excel, se ven las sumas reales).
+            $total = $fila + 1;
+            $hoja->setCellValue("H{$total}", 'Totales');
+            foreach (['I', 'J', 'K', 'L'] as $col) {
+                $hoja->setCellValue("{$col}{$total}", "=SUBTOTAL(9,{$col}5:{$col}{$fila})");
+            }
+            $hoja->getStyle("H{$total}:L{$total}")->getFont()->setBold(true);
+            $hoja->getStyle("I{$total}:L{$total}")->getNumberFormat()->setFormatCode(self::SOLES);
+        }
+
         $hoja->setAutoFilter("A4:{$ultima}{$fila}");
         $hoja->freezePane('A5');
         foreach (range(1, count($columnas)) as $i) {

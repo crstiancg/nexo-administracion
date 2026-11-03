@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Cotizacion;
 use App\Models\Lote;
+use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\Stock;
 use App\Models\User;
@@ -49,6 +50,39 @@ class Alertas
             }
         }
 
+        // ── Taller ──
+        if ($puede('ordenes-servicio.index')) {
+            $ordenes = fn () => OrdenServicio::query()->where('sede_id', $sedeId);
+
+            // Listos hace días: el cliente no vino (o no se le avisó).
+            $sinRecoger = $ordenes()
+                ->whereIn('estado', [OrdenServicio::REPARADO, OrdenServicio::SIN_REPARACION])
+                ->where('updated_at', '<', now()->subDays(OrdenServicio::DIAS_SIN_RECOGER))
+                ->count();
+            if ($sinRecoger) {
+                $alertas[] = $this->alerta('taller_sin_recoger', 'warning',
+                    $this->plural($sinRecoger, 'equipo listo sin recoger', 'equipos listos sin recoger'),
+                    'Hace más de '.OrdenServicio::DIAS_SIN_RECOGER.' días: vuelve a avisar al cliente por WhatsApp.', $sinRecoger, '/ordenes-servicio?estado=reparado');
+            }
+
+            $atrasados = $ordenes()
+                ->whereIn('estado', OrdenServicio::ACTIVOS)
+                ->where('recibido_at', '<', Fechas::inicioDelDia(Fechas::hoy()->subDays(OrdenServicio::DIAS_ATRASO)))
+                ->count();
+            if ($atrasados) {
+                $alertas[] = $this->alerta('taller_atrasados', 'warning',
+                    $this->plural($atrasados, 'equipo con más de '.OrdenServicio::DIAS_ATRASO.' días en el taller', 'equipos con más de '.OrdenServicio::DIAS_ATRASO.' días en el taller'),
+                    'Todavía sin terminar: revisa si esperan un repuesto o una respuesta del cliente.', $atrasados, '/ordenes-servicio?estado=activas');
+            }
+
+            $sinTecnico = $ordenes()->whereIn('estado', OrdenServicio::ACTIVOS)->whereNull('tecnico_id')->count();
+            if ($sinTecnico) {
+                $alertas[] = $this->alerta('taller_sin_tecnico', 'info',
+                    $this->plural($sinTecnico, 'equipo sin técnico asignado', 'equipos sin técnico asignado'),
+                    'Asígnalos para que nadie se quede esperando.', $sinTecnico, '/ordenes-servicio?estado=activas');
+            }
+        }
+
         // ── Lotes ──
         if ($puede('inventario.lotes')) {
             $lotes = Lote::query()->where('sede_id', $sedeId)->where('cantidad', '>', 0);
@@ -60,7 +94,7 @@ class Alertas
 
             if ($vencidos) {
                 $alertas[] = $this->alerta('lotes_vencidos', 'critical', $this->plural($vencidos, 'lote vencido', 'lotes vencidos'),
-                    'Siguen en el stock pero no se venden: sacalos como merma.', $vencidos, '/vencimientos');
+                    'Siguen en el stock pero no se venden: sácalos como merma.', $vencidos, '/vencimientos');
             }
             if ($porVencer) {
                 $alertas[] = $this->alerta('lotes_por_vencer', 'warning', $this->plural($porVencer, 'lote por vencer', 'lotes por vencer'),

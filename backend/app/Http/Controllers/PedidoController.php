@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePedidoRequest;
 use App\Http\Resources\PedidoResource;
 use App\Models\Pedido;
+use App\Services\Exportaciones;
 use App\Services\Pedidos;
+use App\Support\Fechas;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Los pedidos no se borran: se cancelan (son historial de ventas). Sólo un
@@ -22,8 +25,65 @@ class PedidoController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Pedido::query()->with(['cliente', 'sede:id,nombre'])->withCount('items')->withSum('pagos', 'monto');
+        $this->filtrar($request, $query);
 
-        // Por código, nombre o documento del cliente.
+        if (! $request->filled('order_by')) {
+            $request->merge(['order_by' => '-id']);
+        }
+
+        $respuesta = $this->generateViewSetList(
+            $request,
+            $query,
+            ['estado', 'canal', 'cliente_id', 'sede_id'],
+            [],
+            ['id', 'total', 'estado'],
+            PedidoResource::class,
+        )->getData(true);
+
+        // Lo que espera a alguien: sin confirmar y confirmados sin entregar
+        // (en la sede filtrada o en todas; no depende de la página).
+        $atencion = Pedido::query()
+            ->when($request->filled('sede_id'), fn (Builder $q) => $q->where('sede_id', $request->integer('sede_id')))
+            ->whereIn('estado', [Pedido::PENDIENTE, Pedido::CONFIRMADO])
+            ->selectRaw('estado, COUNT(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado');
+        $respuesta['atencion'] = [
+            'pendientes' => (int) ($atencion[Pedido::PENDIENTE] ?? 0),
+            'por_entregar' => (int) ($atencion[Pedido::CONFIRMADO] ?? 0),
+        ];
+
+        return response()->json($respuesta);
+    }
+
+    /** Los pedidos del filtro (el mismo del listado) en Excel. */
+    public function exportar(Request $request, Exportaciones $exportar): StreamedResponse
+    {
+        $query = Pedido::query()->with(['cliente:id,nombre,tipo_documento,numero_documento', 'sede:id,nombre', 'usuario:id,name'])->withSum('pagos', 'monto');
+        $this->filtrar($request, $query);
+        foreach (['estado', 'canal', 'cliente_id', 'sede_id'] as $campo) {
+            if ($request->filled($campo)) {
+                $query->where("pedidos.{$campo}", $request->input($campo));
+            }
+        }
+
+        $pedidos = $query->orderByDesc('id')->limit(5000)->get();
+        $periodo = $request->filled('desde') ? ' '.$request->input('desde').' a '.$request->input('hasta', Fechas::hoyIso()) : '';
+
+        return $exportar->descargar($exportar->pedidos($pedidos, 'Pedidos'.$periodo), 'pedidos'.str_replace(' ', '_', $periodo).'.xlsx');
+    }
+
+    /**
+     * Búsqueda (código, nombre o documento del cliente) y rango de fechas
+     * (días locales: `desde` / `hasta` en YYYY-MM-DD).
+     */
+    private function filtrar(Request $request, Builder $query): void
+    {
+        $request->validate([
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
+        ]);
+
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
@@ -33,18 +93,12 @@ class PedidoController extends Controller
                     ->orWhere('numero_documento', 'like', $term)));
         }
 
-        if (! $request->filled('order_by')) {
-            $request->merge(['order_by' => '-id']);
+        if ($request->filled('desde')) {
+            $query->where('pedidos.created_at', '>=', Fechas::inicioDelDia($request->date('desde')));
         }
-
-        return $this->generateViewSetList(
-            $request,
-            $query,
-            ['estado', 'canal', 'cliente_id', 'sede_id'],
-            [],
-            ['id', 'total', 'estado'],
-            PedidoResource::class,
-        );
+        if ($request->filled('hasta')) {
+            $query->where('pedidos.created_at', '<=', Fechas::finDelDia($request->date('hasta')));
+        }
     }
 
     public function store(StorePedidoRequest $request): JsonResponse
