@@ -1,0 +1,138 @@
+// Quasar Sass (& SCSS) Variables
+// --------------------------------------------------
+// To customize the look and feel of this app, you can override
+// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+
+// Check documentation for full list of Quasar variables
+
+// Your own variables (that are declared here) and Quasar's own
+// ones will be available out of the box in your .vue/.scss/.sass files
+
+// It's highly recommended to change the default colors
+// to match your app's branding.
+// Tip: Use the "Theme Builder" on Quasar's documentation website.
+
+// ── TIPOGRAFÍA ───────────────────────────────────────────────────────────
+// $typography-font-family es de Quasar (default 'Roboto', con !default).
+// La pisamos acá por la misma razón que $dark: si sólo pusiéramos Manrope
+// en el body, los componentes de Quasar seguirían en Roboto y tendríamos
+// dos tipografías en la misma pantalla.
+//
+// OJO con el nombre: @fontsource-variable declara la familia como
+// 'Manrope Variable', NO 'Manrope'. Con el nombre equivocado el browser no
+// la encuentra, cae al fallback y no falla nada — es un bug silencioso.
+// 'Manrope' queda como segundo para quien la tenga instalada.
+$typography-font-family : 'Manrope Variable', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// Cifras en columna: tablas y ejes de gráficos. NUNCA para cifras grandes
+// sueltas —el tabular le da a cada dígito el ancho de un 0 y un "121" se ve
+// suelto—, sólo donde los números tienen que alinearse verticalmente.
+$font-mono : 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+
+$primary   : #3B82F6;
+$secondary : #6B7280;
+$accent    : #1F2937;
+
+// Estas dos son de Quasar y su semántica coincide EXACTA con nuestros roles:
+// $dark es la superficie de componente en oscuro, $dark-page el fondo de
+// página. Por eso las apuntamos a nuestra paleta en vez de correr una
+// paralela: así los componentes de Quasar (menús, tooltips, inputs) y los
+// nuestros comparten una sola familia de oscuro.
+//
+// Sus defaults eran #1D1D1D y #121212 —negros neutros— que al lado de un
+// slate azulado se ven de otra paleta.
+$dark: #020101;
+$dark-page: #121212;
+
+$positive  : #21BA45;
+$negative  : #C10015;
+$info      : #31CCEC;
+$warning   : #F2C037;
+
+// Custom neutral tokens — Quasar no trae variables propias para
+// texto/fondo/superficie, así que las declaramos acá.
+$text-primary   : #1F2937;
+$text-secondary : #6B7280;
+$page-background: #F8FAFC;
+$surface        : #FFFFFF;
+
+// Variantes de $primary (hover y fondo suave) — no son $secondary/$accent,
+// son el mismo azul de marca en otro estado/uso.
+$primary-hover : #1D4ED8;
+$primary-soft  : #DBEAFE;
+
+// Tinte suave de $negative. El destructivo nunca va relleno de marca:
+// se diferencia por contorno/tinte + ícono + palabra explícita.
+$negative-soft : #FFEFEF;
+
+// Derivados de $text-primary. Bordes, sombras y deshabilitado NO son matices
+// nuevos: son la misma tinta en alpha. Están acá y no repetidos en cada
+// componente para que no deriven entre archivos.
+$border-subtle        : rgba(31, 41, 55, 0.09);
+$border-control       : rgba(31, 41, 55, 0.14);
+$border-control-hover : rgba(31, 41, 55, 0.26);
+$shadow-card          : 0 1px 2px rgba(31, 41, 55, 0.04);
+$disabled-bg          : rgba(31, 41, 55, 0.10);
+$disabled-text        : rgba(31, 41, 55, 0.34);
+
+// ── TEMA OSCURO ──────────────────────────────────────────────────────────
+// Los valores de arriba son el tema claro. Estos son los mismos roles en
+// oscuro, y la inversión es deliberada: la tinta del tema claro pasa a ser
+// la superficie del oscuro, y el fondo claro pasa a ser la tinta.
+//
+// OJO: estos valores NO se pueden intercambiar con los de arriba en runtime.
+// Sass corre en build. El puente a runtime son las custom properties que
+// arma app.scss; acá sólo se ESCRIBEN los valores.
+// La superficie y el fondo NO se repiten acá: ya son $dark y $dark-page,
+// arriba. Tenerlos dos veces fue el bug — Sass se queda con el último y no
+// avisa nada.
+$dark-text-primary     : #F8FAFC;
+$dark-text-secondary   : #9CA3AF;
+
+// En oscuro los bordes son alpha de BLANCO, no de la tinta: sobre fondo
+// oscuro un negro translúcido no separa nada, desaparece.
+$dark-border-subtle        : rgba(255, 255, 255, 0.10);
+$dark-border-control       : rgba(255, 255, 255, 0.16);
+$dark-border-control-hover : rgba(255, 255, 255, 0.30);
+$dark-shadow-card          : 0 1px 2px rgba(0, 0, 0, 0.40);
+$dark-disabled-bg          : rgba(255, 255, 255, 0.10);
+$dark-disabled-text        : rgba(255, 255, 255, 0.34);
+
+// Mapa único de estados. Lo consumen app.scss y AppChip: una sola lista,
+// así no se puede agregar un estado en un lado y olvidarlo en el otro.
+$statuses: (
+  positive: $positive,
+  warning : $warning,
+  info    : $info,
+  negative: $negative
+);
+
+// Texto legible derivado de un color de estado. Los colores de estado crudos
+// NO sirven como texto: $warning sobre su propio tinte da 3.88:1 y no pasa AA.
+//
+// El 45% es el peso más alto que deja a los cuatro estados sobre 4.5:1.
+// Medido: positive 5.97, info 5.06, negative 10.04, warning 4.83 (el que manda).
+// Si agregás un estado nuevo, MEDÍ el contraste antes de darlo por bueno.
+@function status-ink($color) {
+  @return mix($color, $text-primary, 45%);
+}
+
+// En oscuro la fórmula se INVIERTE: el texto tiene que ACLARARSE, no
+// oscurecerse. Mezclar hacia la tinta oscura acá daría texto negro sobre
+// fondo negro. Es el error clásico al portar un sistema a dark mode.
+//
+// El 55% también es medido, y acá el que manda es $negative: es el estado
+// más oscuro de los cuatro, así que necesita más blanco para despegarse del
+// fondo. A 62% daba 4.02:1 y no pasaba; a 55% da 4.66:1 sobre su tinte.
+@function status-ink-dark($color) {
+  @return mix($color, #FFFFFF, 55%);
+}
+
+@function status-tint($color) {
+  @return mix($color, $surface, 10%);
+}
+
+@function status-tint-dark($color) {
+  @return mix($color, $dark, 18%);
+}

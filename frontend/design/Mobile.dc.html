@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: "Manrope", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C91C1C; text-decoration: none; }
+    a:hover { color: #F82525; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+  </style>
+</helmet>
+
+<div style="width: 390px; min-height: 844px; display: flex; flex-direction: column; background: #F8FAFC; color: #1F2937;">
+
+  <!-- ══ APP BAR · QToolbar — no fake OS status bar above it ══ -->
+  <div style="height: 56px; flex-shrink: 0; background: #FFFFFF; border-bottom: 1px solid rgba(31,41,55,0.09); display: flex; align-items: center; gap: 10px; padding: 0 8px 0 6px;">
+    <div style="width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="#1F2937" stroke-width="1.7" stroke-linecap="round"><path d="M3 6h14M3 10h14M3 14h14"></path></svg>
+    </div>
+    <div style="font-size: 16.5px; font-weight: 700; letter-spacing: -0.2px;">Resumen</div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 4px;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#6B7280" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 8.4a4.8 4.8 0 0 1 9.6 0c0 3.4 1.2 4.6 1.2 4.6H4s1.2-1.2 1.2-4.6Z"></path><path d="M8.4 16.1a1.9 1.9 0 0 0 3.2 0"></path></svg>
+        <div style="position: absolute; top: 10px; right: 11px; width: 7px; height: 7px; border-radius: 999px; background: #F82525; border: 1.5px solid #FFFFFF;"></div>
+      </div>
+      <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: #F82525; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(201,28,28,0.32);">
+          <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"></path></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CONTENT ══ -->
+  <div style="padding: 14px 16px 14px 16px; display: flex; flex-direction: column; gap: 12px;">
+
+    <div style="font-size: 13px; color: #6B7280;">Diciembre 2025 · hace 4 min</div>
+
+    <!-- KPI stack — 2×2 · QCard -->
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+
+      <!-- highlighted: the one hero figure on this view -->
+      <div style="background: #FFE4E4; border: 1px solid rgba(248,37,37,0.18); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 11.5px; font-weight: 700; color: #C91C1C; letter-spacing: 0.1px;">Ingresos</span>
+        <div style="font-size: 34px; font-weight: 700; letter-spacing: -1.2px; line-height: 1;">$418k</div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#1E7E34" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15.5V5"></path><path d="M5.6 9.4 10 5l4.4 4.4"></path></svg>
+          <span style="font-size: 11.5px; font-weight: 700; color: #1E7E34;">+12,4%</span>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(31,41,55,0.04);">
+        <span style="font-size: 11.5px; font-weight: 600; color: #6B7280;">Pedidos</span>
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.6px; line-height: 1;">1.284</div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#1E7E34" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15.5V5"></path><path d="M5.6 9.4 10 5l4.4 4.4"></path></svg>
+          <span style="font-size: 11.5px; font-weight: 700; color: #1E7E34;">+6,1%</span>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(31,41,55,0.04);">
+        <span style="font-size: 11.5px; font-weight: 600; color: #6B7280;">Usuarios</span>
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.6px; line-height: 1;">9.470</div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#1E7E34" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15.5V5"></path><path d="M5.6 9.4 10 5l4.4 4.4"></path></svg>
+          <span style="font-size: 11.5px; font-weight: 700; color: #1E7E34;">+3,8%</span>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; padding: 12px 15px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(31,41,55,0.04);">
+        <span style="font-size: 11.5px; font-weight: 600; color: #6B7280;">Conversión</span>
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.6px; line-height: 1;">3,12%</div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#C10015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5V15"></path><path d="M14.4 10.6 10 15l-4.4-4.4"></path></svg>
+          <span style="font-size: 11.5px; font-weight: 700; color: #C10015;">−0,4%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart · QCard — 6 months on a phone, not 12 -->
+    <div style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; padding: 14px 16px 10px 16px; box-shadow: 0 1px 2px rgba(31,41,55,0.04);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <div>
+          <div style="font-size: 14.5px; font-weight: 700; letter-spacing: -0.2px;">Ingresos por mes</div>
+          <div style="font-size: 11.5px; color: #6B7280; margin-top: 2px;">Últimos 6 meses · en miles</div>
+        </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border-radius: 8px; background: #FFE4E4; color: #C91C1C; font-size: 12px; font-weight: 700;">
+          6M
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8l4.5 4.5L14.5 8"></path></svg>
+        </div>
+      </div>
+
+      <svg width="326" height="164" viewBox="0 0 326 164" fill="none" style="max-width: 100%; display: block;">
+        <sc-for list="{{grid}}" as="g" hint-placeholder-count="3">
+          <line x1="34" y1="{{g.y}}" x2="326" y2="{{g.y}}" stroke="rgba(31,41,55,0.10)" stroke-width="1"></line>
+          <text x="26" y="{{g.ty}}" text-anchor="end" font-size="10" font-family="'IBM Plex Mono', monospace" fill="#6B7280">{{g.label}}</text>
+        </sc-for>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="6">
+          <path d="{{b.d}}" fill="#F82525" fill-opacity="{{b.op}}"></path>
+          <text x="{{b.cx}}" y="158" text-anchor="middle" font-size="11" fill="{{b.mcolor}}" font-weight="{{b.mweight}}">{{b.month}}</text>
+          <sc-if value="{{b.hot}}" hint-placeholder-val="{{true}}">
+            <text x="{{b.cx}}" y="{{b.labelY}}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1F2937">{{b.label}}</text>
+          </sc-if>
+        </sc-for>
+      </svg>
+    </div>
+
+    <!-- Canales · QCard -->
+    <div style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(31,41,55,0.04);">
+      <div style="font-size: 14.5px; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 12px;">Canales de adquisición</div>
+
+      <div style="display: flex; flex-direction: column; gap: 11px;">
+        <div>
+          <div style="display: flex; align-items: baseline; margin-bottom: 6px;">
+            <span style="font-size: 13px; font-weight: 600;">Búsqueda orgánica</span>
+            <span class="mono" style="margin-left: auto; font-size: 12.5px;">42%</span>
+          </div>
+          <div style="height: 6px; border-radius: 999px; background: #FFE4E4;"><div style="width: 42%; height: 6px; border-radius: 999px; background: #F82525;"></div></div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: baseline; margin-bottom: 6px;">
+            <span style="font-size: 13px; font-weight: 600;">Campañas pagas</span>
+            <span class="mono" style="margin-left: auto; font-size: 12.5px;">27%</span>
+          </div>
+          <div style="height: 6px; border-radius: 999px; background: #FFE4E4;"><div style="width: 27%; height: 6px; border-radius: 999px; background: #F82525;"></div></div>
+        </div>
+        <div>
+          <div style="display: flex; align-items: baseline; margin-bottom: 6px;">
+            <span style="font-size: 13px; font-weight: 600;">Referidos</span>
+            <span class="mono" style="margin-left: auto; font-size: 12.5px;">18%</span>
+          </div>
+          <div style="height: 6px; border-radius: 999px; background: #FFE4E4;"><div style="width: 18%; height: 6px; border-radius: 999px; background: #F82525;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOTTOM NAV — 44px+ targets, active item in brand ══ -->
+  <div style="margin-top: auto; flex-shrink: 0; background: #FFFFFF; border-top: 1px solid rgba(31,41,55,0.09); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 6px 14px 6px;">
+
+    <div style="height: 52px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #C91C1C;">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="11" y="2.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="2.5" y="11" width="6.5" height="6.5" rx="1.5"></rect><rect x="11" y="11" width="6.5" height="6.5" rx="1.5"></rect></svg>
+      <span style="font-size: 10.5px; font-weight: 700;">Inicio</span>
+    </div>
+
+    <div style="height: 52px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B7280; position: relative;">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5h15"></path><path d="M2.5 10h15"></path><path d="M2.5 14.5h15"></path></svg>
+      <span style="font-size: 10.5px; font-weight: 600;">Pedidos</span>
+      <div style="position: absolute; top: 6px; right: 22px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #F82525; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1.5px solid #FFFFFF;">14</div>
+    </div>
+
+    <div style="height: 52px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B7280;">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="6.5" r="3.2"></circle><path d="M3.8 17c0-3.1 2.8-5.2 6.2-5.2s6.2 2.1 6.2 5.2"></path></svg>
+      <span style="font-size: 10.5px; font-weight: 600;">Clientes</span>
+    </div>
+
+    <div style="height: 52px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #6B7280;">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="4.5" cy="10" r="1.1" fill="currentColor"></circle><circle cx="10" cy="10" r="1.1" fill="currentColor"></circle><circle cx="15.5" cy="10" r="1.1" fill="currentColor"></circle></svg>
+      <span style="font-size: 10.5px; font-weight: 600;">Más</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var PLOT_L = 34, PLOT_R = 326, TOP = 6, BASE = 140, MAXV = 500, BW = 22, R = 4;
+    var plotH = BASE - TOP;
+
+    var data = [
+      { m: 'Jul', v: 292 }, { m: 'Ago', v: 274 }, { m: 'Sep', v: 318 },
+      { m: 'Oct', v: 341 }, { m: 'Nov', v: 372 }, { m: 'Dic', v: 418 }
+    ];
+
+    var band = (PLOT_R - PLOT_L) / data.length;
+    var r1 = function (n) { return Math.round(n * 10) / 10; };
+
+    var bars = data.map(function (d, i) {
+      var cx = r1(PLOT_L + band * i + band / 2);
+      var x = r1(cx - BW / 2);
+      var y = r1(BASE - (d.v / MAXV) * plotH);
+      var hot = i === data.length - 1;
+      return {
+        month: d.m,
+        cx: cx,
+        hot: hot,
+        op: hot ? 1 : 0.26,
+        mcolor: hot ? '#1F2937' : '#6B7280',
+        mweight: hot ? '700' : '500',
+        labelY: r1(y - 8),
+        label: '$' + d.v + 'k',
+        d: 'M ' + x + ' ' + BASE +
+           ' L ' + x + ' ' + r1(y + R) +
+           ' A ' + R + ' ' + R + ' 0 0 1 ' + r1(x + R) + ' ' + y +
+           ' L ' + r1(x + BW - R) + ' ' + y +
+           ' A ' + R + ' ' + R + ' 0 0 1 ' + r1(x + BW) + ' ' + r1(y + R) +
+           ' L ' + r1(x + BW) + ' ' + BASE + ' Z'
+      };
+    });
+
+    var grid = [0, 250, 500].map(function (v) {
+      var y = r1(BASE - (v / MAXV) * plotH);
+      return { y: y, ty: r1(y + 3.5), label: v === 0 ? '0' : v + 'k' };
+    });
+
+    return { bars: bars, grid: grid };
+  }
+}
+</script>
+</body>
+</html>

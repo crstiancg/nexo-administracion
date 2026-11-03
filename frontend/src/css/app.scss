@@ -1,0 +1,227 @@
+// app global css
+// quasar.variables.scss se inyecta automáticamente por Quasar CLI,
+// no hace falta importarlo acá.
+
+// ─────────────────────────────────────────────────────────────────────────
+// PUENTE COMPILE-TIME → RUNTIME
+//
+// Sass corre en el build: un $surface en un componente queda horneado como
+// #FFFFFF y ya no se puede cambiar. El dark mode pasa cuando el usuario
+// aprieta el toggle, con el CSS ya servido.
+//
+// Por eso cada token que depende del TEMA se publica como custom property.
+// Los componentes leen var(--app-*); estos dos bloques son los únicos
+// lugares donde se decide qué valor tiene cada rol en cada tema.
+//
+// $primary y los colores de estado NO están acá: la marca no cambia de
+// tema. Lo que cambia es todo lo que la rodea.
+// ─────────────────────────────────────────────────────────────────────────
+
+:root {
+  --app-page: #{$page-background};
+  --app-surface: #{$surface};
+  --app-ink: #{$text-primary};
+  --app-ink-2: #{$text-secondary};
+
+  --app-border-subtle: #{$border-subtle};
+  --app-border-control: #{$border-control};
+  --app-border-control-hover: #{$border-control-hover};
+  --app-shadow-card: #{$shadow-card};
+
+  --app-disabled-bg: #{$disabled-bg};
+  --app-disabled-ink: #{$disabled-text};
+
+  --app-brand-soft: #{$primary-soft};
+  --app-brand-soft-ink: #{$primary-hover};
+  --app-negative-soft: #{$negative-soft};
+  --app-negative-border: #{rgba($negative, 0.42)};
+
+  @each $name, $color in $statuses {
+    --app-tint-#{$name}: #{status-tint($color)};
+    --app-ink-#{$name}: #{status-ink($color)};
+  }
+}
+
+// Quasar pone .body--dark en el <body> cuando $q.dark.set(true). Nos
+// colgamos de eso en vez de inventar otro flag: así el switch que ya
+// existe maneja el sistema entero, sin estado paralelo que se desincronice.
+body.body--dark {
+  --app-page: #{$dark-page};
+  --app-surface: #{$dark};
+  --app-ink: #{$dark-text-primary};
+  --app-ink-2: #{$dark-text-secondary};
+
+  --app-border-subtle: #{$dark-border-subtle};
+  --app-border-control: #{$dark-border-control};
+  --app-border-control-hover: #{$dark-border-control-hover};
+  --app-shadow-card: #{$dark-shadow-card};
+
+  --app-disabled-bg: #{$dark-disabled-bg};
+  --app-disabled-ink: #{$dark-disabled-text};
+
+  --app-brand-soft: #{mix($primary, $dark, 20%)};
+  --app-brand-soft-ink: #{mix($primary, #FFFFFF, 55%)};
+  --app-negative-soft: #{mix($negative, $dark, 20%)};
+  --app-negative-border: #{rgba(status-ink-dark($negative), 0.55)};
+
+  @each $name, $color in $statuses {
+    --app-tint-#{$name}: #{status-tint-dark($color)};
+    --app-ink-#{$name}: #{status-ink-dark($color)};
+  }
+}
+
+body {
+  background-color: var(--app-page);
+  color: var(--app-ink);
+}
+
+// Quasar pinta su propio fondo oscuro en .body--dark; lo dejamos en manos
+// de nuestro token para que haya UNA sola fuente del fondo de página.
+body.body--dark {
+  background-color: var(--app-page);
+}
+
+.text-secondary-neutral {
+  color: var(--app-ink-2);
+}
+
+// Utilidad para cifras que tienen que alinearse en columna: tablas, ejes.
+// El tabular-nums va junto con el mono y no suelto — es el par que hace que
+// los dígitos caigan uno debajo del otro.
+.text-mono {
+  font-family: $font-mono;
+  font-variant-numeric: tabular-nums;
+}
+
+// Nada de overrides sobre .q-card ni .q-btn acá: cada componente del sistema
+// (AppCard, AppButton, AppChip) es dueño de su superficie y de sus estados.
+// Una regla global que los pise desde este archivo es acción a distancia.
+
+// Fondo suave de marca, como utilidad opt-in para maquetar rápido.
+.bg-primary-soft {
+  background-color: var(--app-brand-soft) !important;
+}
+
+// Contenedor de las páginas de listado (Pedidos, Productos, …): header +
+// filtros + tabla apilados con el mismo espaciado en todas. Vive acá y no
+// repetido por página porque es layout, no identidad de ninguna pantalla.
+.app-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 32px 32px;
+}
+
+@media (max-width: 599px) {
+  .app-list-page {
+    padding: 20px 16px;
+  }
+}
+
+// ── Ticket de venta (ticketera térmica de 80 mm) ──
+// El ticket se monta en <body> (ImpresionTicket.vue) y al imprimir es lo único
+// que sale: el resto de la app se oculta. Global y no scoped porque tiene que
+// apuntar a los hermanos del ticket dentro de <body>.
+.ticket-impresion,
+.etiquetas-impresion,
+.documento-impresion {
+  display: none;
+}
+
+// ── Documentos A4 (cotizaciones) ──
+// Mismo mecanismo que el ticket, en su propia página con nombre: A4 con
+// márgenes, sin tocar el rollo de 80 mm del ticket.
+@page documento-a4 {
+  size: A4;
+  margin: 14mm;
+}
+
+.documento-impresion {
+  page: documento-a4;
+}
+
+// ── Etiquetas con código de barras (ImpresionEtiquetas.vue) ──
+// Mismo mecanismo que el ticket. El rollo usa el @page sin tamaño de abajo; las
+// hojas A4 piden su propia página con nombre (named page), así un formato no
+// le cambia el tamaño de papel al otro.
+@page etiquetas-a4 {
+  size: A4;
+  margin: 0;
+}
+
+.etiquetas-impresion--a4 {
+  page: etiquetas-a4;
+}
+
+.etiquetas-hoja {
+  display: grid;
+  box-sizing: border-box;
+}
+
+.etiquetas-impresion--a4 .etiquetas-hoja {
+  width: 210mm;
+  // 296 y no 297: un redondeo del navegador hacia arriba agregaría una hoja
+  // en blanco después de cada una.
+  height: 296mm;
+  break-after: page;
+
+  &:last-child {
+    break-after: auto;
+  }
+}
+
+// 72 mm útiles centrados en los 80 del rollo.
+.etiquetas-impresion--rollo .etiquetas-hoja {
+  width: 72mm;
+  margin: 0 auto;
+}
+
+.etiquetas-celda {
+  break-inside: avoid;
+}
+
+// En el rollo se cortan a mano: una línea punteada marca dónde.
+.etiquetas-impresion--rollo .etiquetas-celda {
+  border-bottom: 0.2mm dashed #000000;
+}
+
+@media print {
+  // Sin tamaño forzado: el papel lo pone el driver de la impresora elegida
+  // (la ticketera ya ajusta el rollo sola). Forzar 80 mm chocaba con el
+  // driver y salía la hoja en blanco. Solo se quitan los márgenes del navegador.
+  @page {
+    margin: 0;
+  }
+
+  body > *:not(.ticket-impresion):not(.etiquetas-impresion):not(.documento-impresion) {
+    display: none !important;
+  }
+
+  .ticket-impresion,
+  .etiquetas-impresion,
+  .documento-impresion {
+    display: block;
+  }
+
+  // Sin esto Chrome omite los fondos blancos y algunos drivers aclaran el negro.
+  .etiquetas-impresion {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+// Scrollbars ocultas en todo el sistema: se sigue pudiendo scrollear con la
+// rueda, el trackpad o el teclado, solo no se dibuja la barra.
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+// Punto de venta: mientras se arrastra el ancho del carrito.
+body.pos--arrastrando {
+  cursor: col-resize;
+  user-select: none;
+}

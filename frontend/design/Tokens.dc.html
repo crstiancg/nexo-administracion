@@ -1,0 +1,395 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: "Manrope", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C91C1C; text-decoration: none; }
+    a:hover { color: #F82525; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+    .card { background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09); border-radius: 12px; box-shadow: 0 1px 2px rgba(31,41,55,0.04); }
+    .h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.35px; margin: 0; }
+    .cap { font-size: 12.5px; color: #6B7280; }
+    .over { font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #6B7280; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 9px; font-size: 13.5px; font-weight: 600; }
+    .sw { height: 62px; border-radius: 10px; }
+    .swname { font-size: 12.5px; font-weight: 700; margin-top: 9px; }
+    .swhex { font-size: 12px; margin-top: 2px; color: #1F2937; }
+    .swuse { font-size: 11.5px; color: #6B7280; margin-top: 3px; line-height: 1.4; }
+    .trow { font-size: 13px; height: 38px; border-top: 1px solid rgba(31,41,55,0.07); }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 2500px; background: #F8FAFC; color: #1F2937; padding: 40px 48px 48px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- Header -->
+  <div style="display: flex; align-items: flex-end; gap: 20px;">
+    <div>
+      <div class="over" style="margin-bottom: 8px;">Design system</div>
+      <h1 style="margin: 0 0 6px 0; font-size: 30px; font-weight: 700; letter-spacing: -0.7px;">Tokens y componentes base</h1>
+      <div style="font-size: 14px; color: #6B7280;">Referencia del sistema · mapeado a <span class="mono" style="color: #1F2937;">src/css/quasar.variables.scss</span></div>
+    </div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09);">
+      <div style="width: 22px; height: 22px; border-radius: 6px; background: #F82525;"></div>
+      <span style="font-size: 13px; font-weight: 600;">Marca</span>
+      <div style="width: 1px; height: 18px; background: rgba(31,41,55,0.12); margin: 0 3px;"></div>
+      <div style="width: 22px; height: 22px; border-radius: 6px; background: #1F2937;"></div>
+      <span style="font-size: 13px; font-weight: 600;">Neutro</span>
+    </div>
+  </div>
+
+  <!-- ══ PALETA ══ -->
+  <div class="card" style="padding: 26px 28px;">
+    <h2 class="h2">Paleta</h2>
+    <div class="cap" style="margin-top: 4px;">Siete valores. Todo lo demás — bordes, sombras, separadores — se deriva en alpha de <span class="mono">#1F2937</span>, así el sistema no gana matices nuevos.</div>
+
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 16px; margin-top: 24px;">
+
+      <div>
+        <div class="sw" style="background: #F82525;"></div>
+        <div class="swname">Primary</div>
+        <div class="swhex mono">#F82525</div>
+        <div class="swuse">Botones, acciones, nav activo</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #C91C1C;"></div>
+        <div class="swname">Primary hover</div>
+        <div class="swhex mono">#C91C1C</div>
+        <div class="swuse">Hover y estados activos</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #FFE4E4; border: 1px solid rgba(248,37,37,0.20);"></div>
+        <div class="swname">Primary soft</div>
+        <div class="swhex mono">#FFE4E4</div>
+        <div class="swuse">Cards destacadas, badges, tracks</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #1F2937;"></div>
+        <div class="swname">Texto principal</div>
+        <div class="swhex mono">#1F2937</div>
+        <div class="swuse">Títulos, cifras, cuerpo</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #6B7280;"></div>
+        <div class="swname">Texto secundario</div>
+        <div class="swhex mono">#6B7280</div>
+        <div class="swuse">Labels, captions, ejes</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #F8FAFC; border: 1px solid rgba(31,41,55,0.12);"></div>
+        <div class="swname">Fondo</div>
+        <div class="swhex mono">#F8FAFC</div>
+        <div class="swuse">Fondo general de página</div>
+      </div>
+
+      <div>
+        <div class="sw" style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.12);"></div>
+        <div class="swname">Superficie</div>
+        <div class="swhex mono">#FFFFFF</div>
+        <div class="swuse">Cards, paneles, toolbar</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 26px; padding-top: 24px; border-top: 1px solid rgba(31,41,55,0.09);">
+      <div>
+        <div style="height: 40px; border-radius: 10px; background: #21BA45;"></div>
+        <div class="swname">Positive</div>
+        <div class="swhex mono">#21BA45</div>
+      </div>
+      <div>
+        <div style="height: 40px; border-radius: 10px; background: #C10015;"></div>
+        <div class="swname">Negative</div>
+        <div class="swhex mono">#C10015</div>
+      </div>
+      <div>
+        <div style="height: 40px; border-radius: 10px; background: #F2C037;"></div>
+        <div class="swname">Warning</div>
+        <div class="swhex mono">#F2C037</div>
+      </div>
+      <div>
+        <div style="height: 40px; border-radius: 10px; background: #31CCEC;"></div>
+        <div class="swname">Info</div>
+        <div class="swhex mono">#31CCEC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LA REGLA DE LOS DOS ROJOS ══ -->
+  <div class="card" style="padding: 26px 28px;">
+    <h2 class="h2">La regla de los dos rojos</h2>
+    <div class="cap" style="margin-top: 4px; max-width: 940px;">
+      <span class="mono" style="color: #1F2937;">#F82525</span> (marca) y <span class="mono" style="color: #1F2937;">#C10015</span> (error) son casi el mismo color. Sin una regla, el usuario no distingue «Confirmar» de «Eliminar». La regla no es cromática, es de <strong>tratamiento</strong>: distinta forma, distinto significado.
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 22px;">
+
+      <div style="border: 1px solid rgba(248,37,37,0.22); background: #FFF9F9; border-radius: 11px; padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 26px; height: 26px; border-radius: 7px; background: #F82525; display: flex; align-items: center; justify-content: center;">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"></path></svg>
+          </div>
+          <div style="font-size: 14.5px; font-weight: 700;">Marca · siempre RELLENO</div>
+        </div>
+        <div class="cap" style="margin-top: 10px;">Sólido, sin borde, texto blanco. Un solo CTA relleno por vista; los demás rellenos de marca son indicadores de estado — nav activo, página actual, contador — nunca una segunda acción principal.</div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
+          <div class="btn" style="background: #F82525; color: #FFFFFF; box-shadow: 0 1px 2px rgba(201,28,28,0.28);">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"></path></svg>
+            Nuevo pedido
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 13px; border-radius: 9px; background: #FFE4E4; color: #C91C1C; font-size: 13.5px; font-weight: 600;">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="11" y="2.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="2.5" y="11" width="6.5" height="6.5" rx="1.5"></rect><rect x="11" y="11" width="6.5" height="6.5" rx="1.5"></rect></svg>
+            Dashboard
+          </div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid rgba(193,0,21,0.28); background: #FFFCFC; border-radius: 11px; padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid #C10015; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#C10015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.9h12.8M8 3.3h4M5.6 5.9l.7 10a1.4 1.4 0 0 0 1.4 1.3h4.6a1.4 1.4 0 0 0 1.4-1.3l.7-10"></path></svg>
+          </div>
+          <div style="font-size: 14.5px; font-weight: 700;">Error · NUNCA relleno</div>
+        </div>
+        <div class="cap" style="margin-top: 10px;">Contorno o tinte suave, más ícono, más la palabra explícita. Jamás sólido: eso lo reserva la marca. La palabra es obligatoria, el color solo no alcanza.</div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
+          <div class="btn" style="background: #FFFFFF; border: 1px solid rgba(193,0,21,0.42); color: #C10015;">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 5.9h12.8M8 3.3h4M5.6 5.9l.7 10a1.4 1.4 0 0 0 1.4 1.3h4.6a1.4 1.4 0 0 0 1.4-1.3l.7-10"></path></svg>
+            Eliminar pedido
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border-radius: 999px; background: #FFEFEF; border: 1px solid rgba(193,0,21,0.22); color: #C10015; font-size: 12px; font-weight: 700;">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.4 6.4l7.2 7.2M13.6 6.4l-7.2 7.2"></path></svg>
+            Cancelado
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TIPOGRAFÍA + BOTONES ══ -->
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px;">
+
+    <div class="card" style="padding: 26px 28px;">
+      <h2 class="h2">Escala tipográfica</h2>
+      <div class="cap" style="margin-top: 4px;">Manrope para todo · IBM Plex Mono para datos y cifras en columna.</div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 24px;">
+
+        <div style="display: flex; align-items: baseline; gap: 16px;">
+          <div style="font-size: 34px; font-weight: 700; letter-spacing: -1px; line-height: 1;">$418k</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">34 / 700 / −1px<br>cifra hero · una por vista</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div style="font-size: 25px; font-weight: 700; letter-spacing: -0.5px;">Resumen general</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">25 / 700 / −0.5px<br>título de página</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div style="font-size: 19px; font-weight: 700; letter-spacing: -0.35px;">Sección de contenido</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">19 / 700 / −0.35px</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div style="font-size: 15.5px; font-weight: 700; letter-spacing: -0.2px;">Título de card</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">15.5 / 700 / −0.2px</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div style="font-size: 13.5px; font-weight: 500;">Cuerpo de texto y celdas de tabla</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">13.5 / 500</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div style="font-size: 12.5px; color: #6B7280;">Caption, subtítulo y texto de apoyo</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">12.5 / 500 / #6B7280</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div class="over">Overline de sección</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">11 / 700 / 0.7px / caps</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(31,41,55,0.07);">
+          <div class="mono" style="font-size: 13px; font-variant-numeric: tabular-nums;">$134.500 · #PD-4819</div>
+          <div class="mono" style="margin-left: auto; font-size: 11.5px; color: #6B7280; text-align: right; white-space: nowrap;">13 / Plex Mono / tabular<br>sólo en columnas y ejes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 26px 28px;">
+      <h2 class="h2">Estados de botón · QBtn</h2>
+      <div class="cap" style="margin-top: 4px;">Alto 40px en escritorio, 44px en mobile. Deshabilitado siempre neutro: pierde la marca, no la atenúa.</div>
+
+      <div style="display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); gap: 14px; align-items: center; margin-top: 26px;">
+
+        <div></div>
+        <div class="over" style="text-align: center;">Default</div>
+        <div class="over" style="text-align: center;">Hover</div>
+        <div class="over" style="text-align: center;">Disabled</div>
+
+        <div style="font-size: 12.5px; font-weight: 700;">Primario</div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #F82525; color: #FFFFFF; box-shadow: 0 1px 2px rgba(201,28,28,0.28);">Guardar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #C91C1C; color: #FFFFFF;">Guardar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: rgba(31,41,55,0.10); color: rgba(31,41,55,0.34);">Guardar</div></div>
+
+        <div style="font-size: 12.5px; font-weight: 700;">Secundario</div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.14); color: #1F2937;">Cancelar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #F8FAFC; border: 1px solid rgba(31,41,55,0.26); color: #1F2937;">Cancelar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.10); color: rgba(31,41,55,0.34);">Cancelar</div></div>
+
+        <div style="font-size: 12.5px; font-weight: 700;">Terciario</div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="color: #C91C1C;">Ver reporte</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFE4E4; color: #C91C1C;">Ver reporte</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="color: rgba(31,41,55,0.34);">Ver reporte</div></div>
+
+        <div style="font-size: 12.5px; font-weight: 700; color: #C10015;">Destructivo</div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFFFFF; border: 1px solid rgba(193,0,21,0.42); color: #C10015;">Eliminar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFEFEF; border: 1px solid #C10015; color: #C10015;">Eliminar</div></div>
+        <div style="display: flex; justify-content: center;"><div class="btn" style="background: #FFFFFF; border: 1px solid rgba(31,41,55,0.10); color: rgba(31,41,55,0.34);">Eliminar</div></div>
+      </div>
+
+      <div style="margin-top: 26px; padding: 14px 16px; border-radius: 10px; background: #F8FAFC; border: 1px solid rgba(31,41,55,0.09); display: flex; gap: 11px;">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#6B7280" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="10" cy="10" r="7.2"></circle><path d="M10 9v4.6M10 6.6v.1"></path></svg>
+        <div class="cap">
+          En Quasar, el hover de <span class="mono" style="color: #1F2937;">QBtn</span> lo pinta una capa <span class="mono" style="color: #1F2937;">.q-focus-helper</span> que sube de opacidad sobre <span class="mono" style="color: #1F2937;">currentColor</span>. Para que el hover sea exactamente <span class="mono" style="color: #1F2937;">#C91C1C</span> hay que neutralizar esa capa — ya está resuelto en <span class="mono" style="color: #1F2937;">app.scss</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CHIPS + MAPEO ══ -->
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px;">
+
+    <div class="card" style="padding: 26px 28px;">
+      <h2 class="h2">Estados y datos</h2>
+      <div class="cap" style="margin-top: 4px;">Todo estado lleva ícono + palabra. El color es refuerzo, nunca el único canal.</div>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 22px; flex-wrap: wrap;">
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px; background: #E7F7EC; color: #17703A; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 10.4l3.2 3.2 7.2-7.2"></path></svg>
+          Completado
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px; background: #FDF3DC; color: #8A5B00; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.6"></circle><path d="M10 6.6V10l2.4 1.6"></path></svg>
+          Pendiente
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px; background: #E4F6FB; color: #10627A; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 10h4l1.6-3.4 2.4 6.8 1.6-3.4h3.2"></path></svg>
+          En proceso
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px; background: #FFEFEF; border: 1px solid rgba(193,0,21,0.22); color: #C10015; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.4 6.4l7.2 7.2M13.6 6.4l-7.2 7.2"></path></svg>
+          Cancelado
+        </span>
+      </div>
+
+      <div style="margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(31,41,55,0.09);">
+        <div class="over" style="margin-bottom: 6px;">Badge y contador</div>
+        <div class="cap" style="margin-bottom: 16px;">Relleno de marca por defecto — el contador es su propio elemento y no depende del estado del ítem que lo lleva. El tinte suave es la variante de baja jerarquía, para contextos densos o secundarios.</div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; background: #F82525; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">14</div>
+          <div style="min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; background: #FFE4E4; color: #C91C1C; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">14</div>
+          <div style="width: 8px; height: 8px; border-radius: 999px; background: #F82525;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(31,41,55,0.09);">
+        <div class="over" style="margin-bottom: 6px;">Gráfico · marca y hover</div>
+        <div class="cap" style="margin-bottom: 16px;">Barras de 24px con cap redondeado de 4px, base cuadrada. Un solo matiz: el período actual al 100%, el resto al 26%. Grilla de 1px sólida, nunca punteada.</div>
+
+        <svg width="360" height="118" viewBox="0 0 360 118" fill="none" style="max-width: 100%; display: block;">
+          <line x1="0" y1="96" x2="360" y2="96" stroke="rgba(31,41,55,0.10)" stroke-width="1"></line>
+          <line x1="0" y1="58" x2="360" y2="58" stroke="rgba(31,41,55,0.10)" stroke-width="1"></line>
+          <line x1="0" y1="20" x2="360" y2="20" stroke="rgba(31,41,55,0.10)" stroke-width="1"></line>
+
+          <path d="M 12 96 L 12 66 A 4 4 0 0 1 16 62 L 32 62 A 4 4 0 0 1 36 66 L 36 96 Z" fill="#F82525" fill-opacity="0.26"></path>
+          <path d="M 60 96 L 60 56 A 4 4 0 0 1 64 52 L 80 52 A 4 4 0 0 1 84 56 L 84 96 Z" fill="#F82525" fill-opacity="0.26"></path>
+          <path d="M 108 96 L 108 62 A 4 4 0 0 1 112 58 L 128 58 A 4 4 0 0 1 132 62 L 132 96 Z" fill="#F82525" fill-opacity="0.26"></path>
+          <path d="M 156 96 L 156 44 A 4 4 0 0 1 160 40 L 176 40 A 4 4 0 0 1 180 44 L 180 96 Z" fill="#F82525" fill-opacity="0.26"></path>
+          <path d="M 204 96 L 204 34 A 4 4 0 0 1 208 30 L 224 30 A 4 4 0 0 1 228 34 L 228 96 Z" fill="#F82525" fill-opacity="0.26"></path>
+          <path d="M 252 96 L 252 22 A 4 4 0 0 1 256 18 L 272 18 A 4 4 0 0 1 276 22 L 276 96 Z" fill="#F82525"></path>
+
+          <!-- hover: crosshair + tooltip, the pattern for QTooltip on the chart -->
+          <line x1="264" y1="8" x2="264" y2="96" stroke="rgba(31,41,55,0.22)" stroke-width="1"></line>
+          <rect x="288" y="18" width="66" height="42" rx="8" fill="#1F2937"></rect>
+          <text x="298" y="35" font-size="10" fill="rgba(255,255,255,0.66)" font-family="Manrope, sans-serif" font-weight="600">Diciembre</text>
+          <text x="298" y="50" font-size="13" fill="#FFFFFF" font-family="'IBM Plex Mono', monospace" font-weight="500">$418k</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 26px 28px;">
+      <h2 class="h2">Mapeo a Quasar</h2>
+      <div class="cap" style="margin-top: 4px;">Lo que ya vive en <span class="mono" style="color: #1F2937;">quasar.variables.scss</span>. Las variables marcadas <em>custom</em> no existen en Quasar — Quasar sólo trae colores de marca y de estado, no de texto ni superficie.</div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 22px;">
+        <thead>
+          <tr>
+            <th class="over" style="text-align: left; padding-bottom: 11px;">Variable</th>
+            <th class="over" style="text-align: left; padding-bottom: 11px;">Valor</th>
+            <th class="over" style="text-align: right; padding-bottom: 11px;">Origen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$primary</td><td class="mono" style="color: #6B7280;">#F82525</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$secondary</td><td class="mono" style="color: #6B7280;">#6B7280</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$accent</td><td class="mono" style="color: #6B7280;">#1F2937</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$primary-hover</td><td class="mono" style="color: #6B7280;">#C91C1C</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$primary-soft</td><td class="mono" style="color: #6B7280;">#FFE4E4</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$text-primary</td><td class="mono" style="color: #6B7280;">#1F2937</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$text-secondary</td><td class="mono" style="color: #6B7280;">#6B7280</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$page-background</td><td class="mono" style="color: #6B7280;">#F8FAFC</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$surface</td><td class="mono" style="color: #6B7280;">#FFFFFF</td><td style="text-align: right; font-size: 11.5px; color: #C91C1C; font-weight: 600;">custom</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$negative</td><td class="mono" style="color: #6B7280;">#C10015</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$positive</td><td class="mono" style="color: #6B7280;">#21BA45</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$warning</td><td class="mono" style="color: #6B7280;">#F2C037</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+          <tr class="trow"><td class="mono" style="font-weight: 500;">$info</td><td class="mono" style="color: #6B7280;">#31CCEC</td><td style="text-align: right; font-size: 11.5px; color: #6B7280;">Quasar</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(31,41,55,0.09);">
+        <div class="over" style="margin-bottom: 10px;">Derivados · sin matices nuevos</div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="width: 46px; height: 22px; border-radius: 6px; background: #FFFFFF; border: 1px solid rgba(31,41,55,0.09);"></div>
+            <span class="mono" style="font-size: 12px;">rgba(31,41,55,0.09)</span>
+            <span class="cap" style="margin-left: auto;">borde de card</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="width: 46px; height: 22px; border-radius: 6px; background: #FFFFFF; border: 1px solid rgba(31,41,55,0.14);"></div>
+            <span class="mono" style="font-size: 12px;">rgba(31,41,55,0.14)</span>
+            <span class="cap" style="margin-left: auto;">borde de control</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="width: 46px; height: 22px; border-radius: 6px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(31,41,55,0.04);"></div>
+            <span class="mono" style="font-size: 12px;">0 1px 2px …0.04</span>
+            <span class="cap" style="margin-left: auto;">elevación de card</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="width: 46px; height: 22px; border-radius: 6px; background: rgba(31,41,55,0.10);"></div>
+            <span class="mono" style="font-size: 12px;">rgba(31,41,55,0.10)</span>
+            <span class="cap" style="margin-left: auto;">grilla y deshabilitado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":2500}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

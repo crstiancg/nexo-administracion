@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Dashboard · escritorio", "x": 0, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Listado.dc.html", "title": "Pedidos · tabla y filtros", "x": 1560, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Mobile.dc.html", "title": "Dashboard · mobile 390", "x": 0, "y": 1060, "w": 390, "h": 844 },
+    { "file": "Tokens.dc.html", "title": "Design tokens", "x": 550, "y": 1060, "w": 1440, "h": 2500 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-direccion",
+      "x": 0,
+      "y": -180,
+      "w": 620,
+      "text": "Dirección: SaaS sobrio, tipografía Manrope + IBM Plex Mono para cifras.\nEl rojo #F82525 sólo aparece en rellenos interactivos (CTA, nav activo, período actual del gráfico); todo lo demás vive en neutros.\nBordes y sombras son alpha de #1F2937 — el sistema no gana matices nuevos."
+    },
+    {
+      "id": "nota-dos-rojos",
+      "x": 550,
+      "y": 3680,
+      "w": 620,
+      "text": "El artboard de tokens resuelve el choque entre #F82525 (marca) y #C10015 (error): la diferencia es de TRATAMIENTO, no de color. Marca = siempre relleno. Error = nunca relleno, siempre contorno o tinte + ícono + palabra."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

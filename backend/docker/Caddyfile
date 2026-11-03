@@ -1,0 +1,17 @@
+{
+	# Sin HTTPS propio: lo pone Traefik (Dokploy).
+	auto_https off
+	frankenphp
+}
+
+:80 {
+	root * /app/public
+	encode zstd gzip
+
+	# Fotos de productos (storage/app/public vía el enlace public/storage):
+	# se sirven directo y con caché larga (el nombre de archivo es único).
+	@fotos path /storage/*
+	header @fotos Cache-Control "public, max-age=2592000"
+
+	php_server
+}
