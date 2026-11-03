@@ -54,8 +54,7 @@
     >
       <div class="app-drawer__inner">
         <div class="app-brand">
-          <AppBrandMark :size="32" />
-          <span class="app-brand__name">NEXO</span>
+          <AppLogo :alto="40" />
         </div>
 
         <!-- Menú por secciones colapsables. Las entradas salen de MENU (abajo):
@@ -165,6 +164,54 @@
       </div>
     </q-drawer>
 
+    <!-- ══ BARRA INFERIOR (celular) ══ -->
+    <!-- Lo de todos los días a un toque del pulgar; "Más" abre el menú
+         completo. No va en pantallas completas (el punto de venta). -->
+    <q-footer
+      v-if="$q.screen.lt.md && !pantallaCompleta"
+      class="app-tabbar"
+    >
+      <nav
+        class="app-tabbar__nav"
+        aria-label="Navegación principal"
+      >
+        <router-link
+          v-for="tab in tabs"
+          :key="tab.to"
+          :to="tab.to"
+          :class="['app-tabbar__tab', { 'app-tabbar__tab--activa': tabActiva(tab) }]"
+        >
+          <span class="app-tabbar__icono">
+            <q-icon
+              :name="tab.icon"
+              size="22px"
+            />
+            <AppBadge
+              v-if="badges[tab.badge]"
+              variant="brand"
+              class="app-tabbar__badge"
+            >
+              {{ badges[tab.badge] }}
+            </AppBadge>
+          </span>
+          <span class="app-tabbar__label">{{ tab.label }}</span>
+        </router-link>
+        <button
+          type="button"
+          :class="['app-tabbar__tab', { 'app-tabbar__tab--activa': drawerOpen }]"
+          @click="toggleDrawer"
+        >
+          <span class="app-tabbar__icono">
+            <q-icon
+              name="menu"
+              size="22px"
+            />
+          </span>
+          <span class="app-tabbar__label">Más</span>
+        </button>
+      </nav>
+    </q-footer>
+
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -176,7 +223,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user-store'
-import AppBrandMark from '@/components/AppBrandMark.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import AppNavItem from '@/components/AppNavItem.vue'
 import AppBadge from '@/components/AppBadge.vue'
 import AppSedeSelector from '@/components/AppSedeSelector.vue'
@@ -185,6 +232,7 @@ import AppAlertas from '@/components/AppAlertas.vue'
 import AppBusquedaGlobal from '@/components/AppBusquedaGlobal.vue'
 import SwitchDarkMode from '@/components/SwitchDarkMode.vue'
 import InventarioService from '@/services/InventarioService'
+import OrdenServicioService from '@/services/OrdenServicioService'
 import PedidoService from '@/services/PedidoService'
 
 // Los pone quasar.config.js al compilar (versión, fecha y commit). Con
@@ -235,6 +283,14 @@ watch(() => route.path, contarAlertasLotes, { immediate: true })
 // `badge`: la clave en `badges` (contadores que se recalculan al navegar).
 const MENU = [
   {
+    id: 'taller',
+    label: 'Servicio técnico',
+    icon: 'build',
+    items: [
+      { to: '/ordenes-servicio', icon: 'construction', label: 'Órdenes de servicio', permiso: 'ordenes-servicio.index', badge: 'taller' }
+    ]
+  },
+  {
     id: 'ventas',
     label: 'Ventas',
     icon: 'storefront',
@@ -275,6 +331,7 @@ const MENU = [
     icon: 'category',
     items: [
       { to: '/categorias', icon: 'category', label: 'Categorías', permiso: 'categorias.index' },
+      { to: '/tipos-equipo', icon: 'devices', label: 'Tipos de equipo', permiso: 'tipos-equipo.index' },
       { to: '/marcas', icon: 'verified', label: 'Marcas', permiso: 'marcas.index' },
       { to: '/unidades', icon: 'straighten', label: 'Unidades de medida', permiso: 'unidades.index' },
       { to: '/colores', icon: 'palette', label: 'Colores', permiso: 'colores.index' }
@@ -293,11 +350,40 @@ const MENU = [
   }
 ]
 
+// ── Barra inferior (celular): lo de todos los días, cada uno con su permiso ──
+const TABS = [
+  { to: '/', icon: 'dashboard', label: 'Inicio' },
+  { to: '/ordenes-servicio', icon: 'construction', label: 'Órdenes', permiso: 'ordenes-servicio.index', badge: 'taller' },
+  { to: '/pedidos', icon: 'receipt_long', label: 'Pedidos', permiso: 'pedidos.index', badge: 'pendientes' },
+  { to: '/clientes', icon: 'groups', label: 'Clientes', permiso: 'clientes.index' }
+]
+const tabs = computed(() => TABS.filter((tab) => !tab.permiso || userStore.hasPermission(tab.permiso)))
+
+function tabActiva (tab) {
+  if (drawerOpen.value) return false
+  return tab.to === '/' ? route.path === '/' : route.path.startsWith(tab.to)
+}
+
 const secciones = computed(() => MENU
   .map((seccion) => ({ ...seccion, items: seccion.items.filter((item) => userStore.hasPermission(item.permiso)) }))
   .filter((seccion) => seccion.items.length))
 
-const badges = computed(() => ({ pendientes: pendientes.value, lotes: alertasLotes.value }))
+// Equipos listos para entregar (reparados o sin reparación): el badge del taller.
+const listosEntrega = ref(0)
+async function contarListos () {
+  if (!userStore.hasPermission('ordenes-servicio.index')) return
+  try {
+    const resumen = await OrdenServicioService.resumen()
+    listosEntrega.value = resumen
+      .filter((r) => ['reparado', 'sin_reparacion'].includes(r.estado))
+      .reduce((suma, r) => suma + r.total, 0)
+  } catch {
+    // Un badge no vale un error en pantalla.
+  }
+}
+watch(() => route.path, contarListos, { immediate: true })
+
+const badges = computed(() => ({ pendientes: pendientes.value, lotes: alertasLotes.value, taller: listosEntrega.value }))
 
 function totalBadges (seccion) {
   return seccion.items.reduce((suma, item) => suma + (badges.value[item.badge] ?? 0), 0)
@@ -312,7 +398,7 @@ function leerAbiertas () {
   } catch {
     // Sin storage (modo privado): arranca con la configuración por defecto.
   }
-  return ['ventas', 'inventario']
+  return ['taller', 'ventas', 'inventario']
 }
 const abiertas = ref(leerAbiertas())
 
@@ -496,6 +582,10 @@ function toggleDrawer () {
   }
 }
 
+.app-drawer__sectionIcon {
+  color: var(--app-brand-soft-ink);
+}
+
 .app-drawer__sectionLabel {
   flex: 1;
   text-align: left;
@@ -532,6 +622,74 @@ function toggleDrawer () {
   color: var(--app-ink-2);
   cursor: default;
   white-space: nowrap;
+}
+
+// ── Barra inferior (celular) ──
+.app-tabbar {
+  background: var(--app-surface);
+  color: var(--app-ink-2);
+  border-top: 1px solid var(--app-border-subtle);
+  // El área segura del iPhone (la barrita de inicio) no tapa los botones.
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-tabbar__nav {
+  display: flex;
+  height: 60px;
+}
+
+.app-tabbar__tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  color: var(--app-ink-2);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: -4px;
+  }
+}
+
+.app-tabbar__tab--activa {
+  color: var(--app-brand-soft-ink);
+
+  .app-tabbar__icono {
+    background: var(--app-brand-soft);
+  }
+
+  .app-tabbar__label {
+    font-weight: 700;
+  }
+}
+
+.app-tabbar__icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.app-tabbar__badge {
+  position: absolute;
+  top: -4px;
+  right: 2px;
+}
+
+.app-tabbar__label {
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .app-drawer__version {

@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  * pisarse el stock.
  *
  * Las cantidades son decimales (3 cifras) por las unidades fraccionables;
- * que una bolsa no se venda por la mitad lo validan los requests.
+ * que una unidad no se venda por la mitad lo validan los requests.
  *
  * Lotes, en una línea (sólo productos con `maneja_lotes`):
  * - Entrada: `lote` + `vence_at` (toda la cantidad a ese lote) o `lotes`
@@ -44,7 +44,7 @@ class Inventario
     /**
      * Compra o reposición (o la devolución de una venta cancelada, con
      * `$motivo`) en una sede. Recalcula el costo promedio ponderado, que es
-     * de la empresa: la misma bolsa cuesta lo mismo en cualquier sede.
+     * de la empresa: el mismo producto cuesta lo mismo en cualquier sede.
      *
      * `$extra` son columnas adicionales del movimiento (p. ej. `pedido_id`).
      *

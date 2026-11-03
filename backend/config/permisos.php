@@ -60,7 +60,7 @@ return [
         'productos.index' => ['ofertas.store', 'ofertas.update'],
         // El form de productos elige la marca, y la unidad y el color de
         // cada presentación; marca y color también filtran el punto de venta.
-        'marcas.index' => ['productos.store', 'productos.update', 'productos.index', 'ventas.store', 'inventario.index'],
+        'marcas.index' => ['productos.store', 'productos.update', 'productos.index', 'ventas.store', 'inventario.index', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         'unidades.index' => ['productos.store', 'productos.update'],
         'colores.index' => ['productos.store', 'productos.update', 'ventas.store'],
         'ventas.catalogo' => ['ventas.store'],
@@ -79,7 +79,7 @@ return [
         // factura, lote) y le da lote al stock que quedó sin lote.
         'inventario.corregir' => ['inventario.entradas'],
         'inventario.asignar-lote' => ['inventario.entradas'],
-        'clientes.index' => ['pedidos.store', 'pedidos.update', 'ventas.store', 'cotizaciones.store', 'cotizaciones.update'],
+        'clientes.index' => ['pedidos.store', 'pedidos.update', 'ventas.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         'clientes.show' => ['clientes.update'],
         'proveedores.show' => ['proveedores.update'],
         // El form de compras elige el proveedor.
@@ -94,7 +94,7 @@ return [
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
         'productos.exportar' => ['productos.index'],
         // El form de cotizaciones busca clientes y presentaciones.
-        'inventario.variantes' => ['inventario.entradas', 'inventario.salidas', 'inventario.ajustes', 'inventario.traslados', 'pedidos.store', 'pedidos.update', 'ventas.store', 'compras.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-compra.store', 'ordenes-compra.update', 'inventario.index'],
+        'inventario.variantes' => ['inventario.entradas', 'inventario.salidas', 'inventario.ajustes', 'inventario.traslados', 'pedidos.store', 'pedidos.update', 'ventas.store', 'compras.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-compra.store', 'ordenes-compra.update', 'inventario.index', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         // Autocompletar con RENIEC/SUNAT es parte de cargar un cliente.
         'clientes.consultar-documento' => ['clientes.store', 'clientes.update'],
         // A diferencia de los catálogos, quien ve la lista de pedidos puede
@@ -102,8 +102,17 @@ return [
         // y el punto de venta lo lee para reimprimir el ticket.
         'pedidos.show' => ['pedidos.index', 'pedidos.update', 'ventas.store'],
         // Cobrar, devolver, mover caja o vender necesita saber si hay una abierta.
-        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store'],
+        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store', 'ordenes-servicio.store', 'ordenes-servicio.show'],
         'cajas.show' => ['cajas.index', 'cajas.cerrar'],
+        // Servicio técnico: quien ve la lista abre la orden; los formularios
+        // eligen tipo de equipo, marca, técnico, cliente y repuestos.
+        'ordenes-servicio.show' => ['ordenes-servicio.index', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
+        'ordenes-servicio.resumen' => ['ordenes-servicio.index'],
+        // Quien ve la orden la imprime (y su etiqueta).
+        'ordenes-servicio.impresion' => ['ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update'],
+        'ordenes-servicio.tecnicos' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
+        'tipos-equipo.index' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
+        'tipos-equipo.show' => ['tipos-equipo.update'],
     ],
 
     // Para la descripción que genera permisos:sync: "Roles · Crear".
@@ -131,6 +140,9 @@ return [
         'ventas' => 'Punto de venta',
         'comprobantes' => 'Comprobantes electrónicos',
         'etiquetas' => 'Etiquetas',
+        'ordenes-servicio' => 'Órdenes de servicio',
+        'tipos-equipo' => 'Tipos de equipo',
+        'seguimiento' => 'Seguimiento público',
     ],
 
     'acciones' => [
@@ -178,6 +190,10 @@ return [
         'ventas' => 'Ver ventas',
         'productos' => 'Ver más vendidos',
         'inventario' => 'Ver inventario valorizado',
+        'resumen' => 'Ver resumen por estado',
+        'tecnicos' => 'Ver técnicos',
+        'estado' => 'Cambiar estado / entregar',
+        'impresion' => 'Imprimir orden y etiqueta',
     ],
 
 ];

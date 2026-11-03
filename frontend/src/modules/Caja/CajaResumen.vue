@@ -301,6 +301,37 @@ const textoDiferencia = computed(() => {
   color: var(--app-ink-2);
 }
 
+// Celular: los totales de a dos y los movimientos con el monto debajo.
+@media (max-width: 599px) {
+  .caja-resumen__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .caja-resumen__tile {
+    min-width: 0;
+    padding: 12px;
+
+    strong {
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    &--destacado strong {
+      font-size: 18px;
+    }
+  }
+
+  .caja-resumen__registros li {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  .caja-resumen__derecha {
+    margin-left: auto;
+  }
+}
+
 .caja-resumen__arqueo {
   padding: 12px 14px;
   border-radius: 10px;
@@ -337,7 +368,37 @@ const textoDiferencia = computed(() => {
   color: var(--app-ink);
 }
 
-.caja-resumen__metodos,
+// Cobros por método: mini tarjetas que se acomodan solas (2 por fila en el
+// celular). Antes era una fila sin salto que ensanchaba la página.
+.caja-resumen__metodos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border-subtle);
+    border-radius: 10px;
+    background: var(--app-surface);
+    font-size: 13px;
+    color: var(--app-ink);
+
+    .text-mono {
+      font-size: 15px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+// Monto y botones de cada movimiento, a la derecha.
 .caja-resumen__derecha {
   display: inline-flex;
   flex-shrink: 0;
@@ -359,6 +420,12 @@ const textoDiferencia = computed(() => {
     border-top: 1px solid var(--app-border-subtle);
     font-size: 13px;
     color: var(--app-ink);
+
+    > div {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
   }
 }
 

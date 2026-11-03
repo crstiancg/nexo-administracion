@@ -42,7 +42,7 @@ class StoreMarcaRequest extends FormRequest
     }
 
     /**
-     * "Sika" y "SIKA" son la misma marca (SQLite no compara sin mayúsculas).
+     * "Kingston" y "KINGSTON" son la misma marca (SQLite no compara sin mayúsculas).
      */
     private function nombreUnico(?Marca $ignorar): Closure
     {

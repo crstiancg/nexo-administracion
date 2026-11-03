@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Sika, Chema, Z Aditivos...: cada producto es de una marca.
+        // HP, Lenovo, Kingston...: cada producto es de una marca.
         Schema::create('marcas', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 60)->unique();
@@ -17,13 +17,13 @@ return new class extends Migration
         });
 
         // Unidad en la que se vende y se cuenta el stock de una presentación
-        // (Bolsa, Galón, Balde, Kg, Metro...).
+        // (Unidad, Caja, Kit, Metro...).
         Schema::create('unidades', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 40)->unique();
             // Lo que sale en el ticket y en las etiquetas: "BLS", "GL", "KG".
             $table->string('abreviatura', 10)->unique();
-            // Kg, metro, m²: se pueden vender fracciones. Bolsa, balde: no.
+            // Metro: se pueden vender fracciones. Unidad, caja: no.
             $table->boolean('fraccionable')->default(false);
             $table->timestamps();
         });

@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Una línea del pedido con precio (y, al confirmar, costo) congelados: lo
- * que se cobró y lo que costó en ESE momento.
+ * que se cobró y lo que costó en ESE momento. Sin `variante_id` es un
+ * servicio (la mano de obra de una orden): lleva `descripcion` y no mueve stock.
  */
-#[Fillable(['variante_id', 'cantidad', 'precio_unitario', 'por_mayor', 'subtotal'])]
+#[Fillable(['variante_id', 'descripcion', 'cantidad', 'precio_unitario', 'por_mayor', 'subtotal'])]
 class PedidoItem extends Model
 {
     public $timestamps = false;
@@ -29,6 +30,11 @@ class PedidoItem extends Model
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class);
+    }
+
+    public function esServicio(): bool
+    {
+        return $this->variante_id === null;
     }
 
     public function variante(): BelongsTo

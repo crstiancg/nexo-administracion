@@ -209,13 +209,50 @@
     <!-- ── Totales ── -->
     <div class="cotizacion-form__pie">
       <div class="cotizacion-form__grow cotizacion-form__textos">
+        <!-- Se elige una opción o se escribe otra (Enter para usarla). -->
+        <q-select
+          v-model="form.cotizacion.forma_pago"
+          :options="FORMAS_PAGO"
+          label="Forma de pago"
+          use-input
+          fill-input
+          hide-selected
+          new-value-mode="add"
+          input-debounce="0"
+          maxlength="100"
+          dense
+          outlined
+          hide-bottom-space
+          :error="Boolean(form.errors[`${PATH}.forma_pago`])"
+          :error-message="form.errors[`${PATH}.forma_pago`]"
+          class="cotizacion-form__control"
+          @input-value="(v) => { form.cotizacion.forma_pago = v }"
+        />
+        <q-select
+          v-model="form.cotizacion.entrega"
+          :options="ENTREGAS"
+          label="Entrega"
+          use-input
+          fill-input
+          hide-selected
+          new-value-mode="add"
+          input-debounce="0"
+          maxlength="250"
+          dense
+          outlined
+          hide-bottom-space
+          :error="Boolean(form.errors[`${PATH}.entrega`])"
+          :error-message="form.errors[`${PATH}.entrega`]"
+          class="cotizacion-form__control"
+          @input-value="(v) => { form.cotizacion.entrega = v }"
+        />
         <AppTextField
           v-model="form.cotizacion.condiciones"
-          label="Condiciones (salen impresas)"
+          label="Otras condiciones (opcional, salen impresas)"
           type="textarea"
           autogrow
           maxlength="500"
-          placeholder="Pago: 50% adelanto. Entrega en obra en 48 h. Precios incluyen IGV."
+          placeholder="Incluye instalación y configuración."
           :error="form.errors[`${PATH}.condiciones`]"
           @change="form.validate(`${PATH}.condiciones`)"
         />
@@ -327,7 +364,7 @@ import { formatearPrecio } from '@/utils/moneda'
 import { desglosarIgv, ETIQUETA_IGV } from '@/utils/igv'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem, reprecio } from '@/modules/Pedidos/FormPedido'
-import formCotizacion from './FormCotizacion'
+import formCotizacion, { ENTREGAS, FORMAS_PAGO } from './FormCotizacion'
 import { hoyLocal } from './constantes'
 
 const PATH = 'cotizacion'
@@ -410,6 +447,8 @@ onMounted(async () => {
       // Una vencida se edita para renovarla: la validez queda vacía para
       // poner la nueva.
       valida_hasta: cotizacion.valida_hasta < hoy ? '' : cotizacion.valida_hasta,
+      forma_pago: cotizacion.forma_pago ?? '',
+      entrega: cotizacion.entrega ?? '',
       condiciones: cotizacion.condiciones ?? '',
       descuento: Number(cotizacion.descuento) ? cotizacion.descuento : '',
       observacion: cotizacion.observacion ?? '',

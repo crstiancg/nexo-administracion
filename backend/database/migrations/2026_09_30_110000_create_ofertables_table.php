@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Una oferta pasa de "un producto o una categoría" a una LISTA de destinos:
- * productos completos, variantes puntuales (el Sikaflex gris en cartucho) y/o categorías.
+ * productos completos, variantes puntuales (la tinta negra en botella) y/o categorías.
  * Polimórfica, como `archivos`.
  */
 return new class extends Migration

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * pendiente → confirmado → entregado
@@ -37,7 +38,11 @@ class Pedido extends Model
         'web' => 'Web',
         // Nace de convertir una cotización.
         'cotizacion' => 'Cotización',
+        // El cobro de una orden de servicio: se gestiona desde la orden.
+        'servicio' => 'Servicio técnico',
     ];
+
+    public const CANAL_SERVICIO = 'servicio';
 
     /**
      * El desglose del IGV sigue al total, se guarde por donde se guarde.
@@ -85,6 +90,17 @@ class Pedido extends Model
     public function comprobanteVigente(): ?Comprobante
     {
         return $this->comprobantes->first(fn (Comprobante $c) => $c->vigente());
+    }
+
+    /** La orden de servicio que cobra este pedido (si es de servicio técnico). */
+    public function ordenServicio(): HasOne
+    {
+        return $this->hasOne(OrdenServicio::class);
+    }
+
+    public function esDeServicio(): bool
+    {
+        return $this->canal === self::CANAL_SERVICIO;
     }
 
     public function items(): HasMany

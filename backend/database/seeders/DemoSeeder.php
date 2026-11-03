@@ -7,12 +7,14 @@ use App\Models\Cliente;
 use App\Models\Color;
 use App\Models\Cotizacion;
 use App\Models\Marca;
+use App\Models\OrdenServicio;
 use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\Sede;
 use App\Models\Stock;
+use App\Models\TipoEquipo;
 use App\Models\Unidad;
 use App\Models\User;
 use App\Models\Variante;
@@ -20,6 +22,7 @@ use App\Services\Cajas;
 use App\Services\Compras;
 use App\Services\Cotizaciones;
 use App\Services\Inventario;
+use App\Services\OrdenesServicio;
 use App\Services\Pedidos;
 use App\Support\Ean13;
 use Illuminate\Database\Eloquent\Model;
@@ -32,12 +35,12 @@ use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Datos de DEMOSTRACIÓN para probar el sistema de punta a punta: sedes,
- * catálogo de materiales, proveedores, clientes, compras con lotes,
- * traslados, ventas de los últimos días y cotizaciones.
+ * catálogo de tecnología, proveedores, clientes, compras, traslados, ventas
+ * de los últimos días, cotizaciones y órdenes de servicio técnico.
  *
  * Todo pasa por los mismos servicios que usa la app (Compras, Inventario,
- * Pedidos, Cajas, Cotizaciones): el stock, el kardex, los lotes, la caja y
- * los reportes quedan consistentes, como si se hubiera cargado a mano.
+ * Pedidos, Cajas, Cotizaciones, OrdenesServicio): el stock, el kardex, la
+ * caja y los reportes quedan consistentes, como si se hubiera cargado a mano.
  *
  * Sólo corre con la base sin productos (no pisa datos reales). Los RUC y
  * DNI son inventados.
@@ -52,6 +55,7 @@ class DemoSeeder extends Seeder
         private Pedidos $pedidos,
         private Cajas $cajas,
         private Cotizaciones $cotizaciones,
+        private OrdenesServicio $ordenes,
     ) {}
 
     public function run(): void
@@ -76,23 +80,29 @@ class DemoSeeder extends Seeder
             }
         }
 
-        $this->command?->info('DemoSeeder: datos de demostración listos (usuario vendedor / vendedor123 en Arequipa).');
+        $this->command?->info('DemoSeeder: datos de demostración listos (usuario vendedor / vendedor123 en Juliaca).');
     }
 
     private function sembrar(): void
     {
         DB::transaction(function () {
-            [$lima, $arequipa] = $this->sedes();
-            [$admin, $vendedor] = $this->usuarios($lima, $arequipa);
-            $v = $this->catalogo($lima, $arequipa);
-            [$sika, $distribuidora, $ferreteria] = $this->proveedores();
+            [$matriz, $juliaca] = $this->sedes();
+            [$admin, $vendedor] = $this->usuarios($matriz, $juliaca);
+            $v = $this->catalogo($matriz, $juliaca);
+            [$mayorista, $repuestos, $local] = $this->proveedores();
             $clientes = $this->clientes();
 
-            $this->comprasIniciales($admin, $vendedor, $v, $sika, $distribuidora, $ferreteria);
-            $this->loteVencido($lima, $admin, $v);
-            $this->trasladoALaOtraSede($admin, $arequipa, $v);
+            $this->comprasIniciales($admin, $vendedor, $v, $mayorista, $repuestos, $local);
+            $this->loteVencido($matriz, $admin, $v);
+            $this->trasladoALaOtraSede($admin, $juliaca, $v);
+            // La caja de hoy: cobra las ventas de demostración y los abonos
+            // (si ya hay una abierta en la sede, se usa esa).
+            if (! $this->cajas->actual($admin->sede_id)) {
+                $this->cajas->abrir($admin->sede_id, 200, $admin);
+            }
             $this->ventasDeLosUltimosDias($admin, $v, $clientes);
             $this->cotizacionesDeEjemplo($admin, $v, $clientes);
+            $this->ordenesDeServicio($admin, $v, $clientes);
         });
     }
 
@@ -101,42 +111,35 @@ class DemoSeeder extends Seeder
      */
     private function sedes(): array
     {
-        $lima = Sede::query()->orderBy('id')->first();
-        $lima->update(['nombre' => 'Lima - Surquillo', 'direccion' => 'Av. Principal 123, Surquillo', 'telefono' => '01 555 0101']);
+        $matriz = Sede::query()->orderBy('id')->first();
+        $matriz->update(['nombre' => 'Puno - Matriz', 'direccion' => 'Jr. Arequipa 418, Puno', 'telefono' => '900 180 000']);
 
-        $arequipa = Sede::firstOrCreate(
-            ['nombre' => 'Arequipa'],
-            ['direccion' => 'Av. Ejército 456, Yanahuara', 'telefono' => '054 555 0202', 'activo' => true],
+        $juliaca = Sede::firstOrCreate(
+            ['nombre' => 'Juliaca'],
+            ['direccion' => 'Jr. San Román 250, Juliaca', 'telefono' => '900 551 900', 'activo' => true],
         );
 
-        return [$lima, $arequipa];
+        return [$matriz, $juliaca];
     }
 
     /**
-     * Un rol "Vendedor" de mostrador (sin catálogos ni administración) y un
-     * usuario de Arequipa para probar el trabajo por sede.
+     * Un vendedor de Juliaca para probar el trabajo por sede (con el rol
+     * Vendedor de PermissionSeeder).
      *
      * @return array{0: User, 1: User}
      */
-    private function usuarios(Sede $lima, Sede $arequipa): array
+    private function usuarios(Sede $matriz, Sede $juliaca): array
     {
         $vendedorRol = Role::firstOrCreate(['name' => 'Vendedor', 'guard_name' => 'api']);
-        $vendedorRol->syncPermissions(Permission::query()->where('guard_name', 'api')->whereIn('name', [
-            'ventas.store', 'ventas.catalogo',
-            'pedidos.index', 'pedidos.store', 'pedidos.update', 'pedidos.confirmar', 'pedidos.entregar', 'pedidos.cancelar', 'pedidos.pagos',
-            'clientes.index', 'clientes.store', 'clientes.update', 'clientes.consultar-documento',
-            'cotizaciones.index', 'cotizaciones.store', 'cotizaciones.update', 'cotizaciones.convertir', 'cotizaciones.rechazar',
-            'cajas.actual', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos',
-            'inventario.index', 'inventario.lotes', 'productos.index',
-        ])->get());
+        $vendedorRol->syncPermissions(Permission::query()->where('guard_name', 'api')->whereIn('name', PermissionSeeder::VENDEDOR)->get());
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $admin = User::query()->where('username', 'admin')->firstOrFail();
-        $admin->update(['sede_id' => $lima->id]);
+        $admin->update(['sede_id' => $matriz->id]);
 
         $vendedor = User::firstOrCreate(
             ['username' => 'vendedor'],
-            ['name' => 'Rosa Quispe', 'password' => 'vendedor123', 'active' => true, 'sede_id' => $arequipa->id],
+            ['name' => 'Rosa Quispe', 'password' => 'vendedor123', 'active' => true, 'sede_id' => $juliaca->id],
         );
         $vendedor->syncRoles([$vendedorRol]);
 
@@ -144,89 +147,84 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Productos de materiales de construcción con sus presentaciones, y qué
-     * vende cada sede: Lima todo; Arequipa casi todo, con mínimos más chicos
-     * y algunos precios propios (el flete encarece).
+     * Productos de una tienda de tecnología con sus presentaciones, y qué
+     * vende cada sede: la matriz todo; Juliaca casi todo, con mínimos más
+     * chicos y algunos precios propios.
      *
      * @return array<string, Variante> por SKU
      */
-    private function catalogo(Sede $lima, Sede $arequipa): array
+    private function catalogo(Sede $matriz, Sede $juliaca): array
     {
-        // Lo que Arequipa no vende.
-        $soloLima = ['Sika MonoTop 612', 'Chema Techo', 'Chema Sello Acrílico', 'Anclaje químico epóxico'];
-        // Precio propio en Arequipa, por SKU.
-        $preciosArequipa = ['SK1-GL' => 34.00, 'SK1-BLD20' => 142.00, 'SKCERAM-25' => 33.50, 'SKGROUT-30' => 61.00];
+        // Lo que Juliaca no vende (repuestos que se instalan en el taller).
+        $soloMatriz = ['Pantalla LED 15.6" slim 30 pines', 'Batería para laptop HP HT03XL'];
+        // Precio propio en Juliaca, por SKU.
+        $preciosJuliaca = ['KNG-A400-480' => 175.00, 'LOG-M170' => 42.00];
 
-        $marcas = collect(['Sika', 'Chema', 'Z Aditivos', 'Celima'])
-            ->mapWithKeys(fn ($nombre) => [$nombre => Marca::firstOrCreate(['nombre' => $nombre], ['activo' => true])]);
-
+        $marca = fn (string $nombre) => Marca::firstOrCreate(['nombre' => $nombre], ['activo' => true])->id;
         $unidad = fn (string $abrev) => Unidad::query()->where('abreviatura', $abrev)->value('id');
         $categoria = fn (string $nombre) => Categoria::query()->where('nombre', $nombre)->value('id');
 
-        $gris = Color::firstOrCreate(['nombre' => 'Gris'], ['hexadecimal' => '#8A8D8F']);
-        $blanco = Color::firstOrCreate(['nombre' => 'Blanco'], ['hexadecimal' => '#FFFFFF']);
         $negro = Color::firstOrCreate(['nombre' => 'Negro'], ['hexadecimal' => '#1F1F1F']);
+        $cian = Color::firstOrCreate(['nombre' => 'Cian'], ['hexadecimal' => '#00A3E0']);
+        $magenta = Color::firstOrCreate(['nombre' => 'Magenta'], ['hexadecimal' => '#D6007E']);
+        $amarillo = Color::firstOrCreate(['nombre' => 'Amarillo'], ['hexadecimal' => '#FFD100']);
 
         // [nombre, marca, categoría, precio base, maneja lotes, descripción, [[presentación, unidad, sku, precio|null, mínimo, color|null]]]
         $productos = [
-            ['Sikaflex 1A Plus', 'Sika', 'Poliuretanos', 38.50, false, 'Sellador elástico de poliuretano para juntas de construcción.', [
-                ['Cartucho 300 ml', 'CRT', 'SKF1A-300-GRI', null, 24, $gris],
-                ['Cartucho 300 ml', 'CRT', 'SKF1A-300-BLA', null, 24, $blanco],
-                ['Salchicha 600 ml', 'UND', 'SKF1A-600-GRI', 62.00, 6, $gris],
+            ['Mouse inalámbrico M170', 'Logitech', 'Mouse y teclados', 39.90, false, 'Mouse inalámbrico con receptor USB.', [
+                ['Unidad', 'UND', 'LOG-M170', null, 10, $negro],
             ]],
-            ['Sikasil Universal', 'Sika', 'Siliconas', 24.90, false, 'Silicona acética multiuso.', [
-                ['Cartucho 280 ml', 'CRT', 'SKSIL-280-BLA', null, 12, $blanco],
-                ['Cartucho 280 ml', 'CRT', 'SKSIL-280-NEG', null, 6, $negro],
+            ['Teclado USB KB-110', 'Genius', 'Mouse y teclados', 29.90, false, 'Teclado USB en español.', [
+                ['Unidad', 'UND', 'GEN-KB110', null, 8, $negro],
             ]],
-            ['Sika-1', 'Sika', 'Para mezclas de concreto', 32.00, true, 'Impermeabilizante integral para morteros y concretos.', [
-                ['Galón 4 L', 'GL', 'SK1-GL', null, 10, null],
-                ['Balde 20 L', 'BLD', 'SK1-BLD20', 135.00, 4, null],
+            ['SSD A400', 'Kingston', 'Discos SSD', 119.00, false, 'Disco sólido SATA 2.5".', [
+                ['240 GB', 'UND', 'KNG-A400-240', null, 6, null],
+                ['480 GB', 'UND', 'KNG-A400-480', 169.00, 4, null],
             ]],
-            ['SikaFill Power 12', 'Sika', 'Techos y cubiertas', 95.00, true, 'Impermeabilizante elastomérico para techos, 12 años.', [
-                ['Galón 4 kg', 'GL', 'SKFILL12-GL', null, 6, null],
-                ['Balde 20 kg', 'BLD', 'SKFILL12-BLD', 410.00, 2, null],
+            ['Memoria USB DataTraveler', 'Kingston', 'Memorias USB y microSD', 25.00, false, 'USB 3.2.', [
+                ['32 GB', 'UND', 'KNG-DT-32', null, 15, null],
+                ['64 GB', 'UND', 'KNG-DT-64', 35.00, 10, null],
             ]],
-            ['Sikadur-32 Gel', 'Sika', 'Puentes de adherencia', 78.00, true, 'Adhesivo epóxico para unir concreto viejo con nuevo.', [
-                ['Kit 1 kg', 'KIT', 'SKDUR32-1K', null, 5, null],
+            ['Memoria RAM DDR4 SODIMM 3200', 'Kingston', 'Memorias RAM', 129.00, false, 'Para laptop.', [
+                ['8 GB', 'UND', 'KNG-SO8', null, 6, null],
+                ['16 GB', 'UND', 'KNG-SO16', 229.00, 3, null],
             ]],
-            ['SikaGrout 212', 'Sika', 'Grouting y nivelación de maquinarias', 58.00, true, 'Mortero fluido de nivelación sin contracción.', [
-                ['Bolsa 30 kg', 'BLS', 'SKGROUT-30', null, 15, null],
+            ['Cargador USB-C 25W', 'Samsung', 'Cargadores', 69.00, false, 'Carga rápida, con cable.', [
+                ['Unidad', 'UND', 'SAM-25W', null, 8, null],
             ]],
-            ['Sika Ceram Porcelanato', 'Sika', 'Pegamentos para Cerámicos', 32.00, true, 'Pegamento flexible para porcelanato y cerámico.', [
-                ['Bolsa 25 kg', 'BLS', 'SKCERAM-25', null, 30, null],
+            ['Cable HDMI 2.0', 'Genérico', 'Cables y adaptadores', 15.00, false, 'Cable HDMI 4K.', [
+                ['1.8 m', 'UND', 'HDMI-18', null, 10, null],
+                ['10 m', 'UND', 'HDMI-10', 47.00, 3, null],
             ]],
-            ['Sika Cem Acelerante', 'Sika', 'Aditivos para Concreto', 18.50, true, 'Acelerante de fragua para concreto y mortero.', [
-                ['Litro', 'L', 'SKCEM-ACEL-L', null, 10, null],
-                ['Galón 4 L', 'GL', 'SKCEM-ACEL-GL', 62.00, 4, null],
+            ['Cable UTP Cat 6', 'Genérico', 'Redes', 1.80, false, 'Por metro, para armar patch cords.', [
+                ['Por metro', 'M', 'UTP6-M', null, 100, null],
+                ['Caja 305 m', 'CJ', 'UTP6-305', 420.00, 1, null],
             ]],
-            ['Sika MonoTop 612', 'Sika', 'Morteros de reparación', 89.00, true, 'Mortero de reparación estructural.', [
-                ['Bolsa 25 kg', 'BLS', 'SKMONO612-25', null, 8, null],
+            ['Tinta 544', 'Epson', 'Tintas', 39.00, true, 'Botella de 65 ml para EcoTank.', [
+                ['Botella 65 ml', 'UND', 'EPS-544-BK', null, 10, $negro],
+                ['Botella 65 ml', 'UND', 'EPS-544-C', null, 6, $cian],
+                ['Botella 65 ml', 'UND', 'EPS-544-M', null, 6, $magenta],
+                ['Botella 65 ml', 'UND', 'EPS-544-Y', null, 6, $amarillo],
             ]],
-            ['Chema Techo', 'Chema', 'Techos y cubiertas', 72.00, true, 'Impermeabilizante acrílico para techos.', [
-                ['Galón', 'GL', 'CHTECHO-GL', null, 6, null],
-                ['Balde 5 gl', 'BLD', 'CHTECHO-BLD', 315.00, 2, null],
+            ['Pasta térmica MX-4 4 g', 'Genérico', 'Pasta térmica y refrigeración', 35.00, false, 'Para procesadores y GPU.', [
+                ['Unidad', 'UND', 'MX4-4G', null, 5, null],
             ]],
-            ['Chema Sello Acrílico', 'Chema', 'Acrílicos e imprimantes', 16.00, false, 'Sellador acrílico pintable para juntas interiores.', [
-                ['Cartucho 300 ml', 'CRT', 'CHSELLO-300', null, 12, $blanco],
+            ['Batería para laptop HP HT03XL', 'HP', 'Baterías', 159.00, false, 'Compatible con HP 240/250 G7.', [
+                ['Unidad', 'UND', 'HP-HT03XL', null, 2, null],
             ]],
-            ['Z Fragua', 'Z Aditivos', 'Pegamentos para Cerámicos', 7.50, false, 'Fragua para juntas de cerámico.', [
-                ['Bolsa 1 kg', 'BLS', 'ZFRAG-1K-GRI', null, 20, $gris],
-                ['Bolsa 1 kg', 'BLS', 'ZFRAG-1K-BLA', null, 20, $blanco],
+            ['Pantalla LED 15.6" slim 30 pines', 'Genérico', 'Pantallas', 289.00, false, 'Repuesto para laptop, HD.', [
+                ['Unidad', 'UND', 'LED156-30P', null, 2, null],
             ]],
-            ['Malla de refuerzo fibra de vidrio', 'Z Aditivos', 'Techos y cubiertas', 4.80, false, 'Malla para refuerzo de impermeabilizantes, ancho 1 m.', [
-                ['Por metro', 'M', 'ZMALLA-M', null, 50, null],
-                ['Rollo 50 m', 'RLL', 'ZMALLA-R50', 210.00, 2, null],
-            ]],
-            ['Anclaje químico epóxico', 'Sika', 'Anclajes', 85.00, true, 'Adhesivo para anclaje de varillas y pernos.', [
-                ['Cartucho 300 ml', 'CRT', 'SKANCLA-300', null, 6, null],
+            ['Router Archer C6', 'TP-Link', 'Redes', 159.00, false, 'Router WiFi doble banda AC1200.', [
+                ['Unidad', 'UND', 'TPL-C6', null, 3, null],
             ]],
         ];
 
         $variantes = [];
-        foreach ($productos as [$nombre, $marca, $cat, $precio, $lotes, $descripcion, $presentaciones]) {
+        foreach ($productos as [$nombre, $marcaNombre, $cat, $precio, $lotes, $descripcion, $presentaciones]) {
             $producto = Producto::create([
                 'nombre' => $nombre,
-                'marca_id' => $marcas[$marca]->id,
+                'marca_id' => $marca($marcaNombre),
                 'categoria_id' => $categoria($cat),
                 'descripcion' => $descripcion,
                 'precio' => $precio,
@@ -245,9 +243,9 @@ class DemoSeeder extends Seeder
                 // Demostración: un EAN-13 interno (prefijo 20) en vez del de fábrica.
                 $variantes[$sku]->forceFill(['codigo_barras' => Ean13::paraVariante($variantes[$sku]->id)])->save();
 
-                $this->habilitar($variantes[$sku], $lima, $minimo);
-                if (! in_array($nombre, $soloLima, true)) {
-                    $this->habilitar($variantes[$sku], $arequipa, ceil($minimo / 2), $preciosArequipa[$sku] ?? null);
+                $this->habilitar($variantes[$sku], $matriz, $minimo);
+                if (! in_array($nombre, $soloMatriz, true)) {
+                    $this->habilitar($variantes[$sku], $juliaca, ceil($minimo / 2), $preciosJuliaca[$sku] ?? null);
                 }
             }
         }
@@ -279,15 +277,15 @@ class DemoSeeder extends Seeder
     {
         return [
             Proveedor::firstOrCreate(['ruc' => '20999000011'], [
-                'razon_social' => 'Distribuidora Sika Andina S.A.C. (demo)', 'contacto' => 'Carlos Mendoza',
-                'telefono' => '987 654 321', 'email' => 'ventas@sika-andina.test', 'direccion' => 'Av. Industrial 1500, Lima', 'activo' => true,
+                'razon_social' => 'Mayorista de Cómputo Andino S.A.C. (demo)', 'contacto' => 'Carlos Mendoza',
+                'telefono' => '987 654 321', 'email' => 'ventas@computoandino.test', 'direccion' => 'Av. Garcilaso 1500, Lima', 'activo' => true,
             ]),
             Proveedor::firstOrCreate(['ruc' => '20999000022'], [
-                'razon_social' => 'Químicos para la Construcción del Sur E.I.R.L. (demo)', 'contacto' => 'Lucía Vargas',
-                'telefono' => '954 111 222', 'email' => 'pedidos@quimicossur.test', 'direccion' => 'Parque Industrial, Arequipa', 'activo' => true,
+                'razon_social' => 'Repuestos Laptop del Sur E.I.R.L. (demo)', 'contacto' => 'Lucía Vargas',
+                'telefono' => '954 111 222', 'email' => 'pedidos@repuestossur.test', 'direccion' => 'Calle Mercaderes 210, Arequipa', 'activo' => true,
             ]),
             Proveedor::firstOrCreate(['ruc' => '10999000033'], [
-                'razon_social' => 'Ferretería Mayorista El Constructor (demo)', 'contacto' => 'Jorge Huamán',
+                'razon_social' => 'Importaciones Tecno Juliaca (demo)', 'contacto' => 'Jorge Huamán',
                 'telefono' => '966 333 444', 'activo' => true,
             ]),
         ];
@@ -299,10 +297,10 @@ class DemoSeeder extends Seeder
     private function clientes(): array
     {
         $datos = [
-            ['RUC', '20999100011', 'Constructora Los Andes S.A.C. (demo)', '944 100 200', 'compras@losandes.test', 'Av. Arequipa 2450, Lince'],
-            ['RUC', '20999100022', 'Inmobiliaria Pacífico Sur S.A. (demo)', '955 300 400', 'logistica@pacificosur.test', 'Calle Las Begonias 415, San Isidro'],
-            ['RUC', '10999100033', 'Pedro Ramírez - Maestro de obra (demo)', '977 500 600', null, null],
-            ['DNI', '99900011', 'María Fernández Torres (demo)', '988 700 800', null, 'Jr. Los Pinos 230, Surquillo'],
+            ['RUC', '20999100011', 'Colegio Particular San Martín S.A.C. (demo)', '944 100 200', 'logistica@sanmartin.test', 'Av. El Sol 450, Puno'],
+            ['RUC', '20999100022', 'Estudio Contable Quispe & Asociados (demo)', '955 300 400', 'administracion@quispe.test', 'Jr. Lima 315, Puno'],
+            ['RUC', '10999100033', 'Juan Mamani - Técnico independiente (demo)', '977 500 600', null, null],
+            ['DNI', '99900011', 'María Fernández Torres (demo)', '988 700 800', null, 'Jr. Los Incas 230, Puno'],
         ];
 
         return array_map(fn ($d) => Cliente::firstOrCreate(
@@ -312,12 +310,12 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Stock inicial por compras (Lima la mayoría; Arequipa compra lo suyo).
-     * Algunos lotes vencen pronto para ver las alertas.
+     * Stock inicial por compras (la matriz la mayoría; Juliaca compra lo
+     * suyo). Las tintas tienen lote y vencimiento para ver las alertas.
      *
      * @param  array<string, Variante>  $v
      */
-    private function comprasIniciales(User $admin, User $vendedor, array $v, Proveedor $sika, Proveedor $sur, Proveedor $ferreteria): void
+    private function comprasIniciales(User $admin, User $vendedor, array $v, Proveedor $mayorista, Proveedor $repuestos, Proveedor $local): void
     {
         $vence = fn (int $dias) => today()->addDays($dias)->toDateString();
         $item = fn (string $sku, float $cantidad, float $costo, ?string $lote = null, ?int $dias = null) => array_filter([
@@ -329,67 +327,65 @@ class DemoSeeder extends Seeder
         ], fn ($x) => $x !== null);
 
         $this->compras->registrar([
-            'proveedor_id' => $sika->id, 'tipo_documento' => 'factura', 'numero_documento' => 'F001-10234',
-            'fecha' => today()->subDays(20)->toDateString(), 'observacion' => 'Pedido mensual de Sika.',
+            'proveedor_id' => $mayorista->id, 'tipo_documento' => 'factura', 'numero_documento' => 'F001-10234',
+            'fecha' => today()->subDays(20)->toDateString(), 'observacion' => 'Pedido mensual de accesorios.',
             'items' => [
-                $item('SKF1A-300-GRI', 60, 26.00),
-                $item('SKF1A-300-BLA', 40, 26.00),
-                $item('SKF1A-600-GRI', 12, 43.00),
-                $item('SKSIL-280-BLA', 30, 16.50),
-                $item('SKSIL-280-NEG', 4, 16.50),
-                $item('SK1-GL', 40, 21.00, 'S1-2409', 300),
-                $item('SK1-BLD20', 8, 92.00, 'S1-2409', 300),
-                $item('SKFILL12-GL', 20, 66.00, 'SF-2410', 400),
-                $item('SKFILL12-BLD', 5, 290.00, 'SF-2410', 400),
-                $item('SKDUR32-1K', 12, 52.00, 'D32-2405', 18),
-                $item('SKGROUT-30', 50, 39.00, 'GR-2408', 120),
-                $item('SKCERAM-25', 100, 21.00, 'CE-2409', 150),
-                $item('SKCEM-ACEL-L', 25, 11.50, 'AC-2407', 25),
-                $item('SKCEM-ACEL-GL', 6, 40.00, 'AC-2407', 25),
-                $item('SKMONO612-25', 6, 61.00, 'MT-2409', 200),
-                $item('SKANCLA-300', 15, 58.00, 'AN-2410', 365),
+                $item('LOG-M170', 30, 26.00),
+                $item('GEN-KB110', 20, 18.00),
+                $item('KNG-A400-240', 15, 82.00),
+                $item('KNG-A400-480', 10, 125.00),
+                $item('KNG-DT-32', 40, 15.00),
+                $item('KNG-DT-64', 25, 22.00),
+                $item('KNG-SO8', 12, 92.00),
+                $item('KNG-SO16', 6, 170.00),
+                $item('SAM-25W', 20, 42.00),
+                $item('HDMI-18', 30, 7.50),
+                $item('HDMI-10', 6, 28.00),
+                $item('UTP6-305', 2, 300.00),
+                $item('UTP6-M', 200, 1.00),
+                $item('TPL-C6', 6, 112.00),
+                $item('EPS-544-BK', 24, 26.00, 'EP-2601', 300),
+                $item('EPS-544-C', 12, 26.00, 'EP-2601', 300),
+                $item('EPS-544-M', 12, 26.00, 'EP-2601', 300),
+                $item('EPS-544-Y', 12, 26.00, 'EP-2602', 25),
             ],
         ], $admin);
 
         $this->compras->registrar([
-            'proveedor_id' => $ferreteria->id, 'tipo_documento' => 'boleta', 'numero_documento' => 'B002-5531',
+            'proveedor_id' => $repuestos->id, 'tipo_documento' => 'boleta', 'numero_documento' => 'B002-5531',
             'fecha' => today()->subDays(12)->toDateString(),
             'items' => [
-                $item('CHTECHO-GL', 15, 49.00, 'CH-0921', 240),
-                $item('CHTECHO-BLD', 3, 220.00, 'CH-0921', 240),
-                $item('CHSELLO-300', 30, 9.80),
-                $item('ZFRAG-1K-GRI', 80, 4.20),
-                $item('ZFRAG-1K-BLA', 60, 4.20),
-                $item('ZMALLA-M', 200, 2.60),
-                $item('ZMALLA-R50', 4, 120.00),
+                $item('HP-HT03XL', 4, 105.00),
+                $item('LED156-30P', 4, 190.00),
+                $item('MX4-4G', 10, 21.00),
             ],
         ], $admin);
 
-        // Arequipa compra a su proveedor local.
+        // Juliaca compra a su proveedor local.
         $this->compras->registrar([
-            'proveedor_id' => $sur->id, 'tipo_documento' => 'factura', 'numero_documento' => 'F003-881',
+            'proveedor_id' => $local->id, 'tipo_documento' => 'factura', 'numero_documento' => 'F003-881',
             'fecha' => today()->subDays(8)->toDateString(),
             'items' => [
-                $item('SKCERAM-25', 40, 21.50, 'CE-2408A', 90),
-                $item('SK1-GL', 12, 21.50, 'S1-2408A', 60),
-                $item('ZFRAG-1K-GRI', 30, 4.40),
+                $item('LOG-M170', 10, 27.00),
+                $item('KNG-DT-32', 15, 15.50),
+                $item('HDMI-18', 10, 8.00),
             ],
         ], $vendedor);
     }
 
     /**
-     * Un lote de Sika-1 ya vencido en Lima (como si hubiera quedado de una
-     * compra vieja): aparece en Vencimientos y las ventas no lo usan.
+     * Un lote de tinta negra ya vencido en la matriz (quedó de una compra
+     * vieja): aparece en Vencimientos y las ventas no lo usan.
      *
      * @param  array<string, Variante>  $v
      */
-    private function loteVencido(Sede $lima, User $admin, array $v): void
+    private function loteVencido(Sede $matriz, User $admin, array $v): void
     {
-        $this->inventario->entrada($lima->id, [[
-            'variante_id' => $v['SK1-GL']->id,
+        $this->inventario->entrada($matriz->id, [[
+            'variante_id' => $v['EPS-544-BK']->id,
             'cantidad' => 3,
-            'costo_unitario' => 20.00,
-            'lote' => 'S1-2312',
+            'costo_unitario' => 24.00,
+            'lote' => 'EP-2412',
             'vence_at' => today()->subDays(15)->toDateString(),
         ]], 'Saldo inventario anterior', 'Carga de demostración', $admin);
     }
@@ -397,45 +393,42 @@ class DemoSeeder extends Seeder
     /**
      * @param  array<string, Variante>  $v
      */
-    private function trasladoALaOtraSede(User $admin, Sede $arequipa, array $v): void
+    private function trasladoALaOtraSede(User $admin, Sede $juliaca, array $v): void
     {
-        $this->inventario->traslado($admin->sede_id, $arequipa->id, [
-            ['variante_id' => $v['SKF1A-300-GRI']->id, 'cantidad' => 20],
-            ['variante_id' => $v['SKSIL-280-BLA']->id, 'cantidad' => 10],
-            ['variante_id' => $v['SKFILL12-GL']->id, 'cantidad' => 6],
-            ['variante_id' => $v['SKGROUT-30']->id, 'cantidad' => 12],
-            ['variante_id' => $v['ZMALLA-M']->id, 'cantidad' => 50],
-        ], 'GR-T001-0045', 'Reposición semanal Arequipa', $admin);
+        $this->inventario->traslado($admin->sede_id, $juliaca->id, [
+            ['variante_id' => $v['KNG-A400-240']->id, 'cantidad' => 4],
+            ['variante_id' => $v['SAM-25W']->id, 'cantidad' => 6],
+            ['variante_id' => $v['EPS-544-BK']->id, 'cantidad' => 6],
+            ['variante_id' => $v['UTP6-M']->id, 'cantidad' => 50],
+        ], 'GR-T001-0045', 'Reposición semanal Juliaca', $admin);
     }
 
     /**
-     * Ventas cobradas y entregadas de los últimos días en Lima, con su caja.
-     * Se fechan hacia atrás para que los reportes por día tengan forma.
+     * Ventas cobradas y entregadas de los últimos días en la matriz. Se
+     * fechan hacia atrás para que los reportes por día tengan forma (la caja
+     * es la de hoy: una de otro día ya no cobra).
      *
      * @param  array<string, Variante>  $v
      * @param  array<int, Cliente>  $clientes
      */
     private function ventasDeLosUltimosDias(User $admin, array $v, array $clientes): void
     {
-        $caja = $this->cajas->abrir($admin->sede_id, 200, $admin);
-        $caja->forceFill(['abierta_at' => today()->subDays(6)->setTime(8, 30)])->save();
-
         $precio = fn (string $sku) => (float) ($v[$sku]->precio ?? $v[$sku]->producto->precio);
 
         // [días atrás, cliente|null, método, [[sku, cantidad]]]
         $ventas = [
-            [6, null, 'efectivo', [['SKF1A-300-GRI', 3], ['ZFRAG-1K-GRI', 4]]],
-            [6, $clientes[2], 'yape', [['SKCERAM-25', 10], ['ZFRAG-1K-BLA', 6]]],
-            [5, $clientes[0], 'transferencia', [['SKGROUT-30', 12], ['SKDUR32-1K', 2], ['SK1-BLD20', 2]]],
-            [4, null, 'efectivo', [['SKSIL-280-BLA', 2], ['CHSELLO-300', 3]]],
-            [4, $clientes[3], 'tarjeta', [['CHTECHO-GL', 2], ['ZMALLA-M', 12.5]]],
-            [3, null, 'efectivo', [['SK1-GL', 4], ['SKCEM-ACEL-L', 2.5]]],
-            [2, $clientes[1], 'transferencia', [['SKFILL12-BLD', 2], ['ZMALLA-R50', 1], ['SKANCLA-300', 3]]],
-            [2, null, 'plin', [['SKF1A-300-BLA', 6]]],
-            [1, $clientes[2], 'efectivo', [['SKCERAM-25', 15], ['ZFRAG-1K-GRI', 10]]],
-            [1, null, 'yape', [['SKSIL-280-NEG', 2], ['SKF1A-600-GRI', 1]]],
-            [0, null, 'efectivo', [['SK1-GL', 2], ['ZFRAG-1K-BLA', 3]]],
-            [0, $clientes[0], 'transferencia', [['SKMONO612-25', 4], ['SKDUR32-1K', 3]]],
+            [6, null, 'efectivo', [['LOG-M170', 1], ['KNG-DT-32', 2]]],
+            [6, $clientes[2], 'yape', [['MX4-4G', 2], ['KNG-SO8', 1]]],
+            [5, $clientes[0], 'transferencia', [['GEN-KB110', 10], ['LOG-M170', 10], ['HDMI-18', 5]]],
+            [4, null, 'efectivo', [['SAM-25W', 1], ['HDMI-18', 1]]],
+            [4, $clientes[3], 'tarjeta', [['EPS-544-BK', 2], ['EPS-544-C', 1], ['EPS-544-M', 1]]],
+            [3, null, 'efectivo', [['UTP6-M', 15], ['KNG-DT-64', 1]]],
+            [2, $clientes[1], 'transferencia', [['KNG-A400-480', 2], ['TPL-C6', 1]]],
+            [2, null, 'plin', [['KNG-DT-32', 3]]],
+            [1, $clientes[2], 'efectivo', [['KNG-SO16', 1], ['KNG-A400-240', 2]]],
+            [1, null, 'yape', [['LOG-M170', 1], ['GEN-KB110', 1]]],
+            [0, null, 'efectivo', [['HDMI-10', 1], ['SAM-25W', 1]]],
+            [0, $clientes[0], 'transferencia', [['UTP6-305', 1], ['TPL-C6', 2]]],
         ];
 
         foreach ($ventas as $n => [$dias, $cliente, $metodo, $lineas]) {
@@ -470,10 +463,10 @@ class DemoSeeder extends Seeder
             'cliente_id' => $clientes[1]->id,
             'canal' => 'whatsapp',
             'descuento' => 0,
-            'observacion' => 'Entregar en obra, Calle Las Begonias. Llamar antes.',
+            'observacion' => 'Entregar en la oficina del cliente. Llamar antes.',
             'items' => [
-                ['variante_id' => $v['SKCERAM-25']->id, 'cantidad' => 20, 'precio_unitario' => 30.50],
-                ['variante_id' => $v['ZFRAG-1K-GRI']->id, 'cantidad' => 10, 'precio_unitario' => 7.50],
+                ['variante_id' => $v['KNG-A400-480']->id, 'cantidad' => 3, 'precio_unitario' => 165.00],
+                ['variante_id' => $v['KNG-SO8']->id, 'cantidad' => 3, 'precio_unitario' => 125.00],
             ],
         ], $admin);
         $this->cajas->cobrar($pendiente, ['metodo' => 'transferencia', 'monto' => 300, 'referencia' => 'OP89001'], $admin);
@@ -500,28 +493,32 @@ class DemoSeeder extends Seeder
      */
     private function cotizacionesDeEjemplo(User $admin, array $v, array $clientes): void
     {
-        $condiciones = "Pago: 50% de adelanto y saldo contra entrega.\nEntrega en obra en 48 h (Lima Metropolitana).\nPrecios incluyen IGV.";
+        $condiciones = 'Incluye instalación y configuración.';
+        $proforma = ['forma_pago' => 'Contado', 'entrega' => 'Con posibilidad de entrega en oficina o domicilio del cliente.'];
 
         $this->cotizaciones->guardar(new Cotizacion, [
+            ...$proforma,
             'cliente_id' => $clientes[0]->id,
-            'valida_hasta' => today()->addDays(12)->toDateString(),
+            'valida_hasta' => today()->addDays(7)->toDateString(),
             'condiciones' => $condiciones,
             'descuento' => 50,
             'items' => [
-                ['variante_id' => $v['SKFILL12-BLD']->id, 'cantidad' => 6, 'precio_unitario' => 395.00],
-                ['variante_id' => $v['ZMALLA-R50']->id, 'cantidad' => 3, 'precio_unitario' => 200.00],
-                ['variante_id' => $v['SKF1A-300-GRI']->id, 'cantidad' => 24, 'precio_unitario' => 36.00],
+                ['variante_id' => $v['TPL-C6']->id, 'cantidad' => 3, 'precio_unitario' => 150.00],
+                ['variante_id' => $v['UTP6-305']->id, 'cantidad' => 1, 'precio_unitario' => 410.00],
+                ['variante_id' => $v['HDMI-10']->id, 'cantidad' => 4, 'precio_unitario' => 45.00],
             ],
         ], $admin);
 
         $vencida = $this->cotizaciones->guardar(new Cotizacion, [
+            ...$proforma,
+            'forma_pago' => '50% de adelanto y saldo contra entrega',
             'cliente_id' => $clientes[1]->id,
-            'valida_hasta' => today()->addDays(15)->toDateString(),
-            'condiciones' => $condiciones,
+            'valida_hasta' => today()->addDays(7)->toDateString(),
+            'condiciones' => null,
             'descuento' => 0,
             'items' => [
-                ['variante_id' => $v['SKCERAM-25']->id, 'cantidad' => 80, 'precio_unitario' => 30.00],
-                ['variante_id' => $v['ZFRAG-1K-BLA']->id, 'cantidad' => 40, 'precio_unitario' => 7.00],
+                ['variante_id' => $v['KNG-A400-480']->id, 'cantidad' => 5, 'precio_unitario' => 160.00],
+                ['variante_id' => $v['KNG-SO16']->id, 'cantidad' => 5, 'precio_unitario' => 220.00],
             ],
         ], $admin);
         // Hecha hace un mes: ya venció.
@@ -532,13 +529,78 @@ class DemoSeeder extends Seeder
 
         $aceptada = $this->cotizaciones->guardar(new Cotizacion, [
             'cliente_id' => $clientes[2]->id,
-            'valida_hasta' => today()->addDays(10)->toDateString(),
-            'condiciones' => 'Pago al contado. Recojo en tienda.',
+            'valida_hasta' => today()->addDays(7)->toDateString(),
+            'forma_pago' => 'Contado',
+            'entrega' => 'Recojo en tienda.',
             'descuento' => 0,
             'items' => [
-                ['variante_id' => $v['SKGROUT-30']->id, 'cantidad' => 8, 'precio_unitario' => 55.00],
+                ['variante_id' => $v['MX4-4G']->id, 'cantidad' => 4, 'precio_unitario' => 32.00],
             ],
         ], $admin);
         $this->cotizaciones->convertir($aceptada, $admin);
+    }
+
+    /**
+     * Tres equipos en el taller: uno recién recibido, uno reparado esperando
+     * que lo recojan (con repuesto y adelanto) y uno ya entregado.
+     *
+     * @param  array<string, Variante>  $v
+     * @param  array<int, Cliente>  $clientes
+     */
+    private function ordenesDeServicio(User $admin, array $v, array $clientes): void
+    {
+        $tipo = fn (string $nombre) => TipoEquipo::query()->where('nombre', $nombre)->value('id');
+        $marca = fn (string $nombre) => Marca::query()->where('nombre', $nombre)->value('id');
+        $orden = fn (array $datos) => $this->ordenes->guardar(new OrdenServicio, array_merge([
+            'tecnico_id' => $admin->id,
+            'seguridad_tipo' => 'ninguno',
+            'garantia_dias' => 30,
+            'repuestos' => [],
+        ], $datos), $admin);
+
+        $orden([
+            'cliente_id' => $clientes[3]->id,
+            'tipo_equipo_id' => $tipo('Celular'),
+            'marca_id' => $marca('Samsung'),
+            'modelo' => 'Galaxy A14',
+            'seguridad_tipo' => 'patron',
+            'seguridad_valor' => '1-4-7-8-9',
+            'checklist' => ['Enciende' => true, 'Pantalla sin daños' => false],
+            'falla' => 'Pantalla rota, el táctil no responde en la parte de abajo.',
+            'mano_obra' => 60,
+        ]);
+
+        $reparada = $orden([
+            'cliente_id' => $clientes[1]->id,
+            'tipo_equipo_id' => $tipo('Laptop'),
+            'marca_id' => $marca('HP'),
+            'modelo' => '250 G7',
+            'serie' => 'CND9X1234',
+            'accesorios' => 'Cargador',
+            'checklist' => ['Enciende' => true, 'Cargador' => true, 'Batería' => false],
+            'falla' => 'Muy lenta y la batería no carga.',
+            'diagnostico' => 'Cambio de disco a SSD 480 GB, reinstalación de Windows y cambio de batería.',
+            'mano_obra' => 80,
+            'repuestos' => [
+                ['variante_id' => $v['KNG-A400-480']->id, 'cantidad' => 1, 'precio_unitario' => 169.00],
+                ['variante_id' => $v['HP-HT03XL']->id, 'cantidad' => 1, 'precio_unitario' => 159.00],
+            ],
+            'anticipo' => ['metodo' => 'yape', 'monto' => 200, 'referencia' => 'OP77001'],
+        ]);
+        $this->ordenes->cambiarEstado($reparada, OrdenServicio::DIAGNOSTICO, null, $admin);
+        $this->ordenes->cambiarEstado($reparada, OrdenServicio::REPARADO, 'Probada 2 horas, todo OK.', $admin);
+
+        $entregada = $orden([
+            'cliente_id' => $clientes[0]->id,
+            'tipo_equipo_id' => $tipo('Impresora'),
+            'marca_id' => $marca('Epson'),
+            'modelo' => 'L3250',
+            'falla' => 'Imprime con rayas.',
+            'diagnostico' => 'Limpieza de cabezal y purga de tinta.',
+            'mano_obra' => 50,
+        ]);
+        $this->ordenes->cambiarEstado($entregada, OrdenServicio::REPARADO, null, $admin);
+        $this->cajas->cobrar($entregada->pedido, ['metodo' => 'efectivo', 'monto' => 50], $admin);
+        $this->ordenes->cambiarEstado($entregada, OrdenServicio::ENTREGADO, null, $admin);
     }
 }

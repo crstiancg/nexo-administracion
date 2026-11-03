@@ -105,7 +105,7 @@ class ProductoController extends Controller
             $query->whereHas('variantes', fn (Builder $v) => $v->habilitadaEnSede($sedeId));
         }
 
-        // Filtrar por "Impermeabilizantes" trae también lo de sus subcategorías.
+        // Filtrar por "Accesorios" trae también lo de sus subcategorías.
         if ($request->filled('categoria_id')) {
             $categoria = Categoria::find($request->integer('categoria_id'));
             $query->whereIn('categoria_id', $categoria

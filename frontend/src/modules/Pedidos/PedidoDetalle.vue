@@ -85,7 +85,13 @@
           v-for="item in pedido.items"
           :key="item.id"
         >
-          <td>
+          <td v-if="!item.variante">
+            <!-- Servicio (mano de obra de una orden de servicio). -->
+            <div class="pedido-detalle__producto">
+              {{ item.descripcion }}
+            </div>
+          </td>
+          <td v-else>
             <div class="pedido-detalle__producto">
               {{ item.variante.producto?.nombre }}
             </div>

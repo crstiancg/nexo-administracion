@@ -58,13 +58,13 @@
         class="showcase__brand"
         style="--rise: 0"
       >
-        <AppBrandMark
-          :size="42"
-          glow
+        <!-- Sobre la foto: la versión con letras blancas. -->
+        <AppLogo
+          :alto="44"
+          oscuro
         />
-        <div>
-          <div class="showcase__brandName">NEXO</div>
-          <div class="showcase__brandKicker">Panel de operación</div>
+        <div class="showcase__brandKicker">
+          Panel de operación
         </div>
       </div>
 
@@ -120,7 +120,7 @@
 
 <script setup>
 import { useId } from 'vue'
-import AppBrandMark from './AppBrandMark.vue'
+import AppLogo from './AppLogo.vue'
 
 defineProps({
   // URL de la fotografía de fondo. Vacío = el panel se dibuja solo con CSS,
@@ -176,13 +176,13 @@ $panel-ink-deep: mix($accent, #000000, 26%);
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% 46%;
-  filter: saturate(0.92) contrast(1.03) brightness(0.86);
+  object-position: 5% 46%;
+  filter: saturate(0.99) contrast(1.03) brightness(0.86);
 }
 
 .showcase--photo {
   // El degradado de base pelea con la foto: la tapa con un marrón plano.
-  background: #0A0C0F;
+  background: #165bc3;
 
   // Tres scrims, de arriba hacia abajo en la pila: la cama del titular, el
   // vertical que asienta marca y pie, y el diagonal que abre una cuña de
@@ -202,7 +202,7 @@ $panel-ink-deep: mix($accent, #000000, 26%);
   // Las auroras pasan a segundo plano: la foto ya trae rojos y luz propia, y
   // al volumen anterior se sumaban hasta dar un halo anaranjado sucio.
   .showcase__aurora--brand {
-    opacity: 0.40;
+    opacity: 0.90;
   }
 
   .showcase__aurora--deep {
@@ -326,16 +326,11 @@ $panel-ink-deep: mix($accent, #000000, 26%);
 // ── Marca ──
 .showcase__brand {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-.showcase__brandName {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  line-height: 1.2;
-}
 
 .showcase__brandKicker {
   font-family: $font-mono;

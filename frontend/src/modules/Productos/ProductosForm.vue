@@ -10,9 +10,9 @@
         v-model="form.producto.nombre"
         label="Nombre"
         icon="inventory_2"
-        placeholder="Sikaflex 1A Plus"
+        placeholder="SSD A400"
         maxlength="120"
-        hint="Nombre comercial, como lo busca el vendedor. Sin la presentación (bolsa, galón…): eso va abajo."
+        hint="Nombre comercial, como lo busca el vendedor. Sin la presentación (240 GB, 1.8 m…): eso va abajo."
         class="producto-form__grow"
         :error="form.errors[`${PATH}.nombre`]"
         autofocus
@@ -135,7 +135,7 @@
           </template>
         </q-select>
         <p class="producto-form__hint">
-          El fabricante (Sika, Z Aditivos…).
+          El fabricante (HP, Kingston…).
         </p>
       </div>
 
@@ -287,7 +287,7 @@
           class="producto-form__columnas"
         >
           <dt>Presentación</dt>
-          <dd>Cómo se vende: “Bolsa 25 kg”, “Galón 4 L”, “Cartucho 300 ml”.</dd>
+          <dd>Cómo se vende: “240 GB”, “Caja 305 m”, “Botella 65 ml”.</dd>
           <dt>Unidad</dt>
           <dd>En qué se cuenta el stock. Si la unidad acepta decimales (kg, metro) se puede vender 2.5.</dd>
           <dt>Color</dt>
@@ -360,7 +360,7 @@
                   :aria-label="`Presentación ${i + 1}`"
                   :error="Boolean(errorDe(i, 'presentacion'))"
                   :error-message="errorDe(i, 'presentacion')"
-                  placeholder="Balde 4 gl"
+                  placeholder="480 GB"
                   maxlength="60"
                   dense
                   outlined
@@ -1015,7 +1015,7 @@ const colorPorId = computed(() => new Map(colores.value.map((c) => [c.id, c])))
 const unidadPorId = computed(() => new Map(unidades.value.map((u) => [u.id, u])))
 const userStore = useUserStore()
 
-// Todas las categorías, con la ruta completa ("Impermeabilizantes › Techos y cubiertas").
+// Todas las categorías, con la ruta completa ("Accesorios › Cargadores").
 const opcionesCategorias = computed(() => opcionesPadre(categorias.value))
 const busquedaCategoria = ref('')
 const categoriasFiltradas = computed(() => {

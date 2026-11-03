@@ -30,7 +30,7 @@ class StoreCotizacionRequest extends FormRequest
             return;
         }
 
-        foreach (['condiciones', 'observacion'] as $campo) {
+        foreach (['forma_pago', 'entrega', 'condiciones', 'observacion'] as $campo) {
             if (is_string($cotizacion[$campo] ?? null)) {
                 $cotizacion[$campo] = trim($cotizacion[$campo]) ?: null;
             }
@@ -51,6 +51,8 @@ class StoreCotizacionRequest extends FormRequest
             // Opcional: "cotización sin nombre" para quien sólo pide precios.
             'cotizacion.cliente_id' => ['nullable', 'integer', 'exists:clientes,id'],
             'cotizacion.valida_hasta' => ['required', 'date', 'after_or_equal:'.Fechas::hoyIso()],
+            'cotizacion.forma_pago' => ['nullable', 'string', 'max:100'],
+            'cotizacion.entrega' => ['nullable', 'string', 'max:250'],
             'cotizacion.condiciones' => ['nullable', 'string', 'max:500'],
             'cotizacion.observacion' => ['nullable', 'string', 'max:500'],
             'cotizacion.descuento' => ['numeric', 'min:0', 'max:99999999.99', 'decimal:0,2', $this->descuentoNoMayorAlSubtotal()],
@@ -132,6 +134,8 @@ class StoreCotizacionRequest extends FormRequest
         return [
             'cotizacion.cliente_id' => 'cliente',
             'cotizacion.valida_hasta' => 'válida hasta',
+            'cotizacion.forma_pago' => 'forma de pago',
+            'cotizacion.entrega' => 'entrega',
             'cotizacion.condiciones' => 'condiciones',
             'cotizacion.observacion' => 'observación',
             'cotizacion.descuento' => 'descuento',

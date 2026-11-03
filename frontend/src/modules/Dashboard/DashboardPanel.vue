@@ -2,7 +2,7 @@
   <div class="app-list-page">
     <AppPageHeader
       :title="saludo"
-      :subtitle="`${datos?.sede?.nombre ?? userStore.sede?.nombre ?? ''} · ${hoyLargo}`"
+      :subtitle="`${datos?.sede?.nombre ?? userStore.sede?.nombre ?? ''} · ${hoyLargo}${actualizado ? ` · actualizado ${actualizado}` : ''}`"
     >
       <template #actions>
         <AppButton
@@ -78,6 +78,10 @@
         <AppStatTile
           label="Ventas del mes"
           :value="formatearPrecio(datos.ventas.mes.total)"
+          :delta="variacionMes.texto"
+          :trend="variacionMes.sube ? 'up' : 'down'"
+          :trend-is-good="variacionMes.sube"
+          delta-caption="vs. mes anterior"
         />
         <AppStatTile
           :label="`${ETIQUETA_IGV} del mes`"
@@ -92,20 +96,45 @@
           class="dash__card"
         >
           <div class="dash__cardCabecera">
-            <h2 class="dash__titulo">
-              Ventas de los últimos 14 días
-            </h2>
-            <button
-              type="button"
-              class="dash__link"
-              @click="verTabla = !verTabla"
+            <div>
+              <h2 class="dash__titulo">
+                {{ periodo === '14d' ? 'Ventas de los últimos 14 días' : 'Ventas por mes' }}
+              </h2>
+              <p class="dash__muted">
+                {{ periodo === '14d' ? 'Hoy destacado' : 'Este mes destacado' }} ·
+                <button
+                  type="button"
+                  class="dash__link"
+                  @click="verTabla = !verTabla"
+                >
+                  {{ verTabla ? 'Ver gráfico' : 'Ver tabla' }}
+                </button>
+              </p>
+            </div>
+            <!-- Período: días o meses (6M / 12M / todo lo que hay). -->
+            <div
+              class="dash__periodos"
+              role="radiogroup"
+              aria-label="Período del gráfico"
             >
-              {{ verTabla ? 'Ver gráfico' : 'Ver tabla' }}
-            </button>
+              <button
+                v-for="p in PERIODOS"
+                :key="p.value"
+                type="button"
+                role="radio"
+                :aria-checked="String(periodo === p.value)"
+                :class="['dash__periodo', { 'dash__periodo--activo': periodo === p.value }]"
+                @click="periodo = p.value"
+              >
+                {{ p.label }}
+              </button>
+            </div>
           </div>
           <VentasPorDia
             v-if="!verTabla"
-            :dias="datos.ventas.por_dia"
+            :key="periodo"
+            :dias="serie"
+            :por-mes="periodo !== '14d'"
           />
           <table
             v-else
@@ -113,7 +142,7 @@
           >
             <thead>
               <tr>
-                <th>Día</th>
+                <th>{{ periodo === '14d' ? 'Día' : 'Mes' }}</th>
                 <th class="text-right">
                   Ventas
                 </th>
@@ -124,10 +153,10 @@
             </thead>
             <tbody>
               <tr
-                v-for="d in [...datos.ventas.por_dia].reverse()"
+                v-for="d in [...serie].reverse()"
                 :key="d.fecha"
               >
-                <td>{{ d.fecha.split('-').reverse().join('/') }}</td>
+                <td>{{ periodo === '14d' ? d.fecha.split('-').reverse().join('/') : d.fecha.slice(0, 7).split('-').reverse().join('/') }}</td>
                 <td class="text-right text-mono">
                   {{ d.ventas }}
                 </td>
@@ -203,6 +232,116 @@
           <span class="dash__atajoValor text-mono">{{ a.valor }}</span>
           <span class="dash__atajoLabel">{{ a.label }}</span>
         </router-link>
+      </div>
+
+      <!-- ── Canales del mes + taller ── -->
+      <div
+        v-if="datos.ventas || datos.taller"
+        class="dash__fila"
+      >
+        <AppCard
+          v-if="datos.ventas"
+          class="dash__card"
+        >
+          <div>
+            <h2 class="dash__titulo">
+              De dónde vienen las ventas
+            </h2>
+            <p class="dash__muted">
+              Participación en las ventas de {{ mesActual }}
+            </p>
+          </div>
+          <p
+            v-if="!datos.ventas.por_canal.length"
+            class="dash__muted"
+          >
+            Todavía no hay ventas este mes.
+          </p>
+          <ul
+            v-else
+            class="dash__canales"
+          >
+            <li
+              v-for="c in datos.ventas.por_canal"
+              :key="c.canal"
+            >
+              <span class="dash__canalNombre">
+                <q-icon
+                  :name="ICONOS_CANAL[c.canal] ?? 'sell'"
+                  size="16px"
+                />
+                {{ c.label }}
+              </span>
+              <span class="dash__canalPct text-mono">{{ c.porcentaje }}%</span>
+              <span class="dash__canalBarra">
+                <span :style="{ width: `${c.porcentaje}%` }" />
+              </span>
+              <span class="dash__muted dash__canalDetalle">
+                {{ c.ventas }} {{ c.ventas === 1 ? 'venta' : 'ventas' }} · {{ formatearPrecio(c.total) }}
+              </span>
+            </li>
+          </ul>
+        </AppCard>
+
+        <AppCard
+          v-if="datos.taller"
+          class="dash__card"
+        >
+          <div class="dash__cardCabecera">
+            <div>
+              <h2 class="dash__titulo">
+                Taller
+              </h2>
+              <p class="dash__muted">
+                <template v-if="datos.taller.promedio_dias !== null">
+                  Un equipo sale en {{ datos.taller.promedio_dias }} {{ datos.taller.promedio_dias === 1 ? 'día' : 'días' }} en promedio
+                </template>
+                <template v-else>
+                  Sin entregas en los últimos 30 días
+                </template>
+              </p>
+            </div>
+            <router-link
+              to="/ordenes-servicio"
+              class="dash__link"
+            >
+              Ver órdenes
+            </router-link>
+          </div>
+          <dl class="dash__datos">
+            <dt>Recibidos hoy</dt>
+            <dd class="text-mono">
+              {{ datos.taller.recibidas_hoy }}
+            </dd>
+            <dt>Entregados este mes</dt>
+            <dd class="text-mono">
+              {{ datos.taller.entregadas_mes }}
+            </dd>
+          </dl>
+          <div v-if="datos.taller.por_tecnico.length">
+            <h3 class="dash__subtitulo">
+              Equipos a cargo de cada técnico
+            </h3>
+            <ul class="dash__canales">
+              <li
+                v-for="t in datos.taller.por_tecnico"
+                :key="t.tecnico"
+              >
+                <span class="dash__canalNombre">
+                  <q-icon
+                    name="engineering"
+                    size="16px"
+                  />
+                  {{ t.tecnico }}
+                </span>
+                <span class="dash__canalPct text-mono">{{ t.total }}</span>
+                <span class="dash__canalBarra">
+                  <span :style="{ width: `${(t.total / datos.taller.por_tecnico[0].total) * 100}%` }" />
+                </span>
+              </li>
+            </ul>
+          </div>
+        </AppCard>
       </div>
 
       <!-- ── Top del mes + últimas ventas ── -->
@@ -315,9 +454,14 @@ const ESTADOS_CAJA = {
   vencida: { status: 'negative', label: 'De otro día' }
 }
 
+// "hace 3 min": cuándo se trajeron los números (se refrescan solos).
+const cargadoEn = ref(null)
+const ahora = ref(Date.now())
+
 async function cargar () {
   try {
     datos.value = await PanelService.dashboard()
+    cargadoEn.value = Date.now()
   } finally {
     cargando.value = false
   }
@@ -325,7 +469,46 @@ async function cargar () {
 
 onMounted(cargar)
 const reloj = setInterval(cargar, 120_000)
-onBeforeUnmount(() => clearInterval(reloj))
+const tic = setInterval(() => { ahora.value = Date.now() }, 30_000)
+onBeforeUnmount(() => {
+  clearInterval(reloj)
+  clearInterval(tic)
+})
+
+const actualizado = computed(() => {
+  if (!cargadoEn.value) return ''
+  const min = Math.floor((ahora.value - cargadoEn.value) / 60_000)
+  return min < 1 ? 'recién' : `hace ${min} min`
+})
+
+// ── Gráfico: 14 días o meses ──
+const PERIODOS = [
+  { value: '14d', label: '14D' },
+  { value: '6m', label: '6M' },
+  { value: '12m', label: '12M' },
+  { value: 'todo', label: 'Todo' }
+]
+const periodo = ref('14d')
+
+const serie = computed(() => {
+  const v = datos.value?.ventas
+  if (!v) return []
+  if (periodo.value === '14d') return v.por_dia
+  if (periodo.value === '6m') return v.por_mes.slice(-6)
+  if (periodo.value === '12m') return v.por_mes.slice(-12)
+  return v.por_mes
+})
+
+const mesActual = (() => new Intl.DateTimeFormat('es-PE', { month: 'long' }).format(new Date()))()
+
+const ICONOS_CANAL = {
+  mostrador: 'storefront',
+  whatsapp: 'mdi-whatsapp',
+  redes: 'share',
+  web: 'language',
+  cotizacion: 'request_quote',
+  servicio: 'build'
+}
 
 const saludo = computed(() => {
   const hora = new Date().getHours()
@@ -338,6 +521,15 @@ const hoyLargo = (() => {
   const texto = new Intl.DateTimeFormat('es-PE', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 })()
+
+// El mes hasta hoy contra el mes anterior hasta el mismo día.
+const variacionMes = computed(() => {
+  const mes = datos.value?.ventas?.mes.total ?? 0
+  const anterior = datos.value?.ventas?.mes_anterior?.total ?? 0
+  if (!anterior) return { texto: '', sube: true }
+  const pct = Math.round(((mes - anterior) / anterior) * 100)
+  return { texto: `${pct > 0 ? '+' : ''}${pct}%`, sube: pct >= 0 }
+})
 
 // Lo que bloquea o urge; lo de rutina queda en los atajos y la campana.
 const urgentes = computed(() => (datos.value?.alertas ?? []).filter((a) => a.nivel !== 'info'))
@@ -354,7 +546,11 @@ const variacion = computed(() => {
 const atajos = computed(() => {
   const p = datos.value?.pendientes ?? {}
   const inv = datos.value?.inventario ?? {}
+  const t = datos.value?.taller ?? {}
   return [
+    { label: 'Equipos en el taller', valor: t.en_taller, icono: 'build_circle', to: '/ordenes-servicio', atencion: false },
+    { label: 'Listos para entregar', valor: t.listas, icono: 'task_alt', to: '/ordenes-servicio', atencion: true },
+    { label: 'Más de 7 días en el taller', valor: t.atrasadas, icono: 'hourglass_bottom', to: '/ordenes-servicio', atencion: true },
     { label: 'Pedidos pendientes', valor: p.pedidos_pendientes, icono: 'pending_actions', to: '/pedidos', atencion: false },
     { label: 'Por entregar', valor: p.por_entregar, icono: 'local_shipping', to: '/pedidos', atencion: false },
     { label: 'Cotizaciones vigentes', valor: p.cotizaciones, icono: 'request_quote', to: '/cotizaciones', atencion: false },
@@ -452,6 +648,95 @@ const atajos = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.dash__periodos {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 3px;
+  border: 1px solid var(--app-border-control);
+  border-radius: 9px;
+  background: var(--app-page);
+}
+
+.dash__periodo {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-ink-2);
+  cursor: pointer;
+
+  &--activo {
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow-card);
+    color: var(--app-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 1px;
+  }
+}
+
+.dash__subtitulo {
+  margin: 4px 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--app-ink-2);
+}
+
+.dash__canales {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 5px 12px;
+    align-items: center;
+  }
+}
+
+.dash__canalNombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.dash__canalPct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.dash__canalBarra {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--app-brand-soft);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: $primary;
+  }
+}
+
+.dash__canalDetalle {
+  grid-column: 1 / -1;
+  font-size: 12px;
 }
 
 .dash__titulo {
@@ -620,7 +905,7 @@ const atajos = computed(() => {
   max-width: calc(100% - 32px);
   height: 3px;
   border-radius: 2px;
-  background: #B7860B;
+  background: $primary;
   opacity: 0.6;
 }
 

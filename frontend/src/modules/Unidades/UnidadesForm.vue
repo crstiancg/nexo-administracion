@@ -8,7 +8,7 @@
       v-model="form.unidad.nombre"
       label="Nombre"
       icon="straighten"
-      placeholder="Bolsa, Galón, Kilogramo…"
+      placeholder="Unidad, Caja, Metro…"
       maxlength="40"
       :error="form.errors[`${PATH}.nombre`]"
       :loading="form.validating"
@@ -89,21 +89,15 @@ const emit = defineEmits(['save'])
 // Función y no objeto: useForm guarda estos datos como "originales" para el reset().
 const inicial = () => ({ unidad: { nombre: '', abreviatura: '', codigo_sunat: 'NIU', fraccionable: false } })
 
-// Los más comunes en materiales de construcción (catálogo 03 de SUNAT).
+// Los más comunes en una tienda de tecnología (catálogo 03 de SUNAT).
 const CODIGOS_SUNAT = [
   { value: 'NIU', label: 'NIU · Unidad' },
-  { value: 'BG', label: 'BG · Bolsa / saco' },
-  { value: 'BJ', label: 'BJ · Balde' },
-  { value: 'GLL', label: 'GLL · Galón' },
   { value: 'LTR', label: 'LTR · Litro' },
   { value: 'KGM', label: 'KGM · Kilogramo' },
-  { value: 'TNE', label: 'TNE · Tonelada' },
   { value: 'MTR', label: 'MTR · Metro' },
-  { value: 'MTK', label: 'MTK · Metro cuadrado' },
-  { value: 'MTQ', label: 'MTQ · Metro cúbico' },
   { value: 'BX', label: 'BX · Caja' },
-  { value: 'CA', label: 'CA · Lata' },
-  { value: 'CY', label: 'CY · Cilindro' },
+  { value: 'PK', label: 'PK · Paquete' },
+  { value: 'SET', label: 'SET · Juego' },
   { value: 'RO', label: 'RO · Rollo' },
   { value: 'KT', label: 'KT · Kit' },
   { value: 'ZZ', label: 'ZZ · Servicio' }

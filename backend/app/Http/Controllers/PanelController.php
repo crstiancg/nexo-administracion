@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\Lote;
+use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\Producto;
 use App\Services\Alertas;
@@ -46,6 +47,7 @@ class PanelController extends Controller
             'inventario' => $sedeId && ($puede('inventario.index') || $puede('inventario.lotes')) ? $this->inventario($sedeId, $puede) : null,
             'top_productos' => $veVentas && $sedeId ? $this->topProductos($sedeId) : null,
             'ultimas_ventas' => $puede('pedidos.index') && $sedeId ? $this->ultimasVentas($sedeId) : null,
+            'taller' => $puede('ordenes-servicio.index') && $sedeId ? $this->taller($sedeId) : null,
             'alertas' => $this->alertas->para($user),
         ]);
     }
@@ -177,13 +179,125 @@ class PanelController extends Controller
             ];
         });
 
+        // El mes anterior hasta el mismo día: comparar el mes en curso contra
+        // el mes entero de antes siempre daría "baja" hasta el día 30.
+        $inicioAnterior = $hoy->copy()->startOfMonth()->subMonthNoOverflow();
+        $finAnterior = $inicioAnterior->copy()->addDays(min($hoy->day, $inicioAnterior->daysInMonth) - 1);
+        $delMesAnterior = $resumen(Fechas::inicioDelDia($inicioAnterior), Fechas::finDelDia($finAnterior));
+
         $fila = fn ($r) => ['ventas' => (int) $r->ventas, 'total' => round((float) $r->total, 2), 'igv' => round((float) $r->igv, 2)];
 
         return [
             'hoy' => $fila($deHoy),
             'ayer' => $fila($deAyer),
             'mes' => $fila($delMes),
+            'mes_anterior' => $fila($delMesAnterior),
             'por_dia' => $serie->values(),
+            'por_mes' => $this->ventasPorMes($sedeId, $desfase),
+            'por_canal' => $this->ventasPorCanal($sedeId),
+        ];
+    }
+
+    /**
+     * Ventas por mes: desde la primera venta (mínimo 12 meses, máximo 36),
+     * con los meses sin ventas en 0. El front recorta 6M / 12M / Todo.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function ventasPorMes(int $sedeId, int $desfase): array
+    {
+        $hoy = Fechas::hoy();
+        $mes = "DATE_FORMAT(DATE_ADD(confirmado_at, INTERVAL {$desfase} MINUTE), '%Y-%m')";
+        $primera = $this->pedidos($sedeId)->min('confirmado_at');
+        $meses = $primera
+            ? max(12, min(36, (int) Carbon::parse($primera)->startOfMonth()->diffInMonths($hoy->copy()->startOfMonth()) + 1))
+            : 12;
+        $desde = $hoy->copy()->startOfMonth()->subMonthsNoOverflow($meses - 1);
+
+        $porMes = $this->pedidos($sedeId)
+            ->where('confirmado_at', '>=', Fechas::inicioDelDia($desde))
+            ->selectRaw("{$mes} as mes, COUNT(*) as ventas, SUM(total) as total")
+            ->groupByRaw($mes)
+            ->get()
+            ->keyBy(fn ($f) => (string) $f->mes);
+
+        return collect(range($meses - 1, 0))->map(function (int $atras) use ($hoy, $porMes) {
+            $clave = $hoy->copy()->startOfMonth()->subMonthsNoOverflow($atras)->format('Y-m');
+
+            return [
+                'fecha' => "{$clave}-01",
+                'ventas' => (int) ($porMes[$clave]->ventas ?? 0),
+                'total' => round((float) ($porMes[$clave]->total ?? 0), 2),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * De dónde vinieron las ventas del mes (mostrador, WhatsApp, servicio
+     * técnico…), con su participación.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function ventasPorCanal(int $sedeId): array
+    {
+        $filas = $this->pedidos($sedeId)
+            ->where('confirmado_at', '>=', Fechas::inicioDelDia(Fechas::hoy()->startOfMonth()))
+            ->selectRaw('canal, COUNT(*) as ventas, SUM(total) as total')
+            ->groupBy('canal')
+            ->orderByDesc('total')
+            ->get();
+        $suma = (float) $filas->sum('total');
+
+        return $filas->map(fn ($f) => [
+            'canal' => $f->canal,
+            'label' => Pedido::CANALES[$f->canal] ?? $f->canal,
+            'ventas' => (int) $f->ventas,
+            'total' => round((float) $f->total, 2),
+            'porcentaje' => $suma > 0 ? round((float) $f->total * 100 / $suma, 1) : 0,
+        ])->values()->all();
+    }
+
+    /**
+     * El taller de la sede: qué hay, qué está listo, qué se está atrasando y
+     * cuánto tarda un equipo en salir.
+     *
+     * @return array<string, mixed>
+     */
+    private function taller(int $sedeId): array
+    {
+        $ordenes = fn () => OrdenServicio::query()->where('sede_id', $sedeId);
+        $activas = [OrdenServicio::RECIBIDO, OrdenServicio::DIAGNOSTICO, OrdenServicio::ESPERANDO_REPUESTO, OrdenServicio::EN_REPARACION];
+        $hoy = Fechas::hoy();
+
+        // Días promedio de recibido a entregado (últimos 30 días).
+        $entregadas = $ordenes()
+            ->where('estado', OrdenServicio::ENTREGADO)
+            ->where('entregado_at', '>=', Fechas::inicioDelDia($hoy->copy()->subDays(29)))
+            ->get(['recibido_at', 'entregado_at']);
+        $promedio = $entregadas->isEmpty()
+            ? null
+            : round($entregadas->avg(fn ($o) => $o->recibido_at->diffInHours($o->entregado_at) / 24), 1);
+
+        return [
+            'en_taller' => $ordenes()->whereIn('estado', $activas)->count(),
+            'listas' => $ordenes()->whereIn('estado', [OrdenServicio::REPARADO, OrdenServicio::SIN_REPARACION])->count(),
+            'atrasadas' => $ordenes()->whereIn('estado', $activas)
+                ->where('recibido_at', '<', Fechas::inicioDelDia($hoy->copy()->subDays(7)))->count(),
+            'recibidas_hoy' => $ordenes()->where('recibido_at', '>=', Fechas::inicioDelDia())->count(),
+            'entregadas_mes' => $ordenes()->where('estado', OrdenServicio::ENTREGADO)
+                ->where('entregado_at', '>=', Fechas::inicioDelDia($hoy->copy()->startOfMonth()))->count(),
+            'promedio_dias' => $promedio,
+            // Carga por técnico: lo que cada uno tiene abierto.
+            'por_tecnico' => OrdenServicio::query()
+                ->where('ordenes_servicio.sede_id', $sedeId)
+                ->whereIn('ordenes_servicio.estado', $activas)
+                ->leftJoin('users', 'users.id', '=', 'ordenes_servicio.tecnico_id')
+                ->selectRaw("COALESCE(users.name, 'Sin asignar') as tecnico, COUNT(*) as total")
+                ->groupBy('users.name')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($f) => ['tecnico' => $f->tecnico, 'total' => (int) $f->total])
+                ->values(),
         ];
     }
 

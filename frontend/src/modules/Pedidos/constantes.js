@@ -18,5 +18,7 @@ export const CANALES = [
   { value: 'redes', label: 'Redes sociales' },
   { value: 'web', label: 'Web' },
   // Lo pone el sistema al convertir una cotización.
-  { value: 'cotizacion', label: 'Cotización' }
+  { value: 'cotizacion', label: 'Cotización' },
+  // El cobro de una orden de servicio (se gestiona desde la orden).
+  { value: 'servicio', label: 'Servicio técnico' }
 ]

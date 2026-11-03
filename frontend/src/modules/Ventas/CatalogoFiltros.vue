@@ -110,7 +110,7 @@ const categoriasLista = ref([])
 const marcas = ref([])
 const colores = ref([])
 
-// Chip con el nombre corto; la ruta completa ("Impermeabilizantes › Techos") en el título.
+// Chip con el nombre corto; la ruta completa ("Accesorios › Cargadores") en el título.
 const categorias = computed(() => {
   const opciones = opcionesPadre(categoriasLista.value)
   return opciones.map((o) => ({ id: o.value, label: o.label, corto: o.label.split(' › ').pop() }))

@@ -326,7 +326,7 @@
           class="ficha__vacio"
         >
           <p>
-            Este producto no controla lotes ni vencimiento. Si vence (cemento, aditivos, pegamentos…),
+            Este producto no controla lotes ni vencimiento. Si vence (tintas, pasta térmica…),
             activalo en <strong>Editar → “Maneja lotes y vencimiento”</strong>.
             <template v-if="stockSede > 0">
               El stock que ya tenés va a quedar “sin lote” y acá vas a poder asignarle su lote.

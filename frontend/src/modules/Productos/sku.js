@@ -1,5 +1,5 @@
 /**
- * SKU sugerido de una presentación: "Sikaflex 1A Plus" + "Cartucho 300 ml" +
+ * SKU sugerido de una presentación: "Tinta 544" + "Botella 65 ml" +
  * color "Gris" → "SIKA-1A-CAR300ML-GRI". Es sólo una sugerencia: el form lo
  * deja editar y el backend valida que sea único y de letras, números y guiones.
  */
@@ -26,7 +26,7 @@ function parteProducto (nombre) {
     .join('-')
 }
 
-// "Cartucho 300 ml" → "CAR300ML", "Balde 4 gl" → "BAL4GL": el envase
+// "Botella 65 ml" → "BOT65ML", "Caja 305 m" → "CAJ305M": el envase
 // abreviado y la medida completa (es lo que distingue una de otra).
 function partePresentacion (presentacion) {
   const [envase = '', ...resto] = palabras(presentacion)
@@ -42,7 +42,7 @@ function parteColor (nombre) {
 
 /**
  * @param {string} producto nombre del producto
- * @param {string} presentacion "Balde 4 gl"
+ * @param {string} presentacion "Caja 305 m"
  * @param {string} [color] nombre del color (opcional)
  * @returns {string} '' si todavía no hay datos para armarlo
  */

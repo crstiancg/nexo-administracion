@@ -9,9 +9,9 @@ import { desglosarIgv } from '@/utils/igv'
  */
 export function ticketDePrueba (usuario) {
   const items = [
-    { id: 1, nombre: 'Cemento Portland Tipo I', presentacion: 'Bolsa 42.5 kg', cantidad: 3, precio: 29.9 },
-    { id: 2, nombre: 'Impermeabilizante acrílico para techos de alto tránsito', presentacion: 'Galón 4 L', color: 'Blanco', cantidad: 1, precio: 95 },
-    { id: 3, nombre: 'Sellador de silicona', presentacion: 'Cartucho 280 ml', cantidad: 2, precio: 24.9 }
+    { id: 1, nombre: 'Mouse inalámbrico M170', presentacion: 'Unidad', cantidad: 3, precio: 39.9 },
+    { id: 2, nombre: 'Disco sólido SSD SATA 2.5 pulgadas para laptop y PC de escritorio', presentacion: '480 GB', cantidad: 1, precio: 169 },
+    { id: 3, nombre: 'Tinta 544', presentacion: 'Botella 65 ml', color: 'Negro', cantidad: 2, precio: 39 }
   ].map((i) => ({
     id: i.id,
     cantidad: i.cantidad,

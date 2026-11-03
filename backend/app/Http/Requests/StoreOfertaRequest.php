@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
  *
  * - alcance "productos": `productos` = [{ producto_id, variantes: [ids] }].
  *   `variantes` vacío = el producto completo; con ids = sólo esas variantes
- *   (el Sikaflex gris y el blanco, por ejemplo).
+ *   (la tinta negra y la cian, por ejemplo).
  * - alcance "categorias": `categorias` = [ids] (+ incluye_subcategorias).
  *
  * Las fechas llegan en ISO 8601 CON zona horaria ("2026-12-15T23:59:00-05:00"):

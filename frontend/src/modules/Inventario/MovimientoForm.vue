@@ -379,7 +379,7 @@ onMounted(async () => {
   if (destinos.value.length === 1) form.movimiento.sede_destino_id = destinos.value[0].value
 })
 
-// Las unidades fraccionables (kg, m) aceptan decimales; bolsas y baldes, no.
+// Las unidades fraccionables (metro) aceptan decimales; unidades y cajas, no.
 function paso (linea) {
   return linea.variante.unidad?.fraccionable ? '0.001' : '1'
 }

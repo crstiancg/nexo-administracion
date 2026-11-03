@@ -92,7 +92,7 @@ import { formatearPrecio } from '@/utils/moneda'
 import { beepError, beepOk } from '@/utils/sonido'
 
 /**
- * Las presentaciones de un producto (cartucho, galón, balde…) con su stock y
+ * Las presentaciones de un producto (240 GB, 480 GB…) con su stock y
  * su precio de hoy, para elegir cuál se vende. Es el equivalente del
  * "¿unidad o blíster?" de sistema-botica.
  */

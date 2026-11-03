@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             SedeSeeder::class,
             UserSeeder::class,
             CatalogoSeeder::class,
+            TipoEquipoSeeder::class,
         ]);
 
         // Datos de demostración sólo en desarrollo: en producción se arranca

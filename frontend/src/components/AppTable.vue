@@ -11,7 +11,8 @@
       flat
       hide-bottom
       binary-state-sort
-      class="app-table__table"
+      :grid="enTarjetas"
+      :class="['app-table__table', { 'app-table__table--tarjetas': enTarjetas }]"
       @request="onTableRequest"
     >
       <template
@@ -23,6 +24,75 @@
           :name="name"
           v-bind="slotProps ?? {}"
         />
+      </template>
+
+      <!-- Celular: cada fila es una tarjeta. Reusa las celdas que define
+           cada lista (body-cell-*). Arriba el título (1ra columna) y el
+           estado; al medio los datos en dos columnas; abajo el monto
+           destacado y las acciones. Ver partesDe(). -->
+      <template
+        v-if="enTarjetas"
+        #item="item"
+      >
+        <div :class="['app-table__tarjeta', { 'app-table__tarjeta--seleccionada': item.selected }]">
+          <div class="app-table__tarjetaCabecera">
+            <q-checkbox
+              v-if="selection !== 'none'"
+              v-model="item.selected"
+              dense
+              :aria-label="`Seleccionar fila ${item.rowIndex + 1}`"
+            />
+            <div class="app-table__tarjetaTitulo">
+              <component
+                :is="celda(item, partesDe(item).titulo)"
+                v-if="partesDe(item).titulo"
+              />
+            </div>
+            <div
+              v-if="partesDe(item).estado"
+              class="app-table__tarjetaEstado"
+            >
+              <component :is="celda(item, partesDe(item).estado)" />
+            </div>
+          </div>
+
+          <div
+            v-if="partesDe(item).datos.length"
+            class="app-table__tarjetaDatos"
+          >
+            <div
+              v-for="col in partesDe(item).datos"
+              :key="col.name"
+              :class="['app-table__dato', { 'app-table__dato--ancho': col.tarjeta === 'ancho' }]"
+            >
+              <span class="app-table__datoRotulo">{{ col.label }}</span>
+              <div class="app-table__datoValor">
+                <component :is="celda(item, col)" />
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="partesDe(item).monto || partesDe(item).acciones"
+            class="app-table__tarjetaPie"
+          >
+            <div
+              v-if="partesDe(item).monto"
+              class="app-table__monto"
+            >
+              <span class="app-table__datoRotulo">{{ partesDe(item).monto.label }}</span>
+              <div class="app-table__montoValor">
+                <component :is="celda(item, partesDe(item).monto)" />
+              </div>
+            </div>
+            <div
+              v-if="partesDe(item).acciones"
+              class="app-table__tarjetaAcciones"
+            >
+              <component :is="celda(item, partesDe(item).acciones)" />
+            </div>
+          </div>
+        </div>
       </template>
 
       <template
@@ -93,7 +163,8 @@
 </template>
 
 <script setup>
-import { computed, useSlots, watch } from 'vue'
+import { computed, h, useSlots, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import AppCard from './AppCard.vue'
 
 const props = defineProps({
@@ -133,6 +204,12 @@ const props = defineProps({
   filter: {
     type: String,
     default: ''
+  },
+
+  // En el celular las filas se ven como tarjetas. false = siempre tabla.
+  tarjetasEnMovil: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -151,6 +228,53 @@ const selectedModel = defineModel('selected', {
 })
 
 const slots = useSlots()
+const $q = useQuasar()
+
+// ── Tarjetas (celular) ──
+// Sin información de pantalla (tests, SSR) va la tabla.
+const enTarjetas = computed(() => props.tarjetasEnMovil && Boolean($q?.screen?.lt.sm))
+
+// Columnas que se reconocen solas por el nombre. Una lista puede decidirlo
+// a mano con `tarjeta` en la columna: 'estado' | 'monto' | 'ancho' | 'oculto'.
+const NOMBRES_ESTADO = ['estado', 'activo', 'status']
+const NOMBRES_MONTO = ['saldo', 'total', 'monto', 'importe', 'precio_venta', 'precio']
+
+/**
+ * Reparte las columnas de la fila en las partes de la tarjeta: título (la
+ * primera), estado (arriba a la derecha), datos (al medio), monto (abajo,
+ * grande) y acciones (abajo a la derecha). Lo que una lista marca como
+ * `tarjeta: 'oculto'` no aparece en el celular.
+ */
+function partesDe (item) {
+  const cols = item.cols.filter((col) => col.tarjeta !== 'oculto')
+  const ultima = cols[cols.length - 1]
+  const acciones = ultima && cols.length > 1 && (ultima.name === 'acciones' || !ultima.label) ? ultima : null
+  const resto = cols.filter((col) => col !== acciones)
+  const titulo = resto[0] ?? null
+
+  const elegir = (tipo, nombres) => resto.find((col) => col !== titulo && col.tarjeta === tipo) ??
+    [...resto].reverse().find((col) => col !== titulo && !col.tarjeta && nombres.includes(col.name)) ??
+    null
+  const estado = elegir('estado', NOMBRES_ESTADO)
+  const monto = elegir('monto', NOMBRES_MONTO)
+
+  return {
+    titulo,
+    estado,
+    monto,
+    acciones,
+    datos: resto.filter((col) => ![titulo, estado, monto].includes(col))
+  }
+}
+
+// La celda de una columna: la que define la lista (body-cell-<nombre>, que
+// usa <q-td :props>) o, si no hay, el valor ya formateado.
+function celda (item, col) {
+  const slot = slots[`body-cell-${col.name}`]
+  if (!slot) return () => h('span', col.value)
+  const scope = { key: item.key, row: item.row, rowIndex: item.rowIndex, pageIndex: item.pageIndex, col, value: col.value, selected: item.selected }
+  return () => slot(scope)
+}
 
 // El slot no-data lo resuelve el componente por default (texto en
 // castellano, ver noDataLabel); si quien lo usa manda su propio slot
@@ -273,11 +397,149 @@ defineExpose({ requestServerInteraction, actualizar })
     color: var(--app-ink);
   }
 
-  // El tinte de la fila seleccionada es el mismo del negativo suave: no es
-  // casualidad, es la única tinta rojiza que el sistema ya tiene definida
-  // para los dos temas.
+  // La fila seleccionada lleva el tinte de la marca.
   :deep(tbody tr.selected) {
-    background: var(--app-negative-soft);
+    background: var(--app-brand-soft);
+  }
+}
+
+// ── Tarjetas (celular) ──
+.app-table__table--tarjetas {
+  :deep(.q-table__grid-content) {
+    gap: 10px;
+    padding: 12px;
+  }
+}
+
+.app-table__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  padding: 14px 14px 14px;
+  overflow: hidden;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 12px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+
+  // Las celdas de cada lista vienen como <td>: acá son bloques sueltos.
+  :deep(td) {
+    display: block;
+    padding: 0 !important;
+    border: 0 !important;
+    height: auto !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+}
+
+.app-table__tarjeta--seleccionada {
+  border-color: $primary;
+  background: var(--app-brand-soft);
+}
+
+// Cabecera: título fuerte a la izquierda, estado arriba a la derecha.
+.app-table__tarjetaCabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.app-table__tarjetaTitulo {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--app-ink);
+}
+
+.app-table__tarjetaEstado {
+  flex-shrink: 0;
+}
+
+// Datos: dos columnas, el rótulo chico encima del valor (se lee de arriba
+// abajo, como una ficha). Uno largo puede ocupar el ancho entero.
+.app-table__tarjetaDatos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--app-border-subtle);
+}
+
+.app-table__dato {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.app-table__dato--ancho {
+  grid-column: 1 / -1;
+}
+
+.app-table__datoRotulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--app-ink-2);
+}
+
+.app-table__datoValor {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--app-ink);
+  overflow-wrap: anywhere;
+}
+
+// Pie: el monto en grande a la izquierda y las acciones a la derecha.
+.app-table__tarjetaPie {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -14px -14px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--app-border-subtle);
+  border-radius: 0 0 12px 12px;
+  background: var(--app-page);
+}
+
+.app-table__monto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-table__montoValor {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-ink);
+
+  // Las celdas de monto traen su texto chico de apoyo ("de S/ 408.00"):
+  // queda chico; lo grande es el número.
+  :deep(.os-meta),
+  :deep([class*='meta']) {
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+}
+
+.app-table__tarjetaAcciones {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-left: auto;
+
+  // Botones de acción más cómodos para el pulgar.
+  :deep(.q-btn) {
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 

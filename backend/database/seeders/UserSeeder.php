@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
         // En producción la clave del admin sale del entorno: nunca la de
         // ejemplo que está en el código.
         $clave = env('ADMIN_PASSWORD');
-        if (! $clave && ! app()->environment('local')) {
+        if (! $clave && ! app()->environment(['local', 'testing'])) {
             throw new \RuntimeException('Definí ADMIN_PASSWORD antes de sembrar en producción.');
         }
 

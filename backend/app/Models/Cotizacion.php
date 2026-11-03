@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * `valida_hasta` pasada se muestra como vencida. Los cambios de estado pasan
  * por App\Services\Cotizaciones.
  */
-#[Fillable(['cliente_id', 'valida_hasta', 'condiciones', 'observacion', 'descuento'])]
+#[Fillable(['cliente_id', 'valida_hasta', 'forma_pago', 'entrega', 'condiciones', 'observacion', 'descuento'])]
 class Cotizacion extends Model
 {
     public const PENDIENTE = 'pendiente';

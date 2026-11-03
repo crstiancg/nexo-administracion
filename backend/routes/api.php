@@ -15,6 +15,7 @@ use App\Http\Controllers\OfertaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PanelController;
 use App\Http\Controllers\OrdenCompraController;
+use App\Http\Controllers\OrdenServicioController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ProductoController;
@@ -22,6 +23,8 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\SeguimientoController;
+use App\Http\Controllers\TipoEquipoController;
 use App\Http\Controllers\UnidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentaController;
@@ -31,6 +34,13 @@ use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
 
 // El login es POST /oauth/token (password grant), lo registra Passport.
+
+// Seguimiento público de una orden de servicio (QR del ticket / WhatsApp):
+// sin sesión, por el token de la orden.
+Route::get('seguimiento/{token}', [SeguimientoController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->where('token', '[A-Za-z0-9]{32}')
+    ->name('seguimiento.show');
 
 // {usuario}: el usuario reservado (config permisos.usuario_oculto) sólo
 // existe para él mismo; para cualquier otro, 404 (ver, editar, borrar…).
@@ -92,6 +102,15 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
             ->name('proveedores.consultar-ruc');
         Route::apiResource('proveedores', ProveedorController::class)->parameters(['proveedores' => 'proveedor']);
 
+        // Servicio técnico. resumen y tecnicos van antes del resource: si no,
+        // {orden} los captura. Sin destroy: una orden se entrega o se abandona.
+        Route::apiResource('tipos-equipo', TipoEquipoController::class);
+        Route::get('ordenes-servicio/resumen', [OrdenServicioController::class, 'resumen'])->name('ordenes-servicio.resumen');
+        Route::get('ordenes-servicio/tecnicos', [OrdenServicioController::class, 'tecnicos'])->name('ordenes-servicio.tecnicos');
+        Route::apiResource('ordenes-servicio', OrdenServicioController::class)
+            ->parameters(['ordenes-servicio' => 'orden'])
+            ->except(['destroy']);
+
         // Una compra no se edita ni se borra: se anula.
         Route::apiResource('compras', CompraController::class)->only(['index', 'store', 'show']);
 
@@ -145,6 +164,11 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('reportes/productos', [ReporteController::class, 'productos'])->name('reportes.productos');
     Route::get('reportes/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');
+
+    // Cambiar de estado (entregar confirma el cobro y descuenta repuestos).
+    Route::post('ordenes-servicio/{orden}/estado', [OrdenServicioController::class, 'estado'])->name('ordenes-servicio.estado');
+    // Enlaces firmados para imprimir la orden (A4) y la etiqueta del equipo.
+    Route::post('ordenes-servicio/{orden}/impresion', [OrdenServicioController::class, 'impresion'])->name('ordenes-servicio.impresion');
 
     Route::post('pedidos/{pedido}/confirmar', [PedidoController::class, 'confirmar'])->name('pedidos.confirmar');
     Route::post('pedidos/{pedido}/entregar', [PedidoController::class, 'entregar'])->name('pedidos.entregar');

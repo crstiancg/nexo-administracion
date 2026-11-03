@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Pedido de mercadería a un proveedor (Sika, …). No mueve stock: entra
+        // Pedido de mercadería a un proveedor (un mayorista, …). No mueve stock: entra
         // recién cuando llega y se registra la compra que nace de ella.
         Schema::create('ordenes_compra', function (Blueprint $table) {
             $table->id();

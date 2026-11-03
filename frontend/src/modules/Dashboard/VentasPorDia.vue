@@ -8,7 +8,7 @@
       :width="ancho"
       :height="ALTO"
       role="img"
-      :aria-label="`Ventas de los últimos ${dias.length} días`"
+      :aria-label="porMes ? `Ventas de los últimos ${dias.length} meses` : `Ventas de los últimos ${dias.length} días`"
       class="grafico__svg"
       @mouseleave="activo = null"
     >
@@ -49,7 +49,7 @@
           :y="ALTO - 6"
           text-anchor="middle"
           :class="['grafico__x', { 'grafico__x--hoy': i === dias.length - 1 }]"
-        >{{ i === dias.length - 1 ? 'Hoy' : diaCorto(d.fecha) }}</text>
+        >{{ i === dias.length - 1 ? (porMes ? 'Este mes' : 'Hoy') : (porMes ? mesCorto(d.fecha) : diaCorto(d.fecha)) }}</text>
         <!-- Zona de hover: toda la columna, más grande que la barra. -->
         <rect
           :x="MARGEN.izq + i * paso"
@@ -70,7 +70,7 @@
       role="status"
     >
       <div class="grafico__tooltipFecha">
-        {{ fechaLarga(dias[activo].fecha) }}
+        {{ porMes ? mesLargo(dias[activo].fecha) : fechaLarga(dias[activo].fecha) }}
       </div>
       <div class="grafico__tooltipValor text-mono">
         {{ formatearPrecio(dias[activo].total) }}
@@ -87,7 +87,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatearPrecio } from '@/utils/moneda'
 
 /**
- * Barras de ventas por día (una serie: sin leyenda, el título la nombra).
+ * Barras de ventas por día o por mes (una serie: sin leyenda, el título la
+ * nombra). El período actual va al 100% y el resto atenuado (diseño: "un
+ * solo matiz, el período actual destacado").
  * SVG a mano y no una librería: es un solo gráfico. Ancho medido con
  * ResizeObserver para que el texto y las esquinas no se deformen.
  */
@@ -96,6 +98,12 @@ const props = defineProps({
   dias: {
     type: Array,
     required: true
+  },
+
+  // Cada barra es un mes ('YYYY-MM-01'): cambian las etiquetas y el tooltip.
+  porMes: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -147,10 +155,12 @@ function barra (i, valor) {
   return `M${x},${base} V${tope + r} Q${x},${tope} ${x + r},${tope} H${x + w - r} Q${x + w},${tope} ${x + w},${tope + r} V${base} Z`
 }
 
-// Con columnas angostas, una etiqueta sí y otra no (siempre "Hoy").
+// Con columnas angostas, una etiqueta cada 2 (o 3, con muchos meses);
+// siempre la del período actual.
 function mostrarEtiqueta (i) {
   if (i === props.dias.length - 1) return true
-  return paso.value >= 36 || (props.dias.length - 1 - i) % 2 === 0
+  const cada = paso.value >= 36 ? 1 : paso.value >= 18 ? 2 : 3
+  return (props.dias.length - 1 - i) % cada === 0
 }
 
 function etiquetaEje (valor) {
@@ -163,6 +173,18 @@ const formatoLargo = new Intl.DateTimeFormat('es-PE', { weekday: 'long', day: 'n
 
 function diaCorto (iso) {
   return formatoDia.format(new Date(`${iso}T00:00:00Z`))
+}
+
+const formatoMes = new Intl.DateTimeFormat('es-PE', { month: 'short', timeZone: 'UTC' })
+const formatoMesLargo = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+function mesCorto (iso) {
+  return formatoMes.format(new Date(`${iso}T00:00:00Z`)).replace('.', '')
+}
+
+function mesLargo (iso) {
+  const texto = formatoMesLargo.format(new Date(`${iso}T00:00:00Z`))
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 function fechaLarga (iso) {
@@ -180,9 +202,8 @@ const estiloTooltip = computed(() => {
 
 <style lang="scss" scoped>
 .grafico {
-  // Ámbar oscuro y no el amarillo de marca: #f3c01e sobre blanco da 1.65:1
-  // (validado con el validador de paletas; éste pasa en claro y oscuro).
-  --grafico-barra: #B7860B;
+  // El azul de la marca (pasa 3:1 contra la superficie en claro y oscuro).
+  --grafico-barra: #{$primary};
 
   position: relative;
   width: 100%;
@@ -190,7 +211,7 @@ const estiloTooltip = computed(() => {
 }
 
 :global(body.body--dark) .grafico {
-  --grafico-barra: #B8890D;
+  --grafico-barra: #60A5FA;
 }
 
 .grafico__svg {
@@ -212,7 +233,7 @@ const estiloTooltip = computed(() => {
 
 .grafico__barra {
   fill: var(--grafico-barra);
-  opacity: 0.85;
+  opacity: 0.3;
   transition: opacity 0.12s ease;
 
   &--hoy,

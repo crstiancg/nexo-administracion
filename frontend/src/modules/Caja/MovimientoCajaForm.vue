@@ -25,7 +25,7 @@
       label="Concepto"
       icon="notes"
       maxlength="200"
-      :placeholder="tipo === 'egreso' ? 'Pago de bolsas al proveedor' : 'Sencillo adicional'"
+      :placeholder="tipo === 'egreso' ? 'Pago de repuestos al proveedor' : 'Sencillo adicional'"
       :error="form.errors['movimiento.concepto']"
       @change="form.validate('movimiento.concepto')"
     />

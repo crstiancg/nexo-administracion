@@ -30,9 +30,11 @@ $typography-font-family : 'Manrope Variable', 'Manrope', -apple-system, BlinkMac
 $font-mono : 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
 
-$primary   : #3B82F6;
+// Azul del anillo del logo de Nexo, un punto más profundo para que el
+// blanco encima pase AA (5.17:1).
+$primary   : #2563EB;
 $secondary : #6B7280;
-$accent    : #1F2937;
+$accent    : #0B1B3D;
 
 // Estas dos son de Quasar y su semántica coincide EXACTA con nuestros roles:
 // $dark es la superficie de componente en oscuro, $dark-page el fondo de

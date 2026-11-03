@@ -53,20 +53,23 @@ class Pedidos
             // presentación (lo aplica solo un cliente mayorista o lo elige el
             // vendedor en el punto de venta).
             $preciosMayor = Variante::query()
-                ->whereKey(collect($datos['items'])->pluck('variante_id'))
+                ->whereKey(collect($datos['items'])->pluck('variante_id')->filter())
                 ->whereNotNull('precio_mayor')
                 ->pluck('precio_mayor', 'id');
 
             foreach ($datos['items'] as $item) {
                 $linea = round((float) $item['cantidad'] * (float) $item['precio_unitario'], 2);
                 $subtotal += $linea;
+                // Sin presentación = servicio (mano de obra de una orden).
+                $varianteId = $item['variante_id'] ?? null;
 
                 $pedido->items()->create([
-                    'variante_id' => $item['variante_id'],
+                    'variante_id' => $varianteId,
+                    'descripcion' => $varianteId ? null : ($item['descripcion'] ?? null),
                     'cantidad' => $item['cantidad'],
                     'precio_unitario' => $item['precio_unitario'],
-                    'por_mayor' => $preciosMayor->has($item['variante_id'])
-                        && abs((float) $preciosMayor->get($item['variante_id']) - (float) $item['precio_unitario']) < 0.005,
+                    'por_mayor' => $varianteId && $preciosMayor->has($varianteId)
+                        && abs((float) $preciosMayor->get($varianteId) - (float) $item['precio_unitario']) < 0.005,
                     'subtotal' => $linea,
                 ]);
             }
@@ -103,18 +106,26 @@ class Pedidos
             $pedido = Pedido::query()->whereKey($pedido->id)->lockForUpdate()->firstOrFail();
             $this->exigirEstado($pedido, [Pedido::PENDIENTE], 'confirmar');
 
-            $items = $pedido->items()->with('variante.producto:id,nombre')->orderBy('id')->get();
+            $todos = $pedido->items()->with('variante.producto:id,nombre')->orderBy('id')->get();
+            // Los servicios (mano de obra) no mueven stock ni tienen costo de
+            // mercadería: costo 0, para que la ganancia del pedido se calcule.
+            $items = $todos->reject(fn ($i) => $i->esServicio())->values();
+            foreach ($todos->filter(fn ($i) => $i->esServicio()) as $servicio) {
+                $servicio->forceFill(['costo_unitario' => 0])->save();
+            }
 
             try {
-                $this->inventario->salida(
-                    $pedido->sede_id,
-                    $items->map(fn ($i) => ['variante_id' => $i->variante_id, 'cantidad' => $i->cantidad])->all(),
-                    MovimientoInventario::MOTIVO_VENTA,
-                    $pedido->codigo,
-                    null,
-                    $usuario,
-                    ['pedido_id' => $pedido->id],
-                );
+                if ($items->isNotEmpty()) {
+                    $this->inventario->salida(
+                        $pedido->sede_id,
+                        $items->map(fn ($i) => ['variante_id' => $i->variante_id, 'cantidad' => $i->cantidad])->all(),
+                        MovimientoInventario::MOTIVO_VENTA,
+                        $pedido->codigo,
+                        null,
+                        $usuario,
+                        ['pedido_id' => $pedido->id],
+                    );
+                }
             } catch (ValidationException $e) {
                 // Las líneas del inventario son los ítems en el mismo orden:
                 // el error se muestra en el ítem del pedido, con el nombre del
@@ -230,6 +241,11 @@ class Pedidos
     /** La mercadería vuelve a los lotes de los que salió. */
     private function devolverStock(Pedido $pedido, ?User $usuario): void
     {
+        $items = $pedido->items()->whereNotNull('variante_id')->get();
+        if ($items->isEmpty()) {
+            return;
+        }
+
         $ventas = $pedido->movimientos()
             ->where('motivo', MovimientoInventario::MOTIVO_VENTA)
             ->with('lotes')
@@ -238,7 +254,7 @@ class Pedidos
 
         $this->inventario->entrada(
             $pedido->sede_id,
-            $pedido->items()->get()->map(fn ($i) => [
+            $items->map(fn ($i) => [
                 'variante_id' => $i->variante_id,
                 'cantidad' => $i->cantidad,
                 // Sin costo conocido, la devolución no toca el promedio.

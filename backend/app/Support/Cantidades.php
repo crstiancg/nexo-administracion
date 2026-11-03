@@ -22,7 +22,7 @@ class Cantidades
     }
 
     /**
-     * Una bolsa o un balde no se venden por la mitad: con una unidad que no
+     * Un mouse o un disco no se venden por la mitad: con una unidad que no
      * es fraccionable la cantidad tiene que ser entera.
      */
     public static function segunUnidad(mixed $varianteId): Closure

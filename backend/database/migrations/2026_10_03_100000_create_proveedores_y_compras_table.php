@@ -64,7 +64,7 @@ return new class extends Migration
             $table->foreignId('compra_id')->nullable()->after('pedido_id')->constrained('compras')->restrictOnDelete();
         });
 
-        // Presupuesto para un cliente (constructoras, ferreterías). No mueve
+        // Presupuesto para un cliente (empresas, colegios, instituciones). No mueve
         // stock: al aceptarla se convierte en un pedido pendiente.
         Schema::create('cotizaciones', function (Blueprint $table) {
             $table->id();

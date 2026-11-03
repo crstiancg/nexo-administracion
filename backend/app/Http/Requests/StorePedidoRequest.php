@@ -50,7 +50,8 @@ class StorePedidoRequest extends FormRequest
     {
         $rules = [
             'pedido.cliente_id' => ['nullable', 'integer', 'exists:clientes,id'],
-            'pedido.canal' => ['required', Rule::in(array_keys(Pedido::CANALES))],
+            // "servicio" lo pone sólo una orden de servicio.
+            'pedido.canal' => ['required', Rule::in(array_diff(array_keys(Pedido::CANALES), [Pedido::CANAL_SERVICIO]))],
             'pedido.descuento' => ['numeric', 'min:0', 'max:99999999.99', 'decimal:0,2', $this->descuentoNoMayorAlSubtotal()],
             'pedido.observacion' => ['nullable', 'string', 'max:500'],
             'pedido.items' => ['required', 'array', 'min:1', 'max:'.self::MAX_ITEMS],

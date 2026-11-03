@@ -28,6 +28,18 @@ class PermissionSeeder extends Seeder
         'cotizaciones.index', 'cotizaciones.show', 'cotizaciones.store', 'cotizaciones.update', 'cotizaciones.convertir', 'cotizaciones.rechazar',
         // Consultar productos, stock y vencimientos (sin editar)
         'productos.index', 'inventario.lotes',
+        // Recepción del taller: recibe equipos, avisa y entrega
+        'ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado',
+    ];
+
+    /**
+     * Permisos del rol Técnico: trabaja las órdenes (diagnóstico, repuestos,
+     * estados) y consulta el stock. No cobra ni maneja caja.
+     */
+    public const TECNICO = [
+        'ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado',
+        'clientes.index', 'clientes.show', 'clientes.store', 'clientes.consultar-documento',
+        'productos.index', 'inventario.index',
     ];
 
     public function run(): void
@@ -47,6 +59,9 @@ class PermissionSeeder extends Seeder
         // anula ni devuelve dinero, y no administra catálogos ni usuarios.
         $vendedor = Role::firstOrCreate(['name' => 'Vendedor', 'guard_name' => 'api']);
         $vendedor->syncPermissions(Permission::where('guard_name', 'api')->whereIn('name', self::VENDEDOR)->get());
+
+        $tecnico = Role::firstOrCreate(['name' => 'Técnico', 'guard_name' => 'api']);
+        $tecnico->syncPermissions(Permission::where('guard_name', 'api')->whereIn('name', self::TECNICO)->get());
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

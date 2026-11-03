@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Crea y actualiza un producto junto con sus presentaciones (variantes:
- * "Balde 4 gl", "Cartucho 300 ml gris"...).
+ * "240 GB", "Botella 65 ml negra"...).
  * Payload anidado en `producto`; las variantes en `producto.variantes`.
  *
  * El stock NO viene en el payload: sólo lo mueve el inventario.

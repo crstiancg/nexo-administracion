@@ -133,16 +133,9 @@ describe('Contraste — el relleno de marca, en los dos temas', () => {
     expect(contrast('#ffffff', PRIMARY_HOVER)).toBeGreaterThanOrEqual(AA_TEXT)
   })
 
-  it('blanco sobre $primary NO llega a AA de texto normal', () => {
-    // LIMITACIÓN CONOCIDA Y MEDIDA: el azul de marca da ~3.68:1 con texto
-    // blanco. Alcanza para AA de texto grande y para componentes de UI (3:1),
-    // pero NO para texto normal (4.5:1), y el label del botón mide 13.5px.
-    //
-    // Se arregla usando $primary-hover como relleno de reposo (6.70:1) —
-    // decisión de marca, no técnica, así que queda documentada acá con su
-    // número en vez de escondida.
-    const ratio = contrast('#ffffff', PRIMARY)
-    expect(ratio).toBeGreaterThanOrEqual(AA_LARGE)
-    expect(ratio).toBeLessThan(AA_TEXT)
+  it('blanco sobre $primary también pasa AA (el azul de Nexo es profundo)', () => {
+    // El azul de marca da ~5.17:1 con texto blanco: el label del botón
+    // (13.5px) se lee bien sobre el relleno de reposo, sin depender del hover.
+    expect(contrast('#ffffff', PRIMARY)).toBeGreaterThanOrEqual(AA_TEXT)
   })
 })

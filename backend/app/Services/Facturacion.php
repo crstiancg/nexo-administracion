@@ -218,11 +218,12 @@ class Facturacion
             $sumaValor += $valor;
 
             $variante = $item->variante;
+            // Un servicio (mano de obra) va con la unidad ZZ del catálogo 03.
             $detalles[] = [
-                'codProducto' => $variante?->sku ?: "V{$item->variante_id}",
-                'unidad' => $variante?->unidad?->codigo_sunat ?: 'NIU',
+                'codProducto' => $item->esServicio() ? 'SERV' : ($variante?->sku ?: "V{$item->variante_id}"),
+                'unidad' => $item->esServicio() ? 'ZZ' : ($variante?->unidad?->codigo_sunat ?: 'NIU'),
                 'cantidad' => (float) $item->cantidad,
-                'descripcion' => mb_substr(trim(implode(' ', array_filter([
+                'descripcion' => mb_substr($item->esServicio() ? (string) $item->descripcion : trim(implode(' ', array_filter([
                     $variante?->producto?->nombre, $variante?->presentacion, $variante?->color?->nombre,
                 ]))), 0, 250),
                 'mtoValorUnitario' => round((float) $item->precio_unitario / $tasa, 6),

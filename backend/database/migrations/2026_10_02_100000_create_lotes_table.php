@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('productos', function (Blueprint $table) {
-            // Adhesivos, aditivos, morteros: vencen. Con esto prendido cada
+            // Tintas, pasta térmica: vencen. Con esto prendido cada
             // entrada pide lote y vencimiento, y las salidas descuentan del
             // lote que vence primero.
             $table->boolean('maneja_lotes')->default(false)->after('activo');

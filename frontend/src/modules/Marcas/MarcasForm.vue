@@ -8,7 +8,7 @@
       v-model="form.marca.nombre"
       label="Nombre"
       icon="verified"
-      placeholder="Sika, Chema, Z Aditivos…"
+      placeholder="HP, Lenovo, Kingston…"
       maxlength="60"
       :error="form.errors[`${PATH}.nombre`]"
       :loading="form.validating"

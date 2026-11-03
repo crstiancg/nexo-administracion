@@ -39,7 +39,7 @@ class Oferta extends Model
         return $this->morphedByMany(Producto::class, 'ofertable');
     }
 
-    /** Variantes puntuales (el Sikaflex gris en cartucho), sin el resto del producto. */
+    /** Variantes puntuales (la tinta negra en botella), sin el resto del producto. */
     public function variantes(): MorphToMany
     {
         return $this->morphedByMany(Variante::class, 'ofertable');

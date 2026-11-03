@@ -120,7 +120,7 @@
             @click="ver(props.row)"
           />
           <q-btn
-            v-if="props.row.editable && userStore.hasPermission('pedidos.update')"
+            v-if="props.row.editable && props.row.canal !== 'servicio' && userStore.hasPermission('pedidos.update')"
             flat
             dense
             round
@@ -567,11 +567,13 @@ watch(() => route.query.ver, (id) => {
   router.replace({ query: { ...route.query, ver: undefined } })
 }, { immediate: true })
 
+// `servicio`: también vale para el cobro de una orden de servicio. Lo demás
+// (editar, confirmar, entregar…) se hace desde la orden.
 const REGLAS = {
   editar: { estados: ['pendiente'], permiso: 'pedidos.update' },
   // Un pendiente puede recibir un adelanto.
-  cobrar: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.pagos', saldo: true },
-  devolver: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.devoluciones', pagado: true },
+  cobrar: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.pagos', saldo: true, servicio: true },
+  devolver: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.devoluciones', pagado: true, servicio: true },
   confirmar: { estados: ['pendiente'], permiso: 'pedidos.confirmar' },
   entregar: { estados: ['confirmado'], permiso: 'pedidos.entregar' },
   cancelar: { estados: ['pendiente', 'confirmado'], permiso: 'pedidos.cancelar' },
@@ -583,6 +585,7 @@ function puede (accion) {
   const regla = REGLAS[accion]
   const p = detalle.value
   return Boolean(p) &&
+    (regla.servicio || p.canal !== 'servicio') &&
     regla.estados.includes(p.estado) &&
     userStore.hasPermission(regla.permiso) &&
     (!regla.saldo || Number(p.saldo) > 0) &&

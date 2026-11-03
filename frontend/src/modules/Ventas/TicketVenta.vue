@@ -73,7 +73,12 @@
       class="ticket__item"
     >
       <div>
-        {{ item.variante.producto?.nombre }} {{ item.variante.presentacion }} {{ item.variante.color?.nombre }}
+        <template v-if="item.variante">
+          {{ item.variante.producto?.nombre }} {{ item.variante.presentacion }} {{ item.variante.color?.nombre }}
+        </template>
+        <template v-else>
+          {{ item.descripcion }}
+        </template>
       </div>
       <div class="ticket__fila">
         <span>{{ item.cantidad }} x {{ formatearPrecio(item.precio_unitario) }}</span>

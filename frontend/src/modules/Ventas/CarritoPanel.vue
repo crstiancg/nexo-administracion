@@ -162,7 +162,7 @@
                   size="12px"
                 />
               </button>
-              <!-- Se escribe la cantidad (20 bolsas, 2.5 kg) o se ajusta con
+              <!-- Se escribe la cantidad (20 unidades, 2.5 m) o se ajusta con
                    + / −. Al enfocarla queda seleccionada: se tipea encima. -->
               <input
                 :value="item.cantidad"

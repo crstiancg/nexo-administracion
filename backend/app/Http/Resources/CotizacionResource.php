@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Cotizacion;
+use App\Support\NumeroALetras;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,8 @@ class CotizacionResource extends JsonResource
             'sede' => $this->whenLoaded('sede', fn () => $this->sede?->only(['id', 'nombre', 'direccion', 'telefono'])),
             'fecha' => $this->created_at?->toIso8601String(),
             'valida_hasta' => $this->valida_hasta?->toDateString(),
+            'forma_pago' => $this->forma_pago,
+            'entrega' => $this->entrega,
             'condiciones' => $this->condiciones,
             'observacion' => $this->observacion,
             'subtotal' => $this->subtotal,
@@ -35,6 +38,8 @@ class CotizacionResource extends JsonResource
             // IGV incluido en el total: base imponible + IGV = total.
             'op_gravada' => $this->op_gravada,
             'igv' => $this->igv,
+            // "SON OCHOCIENTOS … CON 00/100 SOLES": va impreso en la proforma.
+            'total_letras' => NumeroALetras::convertir((float) $this->total, 'SOLES'),
             'items_count' => $this->whenCounted('items'),
             // Con VarianteStockResource: el form edita los ítems igual que
             // los de un pedido (producto, presentación, stock de hoy).

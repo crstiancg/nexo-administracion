@@ -40,7 +40,7 @@
         >Canal</label>
         <q-select
           v-model="form.pedido.canal"
-          :options="CANALES"
+          :options="CANALES.filter((c) => c.value !== 'servicio')"
           :aria-labelledby="`${uid}-canal`"
           :error="Boolean(form.errors[`${PATH}.canal`])"
           :error-message="form.errors[`${PATH}.canal`]"

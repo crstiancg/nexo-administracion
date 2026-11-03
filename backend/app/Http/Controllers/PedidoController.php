@@ -9,6 +9,7 @@ use App\Services\Pedidos;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Los pedidos no se borran: se cancelan (son historial de ventas). Sólo un
@@ -60,6 +61,8 @@ class PedidoController extends Controller
 
     public function update(StorePedidoRequest $request, Pedido $pedido): JsonResponse
     {
+        $this->noDeServicio($pedido);
+
         if (! $pedido->editable()) {
             return response()->json([
                 'message' => "Un pedido {$pedido->estado} ya no se edita.",
@@ -73,27 +76,49 @@ class PedidoController extends Controller
 
     public function confirmar(Request $request, Pedido $pedido): JsonResponse
     {
+        $this->noDeServicio($pedido);
+
         return response()->json($this->conDetalle($this->pedidos->confirmar($pedido, $request->user())));
     }
 
     public function entregar(Pedido $pedido): JsonResponse
     {
+        $this->noDeServicio($pedido);
+
         return response()->json($this->conDetalle($this->pedidos->entregar($pedido)));
     }
 
     public function cancelar(Request $request, Pedido $pedido): JsonResponse
     {
+        $this->noDeServicio($pedido);
+
         return response()->json($this->conDetalle($this->pedidos->cancelar($pedido, $request->user())));
     }
 
     /** Anula una venta ya hecha: vuelven stock y plata. Pide el motivo. */
     public function anular(Request $request, Pedido $pedido): JsonResponse
     {
+        $this->noDeServicio($pedido);
+
         $motivo = $request->validate([
             'motivo' => ['required', 'string', 'max:255'],
         ], [], ['motivo' => 'motivo'])['motivo'];
 
         return response()->json($this->conDetalle($this->pedidos->anular($pedido, trim($motivo), $request->user())));
+    }
+
+    /**
+     * El pedido de una orden de servicio se edita, se confirma y se entrega
+     * desde la orden (que descuenta los repuestos al entregar el equipo). Acá
+     * sólo se cobra y se emite el comprobante.
+     */
+    private function noDeServicio(Pedido $pedido): void
+    {
+        if ($pedido->esDeServicio()) {
+            throw ValidationException::withMessages([
+                'estado' => 'Este pedido es el cobro de una orden de servicio: se gestiona desde la orden.',
+            ])->status(409);
+        }
     }
 
     /**

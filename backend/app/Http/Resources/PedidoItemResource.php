@@ -18,6 +18,8 @@ class PedidoItemResource extends JsonResource
         return [
             'id' => $this->id,
             'variante_id' => $this->variante_id,
+            // Sólo en los servicios (sin presentación): la mano de obra.
+            'descripcion' => $this->descripcion,
             'cantidad' => $this->cantidad,
             'precio_unitario' => $this->precio_unitario,
             'por_mayor' => (bool) $this->por_mayor,

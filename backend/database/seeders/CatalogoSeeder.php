@@ -8,45 +8,50 @@ use App\Models\Unidad;
 use Illuminate\Database\Seeder;
 
 /**
- * Catálogo base de una tienda de materiales de construcción: unidades de
- * venta, la marca principal y las categorías (como las de un distribuidor
- * Sika). Se puede correr de nuevo: no duplica.
+ * Catálogo base de una tienda de tecnología con servicio técnico: unidades de
+ * venta, las marcas más comunes (sirven para los productos y para los equipos
+ * de las órdenes de servicio) y las categorías. Se puede correr de nuevo: no
+ * duplica.
  */
 class CatalogoSeeder extends Seeder
 {
+    public const MARCAS = [
+        'Genérico', 'Acer', 'Apple', 'Asus', 'Brother', 'Canon', 'Dell', 'Epson', 'Genius', 'HP',
+        'Huawei', 'Kingston', 'Lenovo', 'LG', 'Logitech', 'Motorola', 'Samsung', 'Sony', 'Toshiba',
+        'TP-Link', 'Xiaomi',
+    ];
+
     public function run(): void
     {
-        // [nombre, abreviatura, fraccionable]
+        // [nombre, abreviatura, fraccionable, código SUNAT (catálogo 03)]
         $unidades = [
-            ['Unidad', 'UND', false],
-            ['Bolsa', 'BLS', false],
-            ['Saco', 'SCO', false],
-            ['Balde', 'BLD', false],
-            ['Galón', 'GL', false],
-            ['Litro', 'L', true],
-            ['Cilindro', 'CIL', false],
-            ['Cartucho', 'CRT', false],
-            ['Lata', 'LT', false],
-            ['Caja', 'CJ', false],
-            ['Rollo', 'RLL', false],
-            ['Kit', 'KIT', false],
-            ['Kilogramo', 'KG', true],
-            ['Metro', 'M', true],
-            ['Metro cuadrado', 'M2', true],
+            ['Unidad', 'UND', false, 'NIU'],
+            ['Caja', 'CJ', false, 'BX'],
+            ['Paquete', 'PQT', false, 'PK'],
+            ['Kit', 'KIT', false, 'KT'],
+            ['Rollo', 'RLL', false, 'RO'],
+            ['Metro', 'M', true, 'MTR'],
         ];
-        foreach ($unidades as [$nombre, $abreviatura, $fraccionable]) {
-            Unidad::firstOrCreate(['nombre' => $nombre], ['abreviatura' => $abreviatura, 'fraccionable' => $fraccionable]);
+        foreach ($unidades as [$nombre, $abreviatura, $fraccionable, $sunat]) {
+            Unidad::firstOrCreate(
+                ['nombre' => $nombre],
+                ['abreviatura' => $abreviatura, 'fraccionable' => $fraccionable, 'codigo_sunat' => $sunat],
+            );
         }
 
-        Marca::firstOrCreate(['nombre' => 'Sika'], ['activo' => true]);
+        foreach (self::MARCAS as $marca) {
+            Marca::firstOrCreate(['nombre' => $marca], ['activo' => true]);
+        }
 
         $categorias = [
-            'Sellantes y Adhesivos' => ['Acrílicos e imprimantes', 'Poliuretanos', 'Siliconas'],
-            'Grouting y Anclajes' => ['Grouting y nivelación de maquinarias', 'Anclajes'],
-            'Impermeabilizantes' => ['Techos y cubiertas', 'Para mezclas de concreto', 'Estructuras de concreto'],
-            'Pegamentos para Cerámicos' => [],
-            'Reparación y Reforzamiento' => ['Morteros de reparación', 'Puentes de adherencia', 'Inyección estructural'],
-            'Aditivos para Concreto' => [],
+            'Accesorios' => ['Mouse y teclados', 'Audífonos y parlantes', 'Cables y adaptadores', 'Cargadores'],
+            'Almacenamiento' => ['Discos SSD', 'Memorias USB y microSD'],
+            'Componentes' => ['Memorias RAM', 'Fuentes de poder', 'Pasta térmica y refrigeración'],
+            'Repuestos' => ['Pantallas', 'Baterías', 'Teclados de laptop', 'Pines de carga'],
+            'Impresión' => ['Tintas', 'Tóner'],
+            'Redes' => [],
+            'Equipos' => ['Laptops', 'Monitores', 'Impresoras'],
+            'Software y licencias' => [],
         ];
         foreach ($categorias as $raiz => $hijas) {
             $padre = Categoria::firstOrCreate(['parent_id' => null, 'nombre' => $raiz]);

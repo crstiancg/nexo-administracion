@@ -23,7 +23,7 @@ return new class extends Migration
         Schema::create('variantes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('producto_id')->constrained('productos')->cascadeOnDelete();
-            // Cómo se vende: "Cartucho 300 ml", "Balde 4 gl", "Bolsa 25 kg".
+            // Cómo se vende: "240 GB", "Caja 305 m", "Botella 65 ml".
             $table->string('presentacion', 60);
             $table->foreignId('unidad_id')->constrained('unidades')->restrictOnDelete();
             // Opcional: sólo algunos productos vienen en colores (sellantes).
