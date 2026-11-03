@@ -109,7 +109,7 @@ class StoreOrdenServicioRequest extends FormRequest
                     return;
                 }
                 if (($otro['variante_id'] ?? null) == $value) {
-                    $fail('Este repuesto ya está en otra línea: sumá la cantidad ahí.');
+                    $fail('Este repuesto ya está en otra línea: suma la cantidad ahí.');
 
                     return;
                 }
@@ -135,11 +135,11 @@ class StoreOrdenServicioRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'orden.cliente_id.required' => 'Elegí el cliente dueño del equipo.',
-            'orden.tipo_equipo_id.required' => 'Elegí qué tipo de equipo es.',
-            'orden.falla.required' => 'Describí la falla que reporta el cliente.',
-            'orden.seguridad_valor.required' => 'Anotá la clave o el patrón para poder probar el equipo.',
-            'orden.anticipo.referencia.required' => 'Anotá el número de operación para poder verificar el pago.',
+            'orden.cliente_id.required' => 'Elige el cliente dueño del equipo.',
+            'orden.tipo_equipo_id.required' => 'Elige qué tipo de equipo es.',
+            'orden.falla.required' => 'Describe la falla que reporta el cliente.',
+            'orden.seguridad_valor.required' => 'Anota la clave o el patrón para poder probar el equipo.',
+            'orden.anticipo.referencia.required' => 'Anota el número de operación para poder verificar el pago.',
         ];
     }
 

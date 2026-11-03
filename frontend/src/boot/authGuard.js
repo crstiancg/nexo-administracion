@@ -42,7 +42,7 @@ export async function authGuard (to) {
   if (permiso && !userStore.hasPermission(permiso)) {
     Notify.create({
       type: 'negative',
-      message: 'No tenés permiso para acceder a este módulo.',
+      message: 'No tienes permiso para acceder a este módulo.',
       position: 'top-right',
       timeout: 3000
     })

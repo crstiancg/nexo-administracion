@@ -84,7 +84,7 @@ class Cotizaciones
 
             if ($cotizacion->vencida()) {
                 throw ValidationException::withMessages([
-                    'estado' => 'La cotización venció el '.$cotizacion->valida_hasta->format('d/m/Y').': actualizá la validez (y los precios) antes de convertirla.',
+                    'estado' => 'La cotización venció el '.$cotizacion->valida_hasta->format('d/m/Y').': actualiza la validez (y los precios) antes de convertirla.',
                 ])->status(409);
             }
 
@@ -153,7 +153,7 @@ class Cotizaciones
         }
 
         if (! $items && ! $errores) {
-            $errores['items'] = 'Elegí al menos un producto.';
+            $errores['items'] = 'Elige al menos un producto.';
         }
         if ($errores) {
             throw ValidationException::withMessages($errores);

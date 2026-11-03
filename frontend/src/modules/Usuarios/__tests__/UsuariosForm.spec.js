@@ -81,7 +81,7 @@ describe('UsuariosForm', () => {
     expect(wrapper.vm.form.setData).toHaveBeenCalledWith({
       usuario: { name: 'Ana', username: 'aperez', email: '', password: '', rolesSelected: [20], permisosSelected: [1] }
     })
-    expect(wrapper.text()).toContain('Dejala vacía para no cambiarla')
+    expect(wrapper.text()).toContain('Déjala vacía para no cambiarla')
   })
 
   it('lista los roles para tildar', async () => {

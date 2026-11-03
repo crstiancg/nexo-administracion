@@ -383,7 +383,7 @@
             size="18px"
           />
           <div>
-            <p>No se puede confirmar todavía: falta stock en tu sede. Registrá la entrada de mercadería o editá las cantidades.</p>
+            <p>No se puede confirmar todavía: falta stock en tu sede. Registra la entrada de mercadería o edita las cantidades.</p>
             <ul>
               <li
                 v-for="f in faltantes"

@@ -46,7 +46,7 @@
         aria-label="Código de unidad SUNAT"
       />
       <p class="unidad-form__hint">
-        El que va en las boletas y facturas electrónicas (catálogo 03 de SUNAT). Si no sabés, dejá NIU (unidad).
+        El que va en las boletas y facturas electrónicas (catálogo 03 de SUNAT). Si no sabes, deja NIU (unidad).
       </p>
     </div>
 

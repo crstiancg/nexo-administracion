@@ -29,7 +29,7 @@ class Sedes
                 ->exists();
 
             if (! $habilitada) {
-                $fail('Esta presentación no se vende en tu sede: habilitala en el producto.');
+                $fail('Esta presentación no se vende en tu sede: habilítala en el producto.');
             }
         };
     }

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\OrdenServicio;
 use App\Support\Permisos;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -51,6 +52,9 @@ class OrdenServicioResource extends JsonResource
                 fn () => $this->seguridad_valor,
             ),
             'checklist' => $this->checklist ?? (object) [],
+            'fotos' => ArchivoResource::collection($this->whenLoaded('archivos')),
+            'firma_recepcion_url' => $this->firma_recepcion ? Storage::disk('public')->url($this->firma_recepcion) : null,
+            'firma_entrega_url' => $this->firma_entrega ? Storage::disk('public')->url($this->firma_entrega) : null,
             'falla' => $this->falla,
             'diagnostico' => $this->diagnostico,
             'observacion' => $this->observacion,

@@ -21,10 +21,10 @@ export const BOLETA_MONTO_IDENTIFICADO = 700
  */
 export function motivoNoPermitido (tipo, cliente, total) {
   if (tipo === 'factura' && !(cliente?.tipo_documento === 'RUC' && /^\d{11}$/.test(cliente?.numero_documento ?? ''))) {
-    return 'Para factura, elegí un cliente con RUC.'
+    return 'Para factura, elige un cliente con RUC.'
   }
   if (tipo === 'boleta' && Number(total) >= BOLETA_MONTO_IDENTIFICADO && !cliente?.numero_documento) {
-    return `Desde S/ ${BOLETA_MONTO_IDENTIFICADO} la boleta lleva el DNI del cliente: elegí o creá el cliente.`
+    return `Desde S/ ${BOLETA_MONTO_IDENTIFICADO} la boleta lleva el DNI del cliente: elige o crea el cliente.`
   }
   return null
 }

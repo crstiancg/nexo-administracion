@@ -12,7 +12,7 @@
       v-model="texto"
       type="search"
       class="busqueda__campo"
-      placeholder="Buscar pedidos, clientes, productos…"
+      placeholder="Buscar órdenes, pedidos, clientes, productos…"
       aria-label="Búsqueda global"
       autocomplete="off"
       @focus="abierto = texto.trim().length >= 2"
@@ -96,11 +96,12 @@ import { useRoute, useRouter } from 'vue-router'
 import PanelService from '@/services/PanelService'
 
 /**
- * Búsqueda global del toolbar: pedidos, clientes, productos y cotizaciones a
+ * Búsqueda global del toolbar: órdenes de servicio, pedidos, clientes, productos y cotizaciones a
  * la vez (cada grupo sólo si el usuario puede ver esa pantalla). Ctrl+K la
  * enfoca, salvo en el punto de venta, donde Ctrl+K es su propio buscador.
  */
 const GRUPOS = [
+  { clave: 'ordenes', label: 'Órdenes de servicio', icono: 'construction' },
   { clave: 'pedidos', label: 'Pedidos', icono: 'receipt_long' },
   { clave: 'clientes', label: 'Clientes', icono: 'groups' },
   { clave: 'productos', label: 'Productos', icono: 'inventory_2' },

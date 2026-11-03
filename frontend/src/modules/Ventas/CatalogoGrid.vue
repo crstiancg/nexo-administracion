@@ -121,7 +121,7 @@
       <div class="catalogo__vacioTitulo">
         Sin resultados
       </div>
-      <div>Probá con otro término o ajustá los filtros.</div>
+      <div>Prueba con otro término o ajusta los filtros.</div>
     </div>
 
     <div

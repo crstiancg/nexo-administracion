@@ -218,7 +218,7 @@ async function agregar (event) {
         rechazos.value.push(`${archivo.name}: ${motivoTipo(tipo)}`)
       } else if (problemas[i]) {
         console.warn(`El navegador no puede abrir ${archivo.name} (${tipo}):`, problemas[i])
-        rechazos.value.push(`${archivo.name}: está dañada o usa una codificación que el navegador no puede abrir. Abrila y guardala de nuevo como JPG (por ejemplo, con Paint o una captura).`)
+        rechazos.value.push(`${archivo.name}: está dañada o usa una codificación que el navegador no puede abrir. Ábrela y guárdala de nuevo como JPG (por ejemplo, con Paint o una captura).`)
       } else if (validos.length >= lugares) {
         rechazos.value.push(`Máximo ${props.max} fotos: ${archivo.name} quedó afuera.`)
       } else {
@@ -253,7 +253,7 @@ async function agregar (event) {
 
 function motivoTipo (tipo) {
   if (tipo === 'image/heic') return 'es HEIC (formato de iPhone). Exportala como JPG.'
-  if (tipo === 'image/gif') return 'los GIF no se aceptan. Usá JPG, PNG, WEBP o AVIF.'
+  if (tipo === 'image/gif') return 'los GIF no se aceptan. Usa JPG, PNG, WEBP o AVIF.'
   return 'no es una imagen JPG, PNG, WEBP o AVIF válida.'
 }
 

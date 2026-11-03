@@ -258,7 +258,7 @@
         v-else
         class="compra-form__vacio"
       >
-        Buscá los productos arriba para agregarlos a la compra.
+        Busca los productos arriba para agregarlos a la compra.
       </p>
     </section>
 

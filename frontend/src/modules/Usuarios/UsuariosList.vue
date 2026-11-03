@@ -48,7 +48,7 @@
             <span
               v-if="esYo(props.row)"
               class="usuario-cell__me"
-            >Vos</span>
+            >Tú</span>
           </div>
           <div class="usuario-cell__username text-mono">
             @{{ props.row.username }}
@@ -345,7 +345,7 @@ function toggleActive (row) {
 function eliminar (row) {
   pedirConfirmacion({
     titulo: 'Eliminar usuario',
-    mensaje: `¿Eliminar a ${row.name} (@${row.username})? Esta acción no se puede deshacer. Si sólo querés quitarle el acceso, dalo de baja.`,
+    mensaje: `¿Eliminar a ${row.name} (@${row.username})? Esta acción no se puede deshacer. Si sólo quieres quitarle el acceso, dalo de baja.`,
     etiqueta: 'Eliminar',
     variante: 'destructive',
     accion: async () => {

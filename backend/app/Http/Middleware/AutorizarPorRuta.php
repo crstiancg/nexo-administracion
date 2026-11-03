@@ -27,13 +27,13 @@ class AutorizarPorRuta
         $user = $request->user();
 
         if ($nombre === null || $user === null) {
-            abort(403, 'No tenés permiso para realizar esta acción.');
+            abort(403, 'No tienes permiso para realizar esta acción.');
         }
 
         if (Permisos::puede($user, $nombre)) {
             return $next($request);
         }
 
-        abort(403, 'No tenés permiso para realizar esta acción.');
+        abort(403, 'No tienes permiso para realizar esta acción.');
     }
 }

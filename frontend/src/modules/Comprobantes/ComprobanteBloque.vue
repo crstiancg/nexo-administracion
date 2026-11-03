@@ -64,7 +64,7 @@
         v-if="comprobante.estado === 'rechazado'"
         class="comprobante-bloque__meta"
       >
-        Corregí lo que indica SUNAT (por ejemplo, los datos del cliente) y emití uno nuevo:
+        Corrige lo que indica SUNAT (por ejemplo, los datos del cliente) y emite uno nuevo:
       </p>
     </template>
 

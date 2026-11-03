@@ -62,7 +62,7 @@
       </q-select>
 
       <p class="categoria-form__hint">
-        Vacío = categoría principal. Elegí una para crearla como subcategoría.
+        Vacío = categoría principal. Elige una para crearla como subcategoría.
       </p>
     </div>
 

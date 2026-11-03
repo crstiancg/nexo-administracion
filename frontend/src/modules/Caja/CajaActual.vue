@@ -81,7 +81,7 @@
           size="20px"
         />
         <span>
-          Esta caja es de un día anterior y ya no cobra. Cerrala desde el punto de venta y abrí la de hoy.
+          Esta caja es de un día anterior y ya no cobra. Ciérrala desde el punto de venta y abre la de hoy.
         </span>
         <AppButton
           v-if="userStore.hasPermission('ventas.store')"

@@ -202,7 +202,7 @@
         v-else
         class="pedido-form__vacio"
       >
-        Buscá los productos arriba para agregarlos al pedido.
+        Busca los productos arriba para agregarlos al pedido.
       </p>
     </section>
 

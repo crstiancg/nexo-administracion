@@ -37,7 +37,7 @@
       :columns="columns"
       :loading="loading"
       :filter="filtroTabla"
-      no-data-label="No hay pedidos de compra. Creá uno desde aquí o desde Por reponer."
+      no-data-label="No hay pedidos de compra. Crea uno desde aquí o desde Por reponer."
       @request="onRequest"
     >
       <template #body-cell-codigo="props">

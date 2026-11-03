@@ -166,7 +166,7 @@ class RegistrarVentaRequest extends FormRequest
                     return;
                 }
                 if (($otro['variante_id'] ?? null) == $value) {
-                    $fail('Esta presentación ya está en el carrito: sumá la cantidad ahí.');
+                    $fail('Esta presentación ya está en el carrito: suma la cantidad ahí.');
 
                     return;
                 }
@@ -182,9 +182,9 @@ class RegistrarVentaRequest extends FormRequest
         return [
             'venta.items.required' => 'El carrito está vacío.',
             'venta.items.min' => 'El carrito está vacío.',
-            'venta.pagos.required' => 'Agregá cómo paga el cliente.',
-            'venta.pagos.min' => 'Agregá cómo paga el cliente.',
-            'venta.pagos.*.referencia.required' => 'Anotá el número de operación para poder verificar el pago.',
+            'venta.pagos.required' => 'Agrega cómo paga el cliente.',
+            'venta.pagos.min' => 'Agrega cómo paga el cliente.',
+            'venta.pagos.*.referencia.required' => 'Anota el número de operación para poder verificar el pago.',
         ];
     }
 

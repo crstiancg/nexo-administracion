@@ -36,8 +36,8 @@ class StorePermisoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'permiso.rutas.required' => 'Elegí al menos una ruta.',
-            'permiso.rutas.min' => 'Elegí al menos una ruta.',
+            'permiso.rutas.required' => 'Elige al menos una ruta.',
+            'permiso.rutas.min' => 'Elige al menos una ruta.',
             'permiso.rutas.*.in' => 'La ruta :input no existe o ya tiene su permiso.',
         ];
     }

@@ -80,7 +80,7 @@ class StoreCotizacionRequest extends FormRequest
                     return;
                 }
                 if (($otro['variante_id'] ?? null) == $value) {
-                    $fail('Esta presentación ya está en otro ítem: sumá la cantidad ahí.');
+                    $fail('Esta presentación ya está en otro ítem: suma la cantidad ahí.');
 
                     return;
                 }
@@ -119,10 +119,10 @@ class StoreCotizacionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'cotizacion.items.required' => 'Agregá al menos un producto.',
-            'cotizacion.items.min' => 'Agregá al menos un producto.',
+            'cotizacion.items.required' => 'Agrega al menos un producto.',
+            'cotizacion.items.min' => 'Agrega al menos un producto.',
             'cotizacion.valida_hasta.after_or_equal' => 'La validez no puede ser una fecha pasada.',
-            'cotizacion.valida_hasta.required' => 'Poné hasta cuándo vale la cotización.',
+            'cotizacion.valida_hasta.required' => 'Pon hasta cuándo vale la cotización.',
         ];
     }
 

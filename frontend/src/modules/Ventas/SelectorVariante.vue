@@ -34,7 +34,7 @@
     <!-- ── Presentaciones ── -->
     <div class="selector__lista">
       <p class="selector__ayuda">
-        Tocá una presentación para sumar una unidad. Podés sumar varias antes de cerrar.
+        Toca una presentación para sumar una unidad. Puedes sumar varias antes de cerrar.
       </p>
 
       <button

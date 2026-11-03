@@ -26,7 +26,8 @@
     .condiciones { flex: 1; font-size: 10.5px; }
     .condiciones p { margin: 0 0 5px; }
     .firmas { display: flex; gap: 30px; margin-top: 46px; }
-    .firmas div { flex: 1; border-top: 1px solid #111827; text-align: center; padding-top: 4px; }
+    .firmas div { flex: 1; border-top: 1px solid #111827; text-align: center; padding-top: 4px; position: relative; }
+    .firmas img { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); height: 44px; }
     .qr { width: 135px; text-align: center; font-size: 9.5px; }
     .qr img { width: 125px; height: 125px; }
     @media print { .hoja { margin: 0; padding: 0; box-shadow: none; width: auto; min-height: 0; } }
@@ -131,7 +132,12 @@
             <p>El cliente declara entregar el equipo en el estado descrito. Los equipos no recogidos en 90 días desde el aviso de reparación podrán considerarse abandonados.</p>
             <p>Presente esta orden para recoger el equipo.</p>
             <div class="firmas">
-                <div>Firma del cliente</div>
+                <div>
+                    @if ($orden->firma_recepcion)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($orden->firma_recepcion) }}" alt="Firma del cliente">
+                    @endif
+                    Firma del cliente
+                </div>
                 <div>Recibido por{{ $orden->usuario ? ': '.$orden->usuario->name : '' }}</div>
             </div>
         </div>

@@ -82,7 +82,7 @@ class Pedidos
             $pagado = $nuevo ? 0.0 : $pedido->pagado();
             if ($total < $pagado) {
                 throw ValidationException::withMessages([
-                    'pedido.items' => 'El total quedaría por debajo de lo ya pagado (S/ '.number_format($pagado, 2).'): devolvé la diferencia primero.',
+                    'pedido.items' => 'El total quedaría por debajo de lo ya pagado (S/ '.number_format($pagado, 2).'): devuelve la diferencia primero.',
                 ]);
             }
 
@@ -191,7 +191,7 @@ class Pedidos
             // "cancela" junto con el pedido.
             if (($pagado = $pedido->pagado()) > 0) {
                 throw ValidationException::withMessages([
-                    'estado' => 'Tiene S/ '.number_format($pagado, 2).' cobrados: devolvé los pagos antes de cancelar.',
+                    'estado' => 'Tiene S/ '.number_format($pagado, 2).' cobrados: devuelve los pagos antes de cancelar.',
                 ])->status(409);
             }
 

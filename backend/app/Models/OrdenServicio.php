@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -116,6 +117,12 @@ class OrdenServicio extends Model
     public function pedido(): BelongsTo
     {
         return $this->belongsTo(Pedido::class);
+    }
+
+    /** Fotos del equipo (al recibirlo, durante la reparación, al entregarlo). */
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'archivable')->orderBy('orden');
     }
 
     public function movimientos(): HasMany

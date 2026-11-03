@@ -148,7 +148,7 @@
             <AppBadge
               dot
               floating
-              sr-label="Tenés mensajes sin leer"
+              sr-label="Tienes mensajes sin leer"
             />
           </q-btn>
         </div>
@@ -191,7 +191,7 @@
       <q-card-section class="showcase__sectionHead">
         <h2 class="showcase__h2">AppStatTile</h2>
         <p class="showcase__note">
-          Mirá la última: la flecha sube pero el color es rojo. La flecha dice
+          Mira la última: la flecha sube pero el color es rojo. La flecha dice
           hacia dónde se movió el dato, el color dice si eso está bien.
         </p>
       </q-card-section>

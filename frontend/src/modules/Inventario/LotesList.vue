@@ -66,7 +66,7 @@
     </AppTable>
 
     <p class="lote-ayuda">
-      Las ventas y los traslados no usan lotes vencidos. Para retirarlos, registrá una salida (merma) en Inventario eligiendo el lote.
+      Las ventas y los traslados no usan lotes vencidos. Para retirarlos, registra una salida (merma) en Inventario eligiendo el lote.
     </p>
   </div>
 </template>

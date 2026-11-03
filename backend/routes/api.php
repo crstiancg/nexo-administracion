@@ -15,6 +15,7 @@ use App\Http\Controllers\OfertaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PanelController;
 use App\Http\Controllers\OrdenCompraController;
+use App\Http\Controllers\OrdenServicioArchivoController;
 use App\Http\Controllers\OrdenServicioController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PermisoController;
@@ -169,6 +170,10 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('ordenes-servicio/{orden}/estado', [OrdenServicioController::class, 'estado'])->name('ordenes-servicio.estado');
     // Enlaces firmados para imprimir la orden (A4) y la etiqueta del equipo.
     Route::post('ordenes-servicio/{orden}/impresion', [OrdenServicioController::class, 'impresion'])->name('ordenes-servicio.impresion');
+    // Evidencia: fotos del equipo y firma del cliente (recibir / entregar).
+    Route::post('ordenes-servicio/{orden}/fotos', [OrdenServicioArchivoController::class, 'subirFotos'])->name('ordenes-servicio.fotos');
+    Route::delete('ordenes-servicio/{orden}/fotos/{archivo}', [OrdenServicioArchivoController::class, 'quitarFoto'])->name('ordenes-servicio.fotos.quitar');
+    Route::post('ordenes-servicio/{orden}/firma', [OrdenServicioArchivoController::class, 'firmar'])->name('ordenes-servicio.firma');
 
     Route::post('pedidos/{pedido}/confirmar', [PedidoController::class, 'confirmar'])->name('pedidos.confirmar');
     Route::post('pedidos/{pedido}/entregar', [PedidoController::class, 'entregar'])->name('pedidos.entregar');

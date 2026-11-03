@@ -75,6 +75,30 @@ class PanelController extends Controller
         $term = '%'.$q.'%';
         $resultados = [];
 
+        // Primero el taller: por código, serie/IMEI, modelo, o nombre,
+        // documento o teléfono del cliente.
+        if ($puede('ordenes-servicio.index')) {
+            $resultados['ordenes'] = OrdenServicio::query()
+                ->with(['cliente:id,nombre', 'tipoEquipo:id,nombre', 'marca:id,nombre'])
+                ->where(fn (Builder $b) => $b
+                    ->where('codigo', 'like', $term)
+                    ->orWhere('serie', 'like', $term)
+                    ->orWhere('modelo', 'like', $term)
+                    ->orWhereHas('cliente', fn (Builder $c) => $c
+                        ->where('nombre', 'like', $term)
+                        ->orWhere('numero_documento', 'like', $term)
+                        ->orWhere('telefono', 'like', $term)))
+                ->latest('id')
+                ->limit(5)
+                ->get()
+                ->map(fn (OrdenServicio $o) => [
+                    'id' => $o->id,
+                    'titulo' => $o->codigo,
+                    'detalle' => $o->cliente?->nombre.' · '.$o->equipo().' · '.(OrdenServicio::ESTADOS[$o->estado] ?? $o->estado),
+                    'to' => "/ordenes-servicio?ver={$o->id}",
+                ]);
+        }
+
         if ($puede('productos.index')) {
             $resultados['productos'] = Producto::query()
                 ->with(['marca:id,nombre', 'portada'])

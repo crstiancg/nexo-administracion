@@ -274,7 +274,7 @@ class StoreProductoRequest extends FormRequest
             $enMiSede = collect((array) $this->input("producto.variantes.{$i}.sedes", []))
                 ->first(fn ($s) => (int) ($s['sede_id'] ?? 0) === $sedeId);
             if ($enMiSede !== null && ! filter_var($enMiSede['activo'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-                $fail('El stock inicial entra en tu sede: habilitá la presentación ahí.');
+                $fail('El stock inicial entra en tu sede: habilita la presentación ahí.');
 
                 return;
             }
@@ -489,9 +489,9 @@ class StoreProductoRequest extends FormRequest
     {
         return [
             'producto.variantes.*.codigo_barras.unique' => 'Ese código de barras ya lo tiene otro producto.',
-            'producto.costo_compra.required' => 'Poné cuánto te costó cada unidad: sin el costo no se puede calcular la ganancia.',
-            'producto.variantes.required' => 'Agregá al menos una presentación.',
-            'producto.variantes.min' => 'Agregá al menos una presentación.',
+            'producto.costo_compra.required' => 'Pon cuánto te costó cada unidad: sin el costo no se puede calcular la ganancia.',
+            'producto.variantes.required' => 'Agrega al menos una presentación.',
+            'producto.variantes.min' => 'Agrega al menos una presentación.',
             'producto.variantes.*.sku.regex' => 'El SKU sólo puede tener letras, números y guiones.',
             'producto.variantes.*.sku.unique' => 'Ese SKU ya lo usa otra presentación.',
             'producto.archivos.max' => 'Máximo '.self::MAX_ARCHIVOS.' fotos.',

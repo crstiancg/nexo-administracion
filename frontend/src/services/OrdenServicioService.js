@@ -32,6 +32,22 @@ class OrdenServicioService {
     return (await api.post(`api/ordenes-servicio/${id}/impresion`)).data
   }
 
+  // Suma fotos (File[]) a la orden; devuelve todas las fotos.
+  static async subirFotos (id, archivos) {
+    const datos = new FormData()
+    archivos.forEach((archivo) => datos.append('fotos[]', archivo))
+    return (await api.post(`api/ordenes-servicio/${id}/fotos`, datos)).data
+  }
+
+  static async quitarFoto (id, archivoId) {
+    return (await api.delete(`api/ordenes-servicio/${id}/fotos/${archivoId}`)).data
+  }
+
+  // momento: 'recepcion' | 'entrega'; imagen: PNG en data URL.
+  static async firmar (id, momento, imagen) {
+    return (await api.post(`api/ordenes-servicio/${id}/firma`, { momento, imagen })).data
+  }
+
   // Página pública (sin sesión): lo que ve el cliente al escanear el QR.
   static async seguimiento (token) {
     return (await api.get(`api/seguimiento/${token}`)).data

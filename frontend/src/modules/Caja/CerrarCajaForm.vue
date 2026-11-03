@@ -39,7 +39,7 @@
 
     <AppTextField
       v-model="form.caja.observacion"
-      :label="diferencia ? 'Explicá la diferencia' : 'Observación (opcional)'"
+      :label="diferencia ? 'Explica la diferencia' : 'Observación (opcional)'"
       type="textarea"
       autogrow
       maxlength="500"
@@ -96,7 +96,7 @@ const errorObservacion = ref('')
 async function submit () {
   errorObservacion.value = ''
   if (diferencia.value && !form.caja.observacion?.trim()) {
-    errorObservacion.value = 'Con diferencia, anotá qué pasó antes de cerrar.'
+    errorObservacion.value = 'Con diferencia, anota qué pasó antes de cerrar.'
     return
   }
 

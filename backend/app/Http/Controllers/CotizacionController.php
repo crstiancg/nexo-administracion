@@ -93,7 +93,7 @@ class CotizacionController extends Controller
             'items.*.variante_id' => ['required', 'integer'],
             'items.*.cantidad' => ['required', 'numeric', 'gt:0', 'max:99999999.999'],
         ], [
-            'items.min' => 'Elegí al menos un producto.',
+            'items.min' => 'Elige al menos un producto.',
         ], [
             'items.*.cantidad' => 'cantidad',
         ]);

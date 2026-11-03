@@ -44,8 +44,8 @@ class Alertas
                 $alertas[] = $this->alerta('caja_vencida', 'critical', "La caja del {$dia} sigue abierta",
                     'No se puede cobrar hasta cerrarla (arqueo) desde el punto de venta.', 1, '/pos');
             } elseif ($caja && now(Fechas::zona())->hour >= (int) config('app.hora_aviso_cierre')) {
-                $alertas[] = $this->alerta('caja_cierre', 'warning', 'Fin del día: cerrá la caja',
-                    'A medianoche se cierra sola, pero sin arqueo: hacé el cierre contando el efectivo.', 1, '/pos');
+                $alertas[] = $this->alerta('caja_cierre', 'warning', 'Fin del día: cierra la caja',
+                    'A medianoche se cierra sola, pero sin arqueo: haz el cierre contando el efectivo.', 1, '/pos');
             }
         }
 

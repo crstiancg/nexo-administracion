@@ -17,6 +17,8 @@ use App\Models\Variante;
 use App\Services\Cajas;
 use App\Services\Inventario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\ActuaConPermisos;
 use Tests\TestCase;
 
@@ -313,5 +315,71 @@ class OrdenServicioTest extends TestCase
         $this->assertSame('servicio', $panel->json('ventas.por_canal.0.canal'));
         $this->assertEquals(100, $panel->json('ventas.por_canal.0.porcentaje'));
         $this->assertEquals(230, $panel->json('ventas.por_mes.11.total'));
+    }
+
+    public function test_sube_y_quita_fotos_del_equipo(): void
+    {
+        Storage::fake('public');
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+
+        $fotos = $this->post("/api/ordenes-servicio/{$id}/fotos", [
+            'fotos' => [UploadedFile::fake()->image('frente.jpg', 1200, 900), UploadedFile::fake()->image('golpe.jpg', 800, 600)],
+        ], ['Accept' => 'application/json'])->assertCreated()->json();
+
+        $this->assertCount(2, $fotos);
+        Storage::disk('public')->assertExists(OrdenServicio::find($id)->archivos()->first()->ruta);
+
+        // Se suman a las que ya tiene.
+        $this->post("/api/ordenes-servicio/{$id}/fotos", ['fotos' => [UploadedFile::fake()->image('otra.jpg')]], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonCount(3);
+
+        $this->deleteJson("/api/ordenes-servicio/{$id}/fotos/{$fotos[0]['id']}")->assertOk()->assertJsonCount(2);
+        $this->getJson("/api/ordenes-servicio/{$id}")->assertJsonCount(2, 'fotos');
+    }
+
+    public function test_no_se_quita_una_foto_de_otra_orden(): void
+    {
+        Storage::fake('public');
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $una = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+        $otra = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+        $foto = $this->post("/api/ordenes-servicio/{$una}/fotos", ['fotos' => [UploadedFile::fake()->image('a.jpg')]], ['Accept' => 'application/json'])->json('0.id');
+
+        $this->deleteJson("/api/ordenes-servicio/{$otra}/fotos/{$foto}")->assertNotFound();
+        $this->assertSame(1, OrdenServicio::find($una)->archivos()->count());
+    }
+
+    public function test_guarda_la_firma_del_cliente_y_sale_impresa(): void
+    {
+        Storage::fake('public');
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.index');
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+
+        $png = 'data:image/png;base64,'.base64_encode(UploadedFile::fake()->image('firma.png', 300, 100)->getContent());
+        $this->postJson("/api/ordenes-servicio/{$id}/firma", ['momento' => 'recepcion', 'imagen' => $png])
+            ->assertOk()
+            ->assertJsonPath('momento', 'recepcion');
+
+        $orden = OrdenServicio::find($id);
+        Storage::disk('public')->assertExists($orden->firma_recepcion);
+        $this->getJson("/api/ordenes-servicio/{$id}")->assertJsonPath('firma_entrega_url', null);
+        $this->assertNotNull($this->getJson("/api/ordenes-servicio/{$id}")->json('firma_recepcion_url'));
+
+        $enlace = $this->postJson("/api/ordenes-servicio/{$id}/impresion")->json('orden');
+        $this->get($enlace)->assertOk()->assertSee('Firma del cliente')->assertSee($orden->firma_recepcion, false);
+
+        // Algo que no es un PNG no se guarda.
+        $this->postJson("/api/ordenes-servicio/{$id}/firma", ['momento' => 'entrega', 'imagen' => 'data:image/png;base64,'.base64_encode('hola')])
+            ->assertUnprocessable();
+    }
+
+    public function test_la_busqueda_global_encuentra_ordenes_por_serie_o_telefono(): void
+    {
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.index');
+        $codigo = $this->postJson('/api/ordenes-servicio', $this->payload())->json('codigo');
+
+        $this->getJson('/api/panel/buscar?q=PF3XYZ')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
+        $this->getJson('/api/panel/buscar?q=987654321')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
     }
 }

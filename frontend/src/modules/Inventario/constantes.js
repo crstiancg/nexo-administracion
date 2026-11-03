@@ -25,7 +25,7 @@ export const TIPOS = {
   ajuste: {
     label: 'Ajuste',
     titulo: 'Ajuste por conteo',
-    ayuda: 'Escribí el stock que contaste en tu sede: el sistema registra la diferencia. Las presentaciones que coinciden no generan movimiento.',
+    ayuda: 'Escribe el stock que contaste en tu sede: el sistema registra la diferencia. Las presentaciones que coinciden no generan movimiento.',
     endpoint: 'ajustes',
     permiso: 'inventario.ajustes',
     status: 'info',

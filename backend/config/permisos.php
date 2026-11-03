@@ -108,6 +108,10 @@ return [
         // eligen tipo de equipo, marca, técnico, cliente y repuestos.
         'ordenes-servicio.show' => ['ordenes-servicio.index', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         'ordenes-servicio.resumen' => ['ordenes-servicio.index'],
+        // Quien recibe, edita o entrega la orden carga fotos y la firma.
+        'ordenes-servicio.fotos' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
+        'ordenes-servicio.fotos.quitar' => ['ordenes-servicio.update'],
+        'ordenes-servicio.firma' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         // Quien ve la orden la imprime (y su etiqueta).
         'ordenes-servicio.impresion' => ['ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         'ordenes-servicio.tecnicos' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
@@ -194,6 +198,9 @@ return [
         'tecnicos' => 'Ver técnicos',
         'estado' => 'Cambiar estado / entregar',
         'impresion' => 'Imprimir orden y etiqueta',
+        'fotos' => 'Subir fotos',
+        'fotos.quitar' => 'Quitar fotos',
+        'firma' => 'Registrar la firma del cliente',
     ],
 
 ];

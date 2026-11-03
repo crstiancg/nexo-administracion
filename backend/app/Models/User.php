@@ -80,7 +80,7 @@ class User extends Authenticatable implements OAuthenticatable
     {
         if (! $this->sede_id) {
             throw ValidationException::withMessages([
-                'sede' => 'Tu usuario no tiene una sede asignada: pedile a un administrador que te asigne una.',
+                'sede' => 'Tu usuario no tiene una sede asignada: pídele a un administrador que te asigne una.',
             ])->status(409);
         }
 

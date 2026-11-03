@@ -32,7 +32,7 @@
           :loading="cargando"
           :error="Boolean(form.errors[`${PATH}.categoria_id`])"
           :error-message="form.errors[`${PATH}.categoria_id`]"
-          placeholder="Elegí una categoría"
+          placeholder="Elige una categoría"
           dense
           outlined
           hide-bottom-space
@@ -117,7 +117,7 @@
           :loading="cargando"
           :error="Boolean(form.errors[`${PATH}.marca_id`])"
           :error-message="form.errors[`${PATH}.marca_id`]"
-          placeholder="Elegí una marca"
+          placeholder="Elige una marca"
           dense
           outlined
           hide-bottom-space
@@ -293,10 +293,10 @@
           <dt>Color</dt>
           <dd>Opcional: sólo si la presentación viene en colores.</dd>
           <dt>SKU</dt>
-          <dd>Código interno; se arma solo con el nombre, la presentación y el color. Podés cambiarlo.</dd>
+          <dd>Código interno; se arma solo con el nombre, la presentación y el color. Puedes cambiarlo.</dd>
           <dt>Código de barras</dt>
           <dd>
-            Obligatorio: el que trae el envase o uno propio. Escanealo con la lectora o escribilo. Es el que lee el punto de venta
+            Obligatorio: el que trae el envase o uno propio. Escanealo con la lectora o escríbelo. Es el que lee el punto de venta
             y el que se imprime en las etiquetas.
           </dd>
           <dt>Precio</dt>
@@ -310,10 +310,10 @@
           <dd>De esta presentación; si no tiene, se muestran las del producto.</dd>
           <dt>{{ hayNuevas ? 'Stock inicial' : 'Stock' }}</dt>
           <dd v-if="hayNuevas">
-            Unidades que ya tenés hoy en {{ userStore.sede?.nombre ?? 'tu sede' }} (sólo al crear la presentación). Si no tenés, dejalo vacío.
+            Unidades que ya tienes hoy en {{ userStore.sede?.nombre ?? 'tu sede' }} (sólo al crear la presentación). Si no tienes, déjalo vacío.
           </dd>
           <dd v-else>
-            Lo que hay hoy (pasá el mouse para ver cada sede). Se mueve desde Inventario, no desde acá.
+            Lo que hay hoy (pasa el mouse para ver cada sede). Se mueve desde Inventario, no desde acá.
           </dd>
         </dl>
       </q-slide-transition>
@@ -751,9 +751,9 @@
           Stock inicial de las presentaciones nuevas
         </div>
         <p class="producto-form__hint">
-          Sólo si ya tenés mercadería de este producto: entra al inventario de
-          {{ userStore.sede?.nombre ?? 'tu sede' }} como “Alta de producto”. Si todavía no tenés,
-          dejá las cantidades vacías y cargala después con una compra o una entrada.
+          Sólo si ya tienes mercadería de este producto: entra al inventario de
+          {{ userStore.sede?.nombre ?? 'tu sede' }} como “Alta de producto”. Si todavía no tienes,
+          deja las cantidades vacías y cárgala después con una compra o una entrada.
         </p>
         <div class="producto-form__row">
           <AppTextField
@@ -890,7 +890,7 @@
         v-else-if="!form.producto.variantes.length"
         class="producto-form__vacio"
       >
-        Todavía no hay presentaciones. Tocá “Agregar presentación”.
+        Todavía no hay presentaciones. Toca “Agregar presentación”.
       </p>
     </section>
 

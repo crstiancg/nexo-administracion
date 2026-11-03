@@ -305,7 +305,7 @@ class Inventario
         }
 
         if (! $pedidos) {
-            $errores["movimiento.lineas.{$i}.lote"] = 'Este producto maneja lotes: indicá el lote y su vencimiento.';
+            $errores["movimiento.lineas.{$i}.lote"] = 'Este producto maneja lotes: indica el lote y su vencimiento.';
 
             return null;
         }

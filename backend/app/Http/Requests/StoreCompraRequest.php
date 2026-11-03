@@ -128,7 +128,7 @@ class StoreCompraRequest extends FormRequest
                     return;
                 }
                 if (($otro['variante_id'] ?? null) == $value) {
-                    $fail('Esta presentación ya está en otro ítem: sumá la cantidad ahí.');
+                    $fail('Esta presentación ya está en otro ítem: suma la cantidad ahí.');
 
                     return;
                 }
@@ -142,8 +142,8 @@ class StoreCompraRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'compra.items.required' => 'Agregá al menos un producto.',
-            'compra.items.min' => 'Agregá al menos un producto.',
+            'compra.items.required' => 'Agrega al menos un producto.',
+            'compra.items.min' => 'Agrega al menos un producto.',
             'compra.items.*.vence_at.after_or_equal' => 'No se recibe mercadería ya vencida.',
         ];
     }

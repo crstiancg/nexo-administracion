@@ -87,7 +87,7 @@ describe('UsuariosList', () => {
     expect(wrapper.find('[aria-label="Activar a bgomez"]').exists()).toBe(true)
   })
 
-  it('en tu propia fila no podés darte de baja ni eliminarte', async () => {
+  it('en tu propia fila no puedes darte de baja ni eliminarte', async () => {
     await montar()
 
     expect(wrapper.find('[aria-label="Dar de baja a admin"]').attributes('disabled')).toBeDefined()

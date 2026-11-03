@@ -94,10 +94,10 @@ class MovimientoInventario extends Model
     {
         static::updating(function (MovimientoInventario $movimiento) {
             if (array_diff(array_keys($movimiento->getDirty()), self::CORREGIBLES)) {
-                throw new LogicException('Los movimientos de inventario no se editan: registrá otro que lo corrija.');
+                throw new LogicException('Los movimientos de inventario no se editan: registra otro que lo corrija.');
             }
         });
-        static::deleting(fn () => throw new LogicException('Los movimientos de inventario no se borran: registrá otro que lo corrija.'));
+        static::deleting(fn () => throw new LogicException('Los movimientos de inventario no se borran: registra otro que lo corrija.'));
     }
 
     public function variante(): BelongsTo

@@ -167,12 +167,12 @@ describe('AppTextField — Bloq Mayús', () => {
     // Dos mensajes bajo el mismo campo compiten; el que dice que algo FALLÓ
     // manda sobre el que dice que algo podría fallar.
     const wrapper = mount(AppTextField, {
-      props: { label: 'Contraseña', type: 'password', error: 'Ingresá tu contraseña.' }
+      props: { label: 'Contraseña', type: 'password', error: 'Ingresa tu contraseña.' }
     })
 
     await teclear(wrapper, { capsLock: true })
     expect(wrapper.find('.app-field__caps').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Ingresá tu contraseña.')
+    expect(wrapper.text()).toContain('Ingresa tu contraseña.')
   })
 
   it('es un aviso, no una alerta', async () => {
@@ -223,13 +223,13 @@ describe('AppTextField — error', () => {
 
   it('con mensaje marca el estado y lo muestra', () => {
     const wrapper = mount(AppTextField, {
-      props: { label: 'Usuario', error: 'Ingresá tu usuario.' }
+      props: { label: 'Usuario', error: 'Ingresa tu usuario.' }
     })
 
     const input = wrapper.findComponent(QInput)
     expect(input.props('error')).toBe(true)
-    expect(input.props('errorMessage')).toBe('Ingresá tu usuario.')
-    expect(wrapper.text()).toContain('Ingresá tu usuario.')
+    expect(input.props('errorMessage')).toBe('Ingresa tu usuario.')
+    expect(wrapper.text()).toContain('Ingresa tu usuario.')
   })
 
   it('desactiva el ícono de error de Quasar', () => {

@@ -202,7 +202,7 @@
         v-else
         class="oc-form__vacio"
       >
-        Buscá los productos arriba, o creá el pedido desde <strong>Por reponer</strong> marcando lo que falta.
+        Busca los productos arriba, o crea el pedido desde <strong>Por reponer</strong> marcando lo que falta.
       </p>
     </section>
 

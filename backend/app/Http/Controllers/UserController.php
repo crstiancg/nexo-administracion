@@ -57,7 +57,7 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $usuario): Response
     {
-        $this->impedirSobreSiMismo($request, $usuario, 'No podés eliminar tu propio usuario.');
+        $this->impedirSobreSiMismo($request, $usuario, 'No puedes eliminar tu propio usuario.');
 
         $usuario->delete();
 
@@ -70,7 +70,7 @@ class UserController extends Controller
      */
     public function toggleActive(Request $request, User $usuario): JsonResponse
     {
-        $this->impedirSobreSiMismo($request, $usuario, 'No podés darte de baja a vos mismo.');
+        $this->impedirSobreSiMismo($request, $usuario, 'No puedes darte de baja a ti mismo.');
 
         $usuario->update(['active' => ! $usuario->active]);
 

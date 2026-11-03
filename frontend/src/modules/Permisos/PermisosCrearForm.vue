@@ -5,7 +5,7 @@
     @submit.prevent="submit"
   >
     <p class="permiso-nuevo__intro">
-      Cada permiso habilita una ruta de la API. Elegí un recurso completo o
+      Cada permiso habilita una ruta de la API. Elige un recurso completo o
       rutas sueltas; el nombre y la descripción se generan solos.
     </p>
 

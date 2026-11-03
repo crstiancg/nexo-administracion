@@ -39,8 +39,8 @@ class Pago extends Model
 
     protected static function booted(): void
     {
-        static::updating(fn () => throw new LogicException('Los pagos no se editan: registrá una devolución.'));
-        static::deleting(fn () => throw new LogicException('Los pagos no se borran: registrá una devolución.'));
+        static::updating(fn () => throw new LogicException('Los pagos no se editan: registra una devolución.'));
+        static::deleting(fn () => throw new LogicException('Los pagos no se borran: registra una devolución.'));
     }
 
     public function pedido(): BelongsTo

@@ -329,7 +329,7 @@
             Este producto no controla lotes ni vencimiento. Si vence (tintas, pasta térmica…),
             activalo en <strong>Editar → “Maneja lotes y vencimiento”</strong>.
             <template v-if="stockSede > 0">
-              El stock que ya tenés va a quedar “sin lote” y acá vas a poder asignarle su lote.
+              El stock que ya tienes va a quedar “sin lote” y acá vas a poder asignarle su lote.
             </template>
           </p>
           <AppButton
@@ -780,7 +780,7 @@ const pendientes = computed(() => {
   const lista = []
   const sinCosto = veCostos.value ? presentaciones.value.filter((v) => v.costo_promedio === null && Number(v.stock) > 0) : []
   if (sinCosto.length) {
-    lista.push(`${sinCosto.length === 1 ? '1 presentación' : `${sinCosto.length} presentaciones`} con stock y sin costo de compra (${sinCosto.map((v) => v.presentacion).join(', ')}): completalo con el lápiz en su entrada, abajo en Movimientos.`)
+    lista.push(`${sinCosto.length === 1 ? '1 presentación' : `${sinCosto.length} presentaciones`} con stock y sin costo de compra (${sinCosto.map((v) => v.presentacion).join(', ')}): complétalo con el lápiz en su entrada, abajo en Movimientos.`)
   }
   if (sinLote.value.length) {
     lista.push(`Stock sin lote en tu sede: ${sinLote.value.map((v) => `${formatearCantidad(v.cantidadSinLote)} de ${v.presentacion}`).join(', ')}. Asignáselo en “Lotes en tu sede”.`)

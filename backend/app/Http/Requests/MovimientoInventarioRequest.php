@@ -160,8 +160,8 @@ abstract class MovimientoInventarioRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'movimiento.lineas.required' => 'Agregá al menos una línea.',
-            'movimiento.lineas.min' => 'Agregá al menos una línea.',
+            'movimiento.lineas.required' => 'Agrega al menos una línea.',
+            'movimiento.lineas.min' => 'Agrega al menos una línea.',
         ];
     }
 

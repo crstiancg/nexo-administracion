@@ -53,8 +53,8 @@
           <template v-if="formato.tipo === 'a4' && total">
             {{ hojas }} {{ hojas === 1 ? 'hoja' : 'hojas' }}.
           </template>
-          Al imprimir elegí <strong>Márgenes: ninguno</strong> y <strong>Escala: 100 %</strong>.
-          Para un PDF, elegí <strong>Guardar como PDF</strong> como impresora.
+          Al imprimir elige <strong>Márgenes: ninguno</strong> y <strong>Escala: 100 %</strong>.
+          Para un PDF, elige <strong>Guardar como PDF</strong> como impresora.
         </p>
       </div>
 

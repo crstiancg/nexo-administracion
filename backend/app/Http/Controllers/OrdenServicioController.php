@@ -152,6 +152,7 @@ class OrdenServicioController extends Controller
             'marca:id,nombre',
             'movimientos' => fn ($q) => $q->orderBy('id'),
             'movimientos.usuario:id,name',
+            'archivos',
             'pedido',
             'pedido.items' => fn ($q) => $q->orderBy('id'),
             'pedido.items.variante' => fn ($q) => $q->conStockDeSede($orden->sede_id),

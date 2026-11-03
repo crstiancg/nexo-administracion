@@ -199,7 +199,7 @@
     <!-- ── Presentación ── -->
     <AppDialog
       v-model="selectorDialog"
-      title="Elegí la presentación"
+      title="Elige la presentación"
       size="lg"
     >
       <!-- key: cada producto arranca con su propia foto y color. -->

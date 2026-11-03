@@ -202,7 +202,7 @@
         v-else
         class="cotizacion-form__vacio"
       >
-        Buscá los productos arriba para agregarlos a la cotización.
+        Busca los productos arriba para agregarlos a la cotización.
       </p>
     </section>
 
@@ -466,7 +466,7 @@ onMounted(async () => {
 // veces es un olvido. La validez es obligatoria.
 function submit () {
   if (!form.cotizacion.valida_hasta) {
-    form.setErrors({ ...form.errors, [`${PATH}.valida_hasta`]: 'Poné hasta cuándo vale la cotización.' })
+    form.setErrors({ ...form.errors, [`${PATH}.valida_hasta`]: 'Pon hasta cuándo vale la cotización.' })
     return
   }
 
@@ -477,7 +477,7 @@ function submit () {
 
   $q.notify({
     message: 'Vas a guardar la cotización sin cliente',
-    caption: 'Sale impresa sin nombre. Si es para alguien en particular, elegilo o crealo con “+ Nuevo cliente”.',
+    caption: 'Sale impresa sin nombre. Si es para alguien en particular, elígelo o créalo con “+ Nuevo cliente”.',
     icon: 'person_off',
     color: 'warning',
     textColor: 'dark',

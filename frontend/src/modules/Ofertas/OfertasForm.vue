@@ -42,7 +42,7 @@
         :options="resultados"
         :loading="buscando"
         aria-label="Agregar producto a la oferta"
-        placeholder="+ Agregar producto: buscá por nombre"
+        placeholder="+ Agregar producto: busca por nombre"
         option-label="nombre"
         use-input
         input-debounce="300"
@@ -73,7 +73,7 @@
         <template #no-option>
           <q-item>
             <q-item-section class="text-grey">
-              Escribí para buscar.
+              Escribe para buscar.
             </q-item-section>
           </q-item>
         </template>
@@ -152,7 +152,7 @@
             v-if="!fila.variantes.length"
             class="oferta-form__error"
           >
-            Elegí al menos una variante (o pasá a "Todas").
+            Elige al menos una variante (o pasa a "Todas").
           </p>
         </div>
 
@@ -434,7 +434,7 @@ async function submit () {
   // COMPLETO: justo lo contrario de lo que se quiso.
   const vacia = filas.value.find((f) => f.soloAlgunas && !f.variantes.length)
   if (form.oferta.alcance === 'productos' && vacia) {
-    $q.notify({ type: 'warning', message: `${vacia.nombre}: elegí al menos una variante o pasá a "Todas".`, position: 'top', timeout: 3000 })
+    $q.notify({ type: 'warning', message: `${vacia.nombre}: elige al menos una variante o pasa a "Todas".`, position: 'top', timeout: 3000 })
     return
   }
 

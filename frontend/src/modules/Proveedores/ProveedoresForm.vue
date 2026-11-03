@@ -159,8 +159,8 @@ async function consultar () {
       aviso.value = 'Datos traídos de SUNAT.'
     } else {
       aviso.value = r.consulta_habilitada
-        ? 'SUNAT no devolvió datos para ese RUC: completalo a mano.'
-        : 'La consulta a SUNAT no está configurada: completalo a mano.'
+        ? 'SUNAT no devolvió datos para ese RUC: complétalo a mano.'
+        : 'La consulta a SUNAT no está configurada: complétalo a mano.'
     }
   } finally {
     consultando.value = false

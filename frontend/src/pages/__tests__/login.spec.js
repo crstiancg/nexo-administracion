@@ -39,8 +39,8 @@ describe('login — validación antes de salir a la red', () => {
     await flushPromises()
 
     expect(login).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Ingresá tu usuario.')
-    expect(wrapper.text()).toContain('Ingresá tu contraseña.')
+    expect(wrapper.text()).toContain('Ingresa tu usuario.')
+    expect(wrapper.text()).toContain('Ingresa tu contraseña.')
   })
 
   it('un usuario de puros espacios sigue estando vacío', async () => {
@@ -51,7 +51,7 @@ describe('login — validación antes de salir a la red', () => {
     await flushPromises()
 
     expect(login).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Ingresá tu usuario.')
+    expect(wrapper.text()).toContain('Ingresa tu usuario.')
   })
 
   it('completo, envía las credenciales tal cual', async () => {

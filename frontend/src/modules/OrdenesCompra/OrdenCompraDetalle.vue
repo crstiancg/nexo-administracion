@@ -39,7 +39,7 @@
       v-else-if="orden.estado === 'enviada'"
       class="oc-detalle__aviso"
     >
-      Enviado al proveedor el {{ fechaCorta(orden.enviada_at) }}. Cuando llegue la mercadería, registrá la recepción.
+      Enviado al proveedor el {{ fechaCorta(orden.enviada_at) }}. Cuando llegue la mercadería, registra la recepción.
     </p>
 
     <!-- La misma vista que se imprime. -->

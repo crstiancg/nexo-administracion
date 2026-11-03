@@ -111,7 +111,7 @@
         <div class="carrito__vacioTitulo">
           Carrito vacío
         </div>
-        <div>Escaneá un código o elegí del catálogo.</div>
+        <div>Escanea un código o elige del catálogo.</div>
       </div>
 
       <div
@@ -676,7 +676,7 @@ const estadoCaja = computed(() => {
     return { tono: 'error', icono: 'warning', texto: `La caja del ${diaDe(caja.value.abierta_at)} sigue abierta` }
   }
   if (ahora.value.getHours() >= (caja.value.hora_aviso_cierre ?? HORA_AVISO_CIERRE)) {
-    return { tono: 'aviso', icono: 'schedule', texto: 'Fin del día: cerrá la caja (a medianoche se cierra sola, sin arqueo)' }
+    return { tono: 'aviso', icono: 'schedule', texto: 'Fin del día: cierra la caja (a medianoche se cierra sola, sin arqueo)' }
   }
   return { tono: 'ok', icono: 'lock_open', texto: `Caja abierta · ${horaDe(caja.value.abierta_at)}` }
 })

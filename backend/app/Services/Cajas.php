@@ -327,7 +327,7 @@ class Cajas
             // historial sin que nadie sepa qué pasó.
             if (round($montoContado - $esperado, 2) != 0 && blank($observacion)) {
                 throw ValidationException::withMessages([
-                    'caja.observacion' => 'Con diferencia, anotá qué pasó antes de cerrar.',
+                    'caja.observacion' => 'Con diferencia, anota qué pasó antes de cerrar.',
                 ]);
             }
 
@@ -352,7 +352,7 @@ class Cajas
         $caja = Caja::query()->where('sede_id', $sedeId)->where('estado', Caja::ABIERTA)->lockForUpdate()->first();
 
         if (! $caja) {
-            throw $this->conflicto('caja', 'No hay una caja abierta en tu sede: abrí la caja para registrar dinero.');
+            throw $this->conflicto('caja', 'No hay una caja abierta en tu sede: abre la caja para registrar dinero.');
         }
 
         // La caja es diaria: la de ayer se cierra (arqueo) antes de cobrar hoy.
@@ -360,7 +360,7 @@ class Cajas
             $dia = $caja->abierta_at->copy()->setTimezone(config('app.zona_negocio'))->format('d/m');
             // No se cierra acá: el error deshace la transacción. La cierra la
             // próxima consulta de la caja (actual()), que hace el POS al recibir esto.
-            throw $this->conflicto('caja', "La caja del {$dia} ya no cobra: se cerró a medianoche. Abrí la de hoy para seguir.");
+            throw $this->conflicto('caja', "La caja del {$dia} ya no cobra: se cerró a medianoche. Abre la de hoy para seguir.");
         }
 
         return $caja;

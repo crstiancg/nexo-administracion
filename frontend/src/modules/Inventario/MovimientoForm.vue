@@ -24,7 +24,7 @@
           :aria-labelledby="`${uid}-motivo`"
           :error="Boolean(form.errors[`${PATH}.motivo`])"
           :error-message="form.errors[`${PATH}.motivo`]"
-          placeholder="Elegí el motivo"
+          placeholder="Elige el motivo"
           dense
           outlined
           hide-bottom-space
@@ -50,7 +50,7 @@
           :aria-labelledby="`${uid}-destino`"
           :error="Boolean(form.errors[`${PATH}.sede_destino_id`])"
           :error-message="form.errors[`${PATH}.sede_destino_id`]"
-          :placeholder="destinos.length ? 'Elegí la sede' : 'No hay otra sede activa'"
+          :placeholder="destinos.length ? 'Elige la sede' : 'No hay otra sede activa'"
           dense
           outlined
           hide-bottom-space
@@ -301,7 +301,7 @@
         v-else
         class="movimiento-form__vacio"
       >
-        Buscá las presentaciones arriba para agregarlas al documento.
+        Busca las presentaciones arriba para agregarlas al documento.
       </p>
 
       <div

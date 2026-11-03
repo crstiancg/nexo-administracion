@@ -4,7 +4,7 @@
     :options="opciones"
     :loading="buscando"
     :aria-labelledby="ariaLabelledby"
-    placeholder="Buscá por razón social o RUC"
+    placeholder="Busca por razón social o RUC"
     option-label="razon_social"
     use-input
     fill-input
@@ -41,7 +41,7 @@
     <template #no-option>
       <q-item>
         <q-item-section class="text-grey">
-          {{ termino ? 'Ningún proveedor activo coincide.' : 'Escribí razón social o RUC.' }}
+          {{ termino ? 'Ningún proveedor activo coincide.' : 'Escribe razón social o RUC.' }}
         </q-item-section>
       </q-item>
     </template>

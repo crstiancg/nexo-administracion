@@ -19,9 +19,9 @@
           style="--rise: 0"
         >
           <p class="auth__eyebrow">Bienvenido de vuelta</p>
-          <h1 class="auth__title">Iniciá sesión</h1>
+          <h1 class="auth__title">Inicia sesión</h1>
           <p class="auth__subtitle">
-            Ingresá tus credenciales para entrar al panel.
+            Ingresa tus credenciales para entrar al panel.
           </p>
         </header>
 
@@ -88,7 +88,7 @@
               name="info_outline"
               size="15px"
             />
-            Todavía no hay recuperación automática. Pedile a tu administrador
+            Todavía no hay recuperación automática. Pídele a tu administrador
             que restablezca tu contraseña.
           </p>
 
@@ -177,8 +177,8 @@ const errors = reactive({ username: '', password: '' })
 const formError = ref('')
 
 function validate () {
-  errors.username = username.value.trim() ? '' : 'Ingresá tu usuario.'
-  errors.password = password.value ? '' : 'Ingresá tu contraseña.'
+  errors.username = username.value.trim() ? '' : 'Ingresa tu usuario.'
+  errors.password = password.value ? '' : 'Ingresa tu contraseña.'
   return !errors.username && !errors.password
 }
 
@@ -206,7 +206,7 @@ async function onSubmit () {
     // crudo de una excepción no es algo que el usuario pueda accionar.
     formError.value = error instanceof AuthError
       ? error.message
-      : 'No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.'
+      : 'No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.'
 
     password.value = ''
   } finally {

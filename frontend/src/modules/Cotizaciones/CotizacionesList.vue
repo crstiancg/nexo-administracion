@@ -211,7 +211,7 @@
       persistent
     >
       <p class="conv-ayuda">
-        Desmarcá lo que no lleva y bajá la cantidad si pide menos. Los precios son los cotizados.
+        Desmarca lo que no lleva y baja la cantidad si pide menos. Los precios son los cotizados.
       </p>
 
       <div class="conv-tablaWrap">
@@ -515,7 +515,7 @@ async function convertir () {
     refrescar()
     $q.notify({
       type: 'positive',
-      message: `Se creó el pedido ${actualizada.pedido?.codigo}${todo ? '' : ' con lo que lleva el cliente'}: confirmalo desde Pedidos.`,
+      message: `Se creó el pedido ${actualizada.pedido?.codigo}${todo ? '' : ' con lo que lleva el cliente'}: confírmalo desde Pedidos.`,
       position: 'top-right',
       timeout: 3500
     })
@@ -540,7 +540,7 @@ async function ejecutar (accion) {
     $q.notify({
       type: 'positive',
       message: accion === 'convertir'
-        ? `Se creó el pedido ${actualizada.pedido?.codigo}: confirmalo desde Pedidos.`
+        ? `Se creó el pedido ${actualizada.pedido?.codigo}: confírmalo desde Pedidos.`
         : 'Cotización marcada como rechazada.',
       position: 'top-right',
       timeout: 3500

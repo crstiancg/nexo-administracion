@@ -16,7 +16,7 @@
       autofocus
     />
     <p class="abrir-caja__ayuda">
-      Contá el sencillo con el que arrancás el día: es la base del arqueo al cerrar.
+      Cuenta el sencillo con el que arrancás el día: es la base del arqueo al cerrar.
     </p>
     <AppButton
       type="submit"

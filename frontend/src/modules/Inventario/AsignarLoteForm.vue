@@ -6,7 +6,7 @@
   >
     <p class="asignar-form__resumen">
       {{ presentacion.presentacion }} tiene <strong>{{ formatearCantidad(sinLote) }}</strong>
-      sin lote en {{ sede }}. Poné el lote y el vencimiento que figuran en el envase.
+      sin lote en {{ sede }}. Pon el lote y el vencimiento que figuran en el envase.
     </p>
 
     <AppTextField
@@ -31,7 +31,7 @@
         v-model="datos.cantidad"
         label="Cantidad"
         type="number"
-        hint="Si son varios lotes, asigná uno y después el resto."
+        hint="Si son varios lotes, asigna uno y después el resto."
         :error="errores['lote.cantidad']"
         min="0"
       />
@@ -76,7 +76,7 @@ const escapar = (texto) => String(texto).replace(/[&<>"']/g, (c) => `&#${c.charC
 
 function submit () {
   if (!datos.codigo.trim()) {
-    errores.value = { 'lote.codigo': 'Poné el código del lote.' }
+    errores.value = { 'lote.codigo': 'Pon el código del lote.' }
     return
   }
 

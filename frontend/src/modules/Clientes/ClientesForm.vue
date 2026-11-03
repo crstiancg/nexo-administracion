@@ -203,16 +203,16 @@ async function consultar () {
       form.cliente.nombre = r.datos.nombre
       if (r.datos.direccion && !form.cliente.direccion) form.cliente.direccion = r.datos.direccion
       form.validate(`${PATH}.nombre`)
-      aviso.value = { tipo: 'ok', texto: `Datos de ${tipo === 'RUC' ? 'SUNAT' : 'RENIEC'} completados. Revisalos antes de guardar.` }
+      aviso.value = { tipo: 'ok', texto: `Datos de ${tipo === 'RUC' ? 'SUNAT' : 'RENIEC'} completados. Revísalos antes de guardar.` }
     } else if (r.origen === null) {
       aviso.value = r.consulta_habilitada
-        ? { tipo: 'warn', texto: 'No se encontró el documento: completá los datos a mano.' }
-        : { tipo: 'warn', texto: 'La consulta de documentos no está configurada: completá los datos a mano.' }
+        ? { tipo: 'warn', texto: 'No se encontró el documento: completa los datos a mano.' }
+        : { tipo: 'warn', texto: 'La consulta de documentos no está configurada: completa los datos a mano.' }
     }
   } catch {
     // Un número mal formado lo marca la validación del campo; la consulta
     // nunca bloquea el alta.
-    aviso.value = { tipo: 'warn', texto: 'No se pudo consultar ahora: completá los datos a mano.' }
+    aviso.value = { tipo: 'warn', texto: 'No se pudo consultar ahora: completa los datos a mano.' }
   } finally {
     consultando.value = false
   }

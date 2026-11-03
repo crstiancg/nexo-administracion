@@ -154,8 +154,8 @@ class StoreOfertaRequest extends FormRequest
             'oferta.tipo.in' => 'Para categorías, la oferta es un porcentaje.',
             'oferta.valor.max' => 'El descuento puede ser de hasta 90%.',
             'oferta.termina_at.after' => 'Tiene que terminar después de empezar.',
-            'oferta.productos.required' => 'Agregá al menos un producto.',
-            'oferta.categorias.required' => 'Elegí al menos una categoría.',
+            'oferta.productos.required' => 'Agrega al menos un producto.',
+            'oferta.categorias.required' => 'Elige al menos una categoría.',
         ];
     }
 

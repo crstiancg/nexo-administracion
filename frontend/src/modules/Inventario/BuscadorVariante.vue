@@ -51,7 +51,7 @@
     <template #no-option>
       <q-item>
         <q-item-section class="text-grey">
-          {{ termino ? 'Ninguna presentación coincide.' : 'Escribí un SKU o el nombre del producto.' }}
+          {{ termino ? 'Ninguna presentación coincide.' : 'Escribe un SKU o el nombre del producto.' }}
         </q-item-section>
       </q-item>
     </template>

@@ -52,7 +52,7 @@
           v-if="id"
           #aside
         >
-          <span class="usuario-form__hint">Dejala vacía para no cambiarla</span>
+          <span class="usuario-form__hint">Déjala vacía para no cambiarla</span>
         </template>
       </AppTextField>
 
@@ -139,7 +139,7 @@
         v-if="heredados.roles.length === 0"
         class="usuario-heredados__empty"
       >
-        Tildá un rol para ver los permisos que le da al usuario.
+        Marca un rol para ver los permisos que le da al usuario.
       </div>
 
       <template v-else>

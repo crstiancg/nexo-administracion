@@ -15,7 +15,7 @@
           @click="ordenDialog = true"
         >
           <q-tooltip v-if="!seleccion.length">
-            Marcá en la tabla lo que querés pedir
+            Marca en la tabla lo que quieres pedir
           </q-tooltip>
         </AppButton>
       </template>
@@ -87,9 +87,9 @@
     </AppTable>
 
     <p class="reponer-ayuda">
-      El mínimo se define por presentación en el formulario del producto. Reponé con una compra o con un traslado desde otra sede
-      (la columna "En la empresa" muestra si hay stock en otras sedes). Para pedirle al proveedor, filtrá por su marca, marcá lo
-      que falta y tocá "Crear pedido de compra".
+      El mínimo se define por presentación en el formulario del producto. Repón con una compra o con un traslado desde otra sede
+      (la columna "En la empresa" muestra si hay stock en otras sedes). Para pedirle al proveedor, filtrá por su marca, marca lo
+      que falta y toca "Crear pedido de compra".
     </p>
 
     <AppDialog

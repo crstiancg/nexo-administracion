@@ -52,7 +52,7 @@ class CobrarPedidoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'pago.referencia.required' => 'Anotá el número de operación para poder verificar el pago.',
+            'pago.referencia.required' => 'Anota el número de operación para poder verificar el pago.',
         ];
     }
 

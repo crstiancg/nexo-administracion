@@ -47,7 +47,7 @@
     <template #no-option>
       <q-item>
         <q-item-section class="text-grey">
-          {{ termino ? 'Ningún cliente coincide.' : 'Escribí nombre, documento o teléfono.' }}
+          {{ termino ? 'Ningún cliente coincide.' : 'Escribe nombre, documento o teléfono.' }}
         </q-item-section>
       </q-item>
       <!-- No existe: se da de alta ahí mismo, con lo que ya se escribió. -->
