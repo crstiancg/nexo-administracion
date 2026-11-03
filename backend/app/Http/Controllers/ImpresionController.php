@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrdenServicio;
+use App\Support\Empresa;
 use App\Support\QrCode;
 use Illuminate\Contracts\View\View;
 
@@ -29,7 +30,7 @@ class ImpresionController extends Controller
 
         return view("impresion.{$formato}-servicio", [
             'orden' => $orden,
-            'empresa' => config('empresa'),
+            'empresa' => Empresa::datos(),
             'qr' => QrCode::svg($orden->urlSeguimiento()),
             'repuestos' => $orden->pedido?->items->whereNotNull('variante_id') ?? collect(),
             'total' => $total,

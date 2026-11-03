@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrdenServicio;
+use App\Support\Empresa;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -30,7 +31,9 @@ class SeguimientoController extends Controller
         $pagado = round((float) ($orden->pedido?->pagos_sum_monto ?? 0), 2);
 
         return response()->json([
-            'empresa' => config('app.name'),
+            'empresa' => Empresa::datos()['nombre'],
+            'logo_url' => Empresa::datos()['logo_url'],
+            'telefono_empresa' => Empresa::datos()['telefono'],
             'codigo' => $orden->codigo,
             'estado' => $orden->estado,
             'estado_label' => OrdenServicio::ESTADOS[$orden->estado] ?? $orden->estado,

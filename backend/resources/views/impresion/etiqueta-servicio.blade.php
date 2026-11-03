@@ -30,7 +30,7 @@
     </div>
     <div class="pie">
         <span>{{ $orden->recibido_at->timezone(\App\Support\Fechas::zona())->format('d/m/Y') }}</span>
-        <span class="fuerte">NEXO TECHNOLOGY</span>
+        <span class="fuerte">{{ \Illuminate\Support\Str::limit($empresa['nombre'], 28) }}</span>
     </div>
 </div>
 @endsection

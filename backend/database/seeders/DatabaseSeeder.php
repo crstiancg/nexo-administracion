@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CatalogoSeeder::class,
             TipoEquipoSeeder::class,
+            ConceptoFinancieroSeeder::class,
         ]);
 
         // Datos de demostración sólo en desarrollo: en producción se arranca

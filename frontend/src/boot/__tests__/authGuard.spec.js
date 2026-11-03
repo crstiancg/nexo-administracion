@@ -4,6 +4,8 @@ import { Cookies } from 'quasar'
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }))
 vi.mock('@/boot/axios', () => ({ api }))
+// La configuración de la empresa se pide aparte (no cuenta para el usuario).
+vi.mock('@/services/ConfiguracionService', () => ({ default: { get: vi.fn().mockResolvedValue(null) } }))
 
 import { authGuard } from '@/boot/authGuard'
 import { useUserStore } from '@/stores/user-store'

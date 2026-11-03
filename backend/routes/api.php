@@ -8,7 +8,11 @@ use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ComprobanteController;
 use App\Http\Controllers\CotizacionController;
+use App\Http\Controllers\ConceptoFinancieroController;
+use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\EtiquetaController;
+use App\Http\Controllers\GananciaController;
+use App\Http\Controllers\MovimientoFinancieroController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\OfertaController;
@@ -63,6 +67,13 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('panel/alertas', [PanelController::class, 'alertas'])->name('panel.alertas');
     Route::get('panel/buscar', [PanelController::class, 'buscar'])->name('panel.buscar');
 
+    // Datos de la empresa y textos: los lee cualquiera con sesión (tickets,
+    // proforma, WhatsApp); los cambia quien administra la configuración.
+    Route::get('configuracion', [ConfiguracionController::class, 'show'])->name('configuracion.show');
+    Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+    Route::post('configuracion/logo', [ConfiguracionController::class, 'logo'])->name('configuracion.logo');
+    Route::delete('configuracion/logo', [ConfiguracionController::class, 'quitarLogo'])->name('configuracion.logo.quitar');
+
     Route::middleware(HandlePrecognitiveRequests::class)->group(function () {
         Route::apiResource('roles', RolController::class);
 
@@ -111,6 +122,15 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
         Route::apiResource('ordenes-servicio', OrdenServicioController::class)
             ->parameters(['ordenes-servicio' => 'orden'])
             ->except(['destroy']);
+
+        // Finanzas: conceptos y movimientos (gastos e ingresos que no son
+        // ventas). Un movimiento no se edita: se elimina y se vuelve a cargar.
+        Route::apiResource('conceptos-financieros', ConceptoFinancieroController::class)
+            ->parameters(['conceptos-financieros' => 'concepto'])
+            ->except(['show']);
+        Route::apiResource('movimientos-financieros', MovimientoFinancieroController::class)
+            ->parameters(['movimientos-financieros' => 'movimiento'])
+            ->only(['index', 'store', 'destroy']);
 
         // Una compra no se edita ni se borra: se anula.
         Route::apiResource('compras', CompraController::class)->only(['index', 'store', 'show']);
@@ -162,6 +182,7 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])->name('cotizaciones.convertir');
     Route::post('cotizaciones/{cotizacion}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
 
+    Route::get('ganancias', [GananciaController::class, 'index'])->name('ganancias.index');
     Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('reportes/productos', [ReporteController::class, 'productos'])->name('reportes.productos');
     Route::get('reportes/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');

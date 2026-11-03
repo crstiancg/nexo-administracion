@@ -36,7 +36,7 @@
 @section('contenido')
 <div class="hoja">
     <div class="cabecera">
-        <img src="{{ asset('img/logo.png') }}" alt="Nexo Technology">
+        <img src="{{ $empresa['logo_url'] ?? asset('img/logo.png') }}" alt="{{ $empresa['nombre'] }}">
         <div class="empresa">
             <strong>{{ $empresa['nombre'] }}</strong><br>
             RUC {{ $empresa['ruc'] }}<br>
@@ -129,8 +129,7 @@
             @if ($orden->garantia_dias > 0)
                 <p>Garantía del trabajo: {{ $orden->garantia_dias }} días desde la entrega, sobre la falla reparada.</p>
             @endif
-            <p>El cliente declara entregar el equipo en el estado descrito. Los equipos no recogidos en 90 días desde el aviso de reparación podrán considerarse abandonados.</p>
-            <p>Presente esta orden para recoger el equipo.</p>
+            <p>{{ $empresa['terminos_orden'] }}</p>
             <div class="firmas">
                 <div>
                     @if ($orden->firma_recepcion)

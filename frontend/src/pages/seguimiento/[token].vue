@@ -2,7 +2,10 @@
   <main class="seg">
     <div class="seg__card">
       <header class="seg__marca">
-        <AppLogo :alto="44" />
+        <AppLogo
+          :alto="44"
+          :url="orden?.logo_url"
+        />
       </header>
 
       <div

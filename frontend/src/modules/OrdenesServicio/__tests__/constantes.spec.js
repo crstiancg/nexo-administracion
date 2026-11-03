@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { enlaceSeguimiento, enlaceWhatsapp, mensajeWhatsapp } from '@/modules/OrdenesServicio/constantes'
+import { TIENDA } from '@/config/tienda'
+import { formatearPrecio } from '@/utils/moneda'
+import { enlaceSeguimiento, enlaceWhatsapp, mensajeWhatsapp, rellenarPlantilla } from '@/modules/OrdenesServicio/constantes'
 import { checklistPara } from '@/modules/OrdenesServicio/FormOrden'
 
 const ORDEN = {
@@ -36,6 +38,21 @@ describe('WhatsApp de órdenes de servicio', () => {
 
   it('sin saldo no menciona saldo pendiente', () => {
     expect(mensajeWhatsapp({ ...ORDEN, saldo: '0.00' })).not.toContain('Saldo pendiente')
+  })
+})
+
+describe('plantillas de WhatsApp configurables', () => {
+  it('usa la plantilla configurada para ese estado', () => {
+    TIENDA.whatsapp = { reparado: '{cliente}: tu {equipo} está listo. Debes {saldo}. {enlace}' }
+    try {
+      expect(mensajeWhatsapp(ORDEN)).toBe(`Ana: tu Laptop Lenovo IdeaPad 3 está listo. Debes ${formatearPrecio(180)}. ${enlaceSeguimiento(ORDEN.token)}`)
+    } finally {
+      TIENDA.whatsapp = {}
+    }
+  })
+
+  it('una variable desconocida queda como está', () => {
+    expect(rellenarPlantilla('Hola {cliente} {otra}', { cliente: 'Ana' })).toBe('Hola Ana {otra}')
   })
 })
 

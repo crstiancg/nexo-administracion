@@ -27,6 +27,7 @@ return [
         'panel.dashboard',
         'panel.alertas',
         'panel.buscar',
+        'configuracion.show',
     ],
 
     // Permisos que también habilitan otra ruta: "esta ruta se permite a
@@ -102,12 +103,18 @@ return [
         // y el punto de venta lo lee para reimprimir el ticket.
         'pedidos.show' => ['pedidos.index', 'pedidos.update', 'ventas.store'],
         // Cobrar, devolver, mover caja o vender necesita saber si hay una abierta.
-        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store', 'ordenes-servicio.store', 'ordenes-servicio.show'],
+        'cajas.actual' => ['pedidos.pagos', 'pedidos.devoluciones', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.index', 'ventas.store', 'ordenes-servicio.store', 'ordenes-servicio.show', 'movimientos-financieros.store'],
         'cajas.show' => ['cajas.index', 'cajas.cerrar'],
         // Servicio técnico: quien ve la lista abre la orden; los formularios
         // eligen tipo de equipo, marca, técnico, cliente y repuestos.
         'ordenes-servicio.show' => ['ordenes-servicio.index', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         'ordenes-servicio.resumen' => ['ordenes-servicio.index'],
+        // Quien edita la configuración cambia también el logo.
+        'configuracion.logo' => ['configuracion.update'],
+        'configuracion.logo.quitar' => ['configuracion.update'],
+        // Registrar un gasto o ingreso elige su concepto; si sale de la caja,
+        // necesita saber si hay una abierta.
+        'conceptos-financieros.index' => ['movimientos-financieros.store', 'movimientos-financieros.index', 'ganancias.index'],
         // Quien recibe, edita o entrega la orden carga fotos y la firma.
         'ordenes-servicio.fotos' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         'ordenes-servicio.fotos.quitar' => ['ordenes-servicio.update'],
@@ -147,6 +154,10 @@ return [
         'ordenes-servicio' => 'Órdenes de servicio',
         'tipos-equipo' => 'Tipos de equipo',
         'seguimiento' => 'Seguimiento público',
+        'conceptos-financieros' => 'Conceptos de ingresos y gastos',
+        'movimientos-financieros' => 'Ingresos y gastos',
+        'ganancias' => 'Ganancias',
+        'configuracion' => 'Configuración',
     ],
 
     'acciones' => [
@@ -201,6 +212,8 @@ return [
         'fotos' => 'Subir fotos',
         'fotos.quitar' => 'Quitar fotos',
         'firma' => 'Registrar la firma del cliente',
+        'logo' => 'Cambiar el logo',
+        'logo.quitar' => 'Quitar el logo',
     ],
 
 ];

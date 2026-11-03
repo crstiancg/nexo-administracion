@@ -1,5 +1,7 @@
 import { defineBoot } from '#q-app'
 import { Cookies, Notify } from 'quasar'
+import { aplicarConfiguracion } from '@/config/tienda'
+import ConfiguracionService from '@/services/ConfiguracionService'
 import { useUserStore } from '@/stores/user-store'
 
 /**
@@ -27,6 +29,8 @@ export async function authGuard (to) {
   if (!userStore.id) {
     try {
       await userStore.getUser()
+      // Sin la configuración se sigue con los valores por defecto.
+      ConfiguracionService.get().then(aplicarConfiguracion).catch(() => {})
     } catch {
       Cookies.remove('token', { path: '/' })
       return isPublic ? undefined : { path: '/login', query: { redirectTo: to.fullPath } }

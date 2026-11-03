@@ -304,6 +304,15 @@ const MENU = [
     ]
   },
   {
+    id: 'finanzas',
+    label: 'Finanzas',
+    icon: 'account_balance',
+    items: [
+      { to: '/ganancias', icon: 'trending_up', label: 'Ganancias', permiso: 'ganancias.index' },
+      { to: '/finanzas', icon: 'swap_horiz', label: 'Ingresos y gastos', permiso: 'movimientos-financieros.index' }
+    ]
+  },
+  {
     id: 'inventario',
     label: 'Inventario',
     icon: 'warehouse',
@@ -342,6 +351,7 @@ const MENU = [
     label: 'Administración',
     icon: 'admin_panel_settings',
     items: [
+      { to: '/configuracion', icon: 'settings', label: 'Configuración', permiso: 'configuracion.update' },
       { to: '/sedes', icon: 'storefront', label: 'Sedes', permiso: 'sedes.index' },
       { to: '/usuarios', icon: 'group', label: 'Usuarios', permiso: 'usuarios.index' },
       { to: '/roles', icon: 'badge', label: 'Roles', permiso: 'roles.index' },

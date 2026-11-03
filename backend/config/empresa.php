@@ -20,6 +20,15 @@ return [
 
     'telefono' => env('EMPRESA_TELEFONO', '900 551 900 - 900 180 000'),
 
+    // Textos de los documentos (se editan en Configuración).
+    'lema' => 'Computadoras · Laptops · Impresoras · Suministros · Soporte técnico especializado · Consultoría y asesoramiento en proyectos tecnológicos',
+
+    'garantia' => 'La garantía de equipos de cómputo en general se hace efectiva en nuestras oficinas, en los horarios de atención establecidos.',
+
+    'pie_ticket' => '¡Gracias por su compra!',
+
+    'terminos_orden' => 'El cliente declara entregar el equipo en el estado descrito. Los equipos no recogidos en 90 días desde el aviso de reparación podrán considerarse abandonados. Presente esta orden para recoger el equipo.',
+
     // Dónde vive la página pública de seguimiento (el front). El QR de cada
     // orden apunta a {frontend_url}/seguimiento/{token}.
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:9000'),

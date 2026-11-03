@@ -44,24 +44,60 @@ export function enlaceSeguimiento (token) {
 }
 
 /**
- * Mensaje de WhatsApp para avisarle al cliente según el estado de la orden.
- * Lo envía quien atiende, desde su WhatsApp (wa.me): no hay costo ni API.
+ * Mensajes de WhatsApp por estado de la orden. Lo envía quien atiende, desde
+ * su WhatsApp (wa.me): no hay costo ni API. Se cambian en Configuración; los
+ * que no se cambiaron son éstos.
  */
-const MENSAJES = {
-  recibido: (o) => `recibimos tu ${o.equipo} (orden ${o.codigo}). Te avisaremos apenas tengamos el diagnóstico.`,
-  diagnostico: (o) => `ya estamos revisando tu ${o.equipo} (orden ${o.codigo}). En cuanto tengamos el diagnóstico te escribimos.`,
-  esperando_repuesto: (o) => `para reparar tu ${o.equipo} (orden ${o.codigo}) estamos esperando un repuesto. Te avisaremos apenas llegue.`,
-  en_reparacion: (o) => `tu ${o.equipo} (orden ${o.codigo}) ya está en reparación.`,
-  reparado: (o) => `¡buenas noticias! Tu ${o.equipo} (orden ${o.codigo}) ya está reparado y listo para recoger.${Number(o.saldo) > 0 ? ` Saldo pendiente: ${formatearPrecio(o.saldo)}.` : ''}`,
-  sin_reparacion: (o) => `revisamos tu ${o.equipo} (orden ${o.codigo}) y lamentablemente no fue posible repararlo. Puedes pasar a recogerlo cuando gustes.`,
-  entregado: (o) => `gracias por confiar en nosotros. Entregamos tu ${o.equipo} (orden ${o.codigo}).${o.garantia_hasta ? ` Garantía hasta el ${fechaCorta(o.garantia_hasta)}.` : ''}`,
-  abandonado: (o) => `tu ${o.equipo} (orden ${o.codigo}) sigue en nuestro taller sin ser recogido. Por favor comunícate con nosotros para coordinar el retiro.`
+const PIE = '\n\nSigue tu orden aquí: {enlace}\n— {empresa}'
+
+export const PLANTILLAS_WHATSAPP = {
+  recibido: 'Hola {cliente}, recibimos tu {equipo} (orden {codigo}). Te avisaremos apenas tengamos el diagnóstico.' + PIE,
+  diagnostico: 'Hola {cliente}, ya estamos revisando tu {equipo} (orden {codigo}). En cuanto tengamos el diagnóstico te escribimos.' + PIE,
+  esperando_repuesto: 'Hola {cliente}, para reparar tu {equipo} (orden {codigo}) estamos esperando un repuesto. Te avisaremos apenas llegue.' + PIE,
+  en_reparacion: 'Hola {cliente}, tu {equipo} (orden {codigo}) ya está en reparación.' + PIE,
+  reparado: 'Hola {cliente}, ¡buenas noticias! Tu {equipo} (orden {codigo}) ya está reparado y listo para recoger.{saldo_pendiente}' + PIE,
+  sin_reparacion: 'Hola {cliente}, revisamos tu {equipo} (orden {codigo}) y lamentablemente no fue posible repararlo. Puedes pasar a recogerlo cuando gustes.' + PIE,
+  entregado: 'Hola {cliente}, gracias por confiar en nosotros. Entregamos tu {equipo} (orden {codigo}).{garantia}' + PIE,
+  abandonado: 'Hola {cliente}, tu {equipo} (orden {codigo}) sigue en nuestro taller sin ser recogido. Por favor comunícate con nosotros para coordinar el retiro.' + PIE
+}
+
+/** Lo que se puede usar en una plantilla, con un ejemplo para la ayuda. */
+export const VARIABLES_WHATSAPP = [
+  { clave: 'cliente', ayuda: 'Primer nombre del cliente' },
+  { clave: 'equipo', ayuda: 'Laptop HP 250 G7' },
+  { clave: 'codigo', ayuda: 'OS-000012' },
+  { clave: 'estado', ayuda: 'Reparado' },
+  { clave: 'total', ayuda: 'S/ 408.00' },
+  { clave: 'saldo', ayuda: 'S/ 208.00' },
+  { clave: 'saldo_pendiente', ayuda: '" Saldo pendiente: S/ 208.00." (vacío si no debe)' },
+  { clave: 'garantia', ayuda: '" Garantía hasta el 03/12/2026." (vacío si no tiene)' },
+  { clave: 'enlace', ayuda: 'Enlace de seguimiento de la orden' },
+  { clave: 'empresa', ayuda: 'Nombre de la empresa' }
+]
+
+/** Reemplaza {variable} por su valor; lo que no existe queda como está. */
+export function rellenarPlantilla (plantilla, valores) {
+  return plantilla.replace(/\{(\w+)\}/g, (todo, clave) => (clave in valores ? valores[clave] : todo))
+}
+
+export function valoresWhatsapp (orden) {
+  return {
+    cliente: orden.cliente?.nombre?.split(' ')[0] ?? '',
+    equipo: orden.equipo ?? '',
+    codigo: orden.codigo ?? '',
+    estado: ESTADOS[orden.estado]?.label ?? '',
+    total: formatearPrecio(orden.total ?? 0),
+    saldo: formatearPrecio(orden.saldo ?? 0),
+    saldo_pendiente: Number(orden.saldo) > 0 ? ` Saldo pendiente: ${formatearPrecio(orden.saldo)}.` : '',
+    garantia: orden.garantia_hasta ? ` Garantía hasta el ${fechaCorta(orden.garantia_hasta)}.` : '',
+    enlace: orden.token ? enlaceSeguimiento(orden.token) : '',
+    empresa: TIENDA.nombre
+  }
 }
 
 export function mensajeWhatsapp (orden) {
-  const nombre = orden.cliente?.nombre?.split(' ')[0] ?? ''
-  const cuerpo = (MENSAJES[orden.estado] ?? MENSAJES.recibido)(orden)
-  return `Hola ${nombre}, ${cuerpo}\n\nSigue tu orden aquí: ${enlaceSeguimiento(orden.token)}\n— ${TIENDA.nombre}`
+  const plantilla = TIENDA.whatsapp?.[orden.estado] || PLANTILLAS_WHATSAPP[orden.estado] || PLANTILLAS_WHATSAPP.recibido
+  return rellenarPlantilla(plantilla, valoresWhatsapp(orden))
 }
 
 /**
