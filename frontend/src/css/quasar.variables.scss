@@ -32,7 +32,7 @@ $font-mono : 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace
 
 // Azul del anillo del logo de Nexo, un punto más profundo para que el
 // blanco encima pase AA (5.17:1).
-$primary   : #2563EB;
+$primary   : #10a5db;
 $secondary : #6B7280;
 $accent    : #0B1B3D;
 
@@ -61,7 +61,7 @@ $surface        : #FFFFFF;
 
 // Variantes de $primary (hover y fondo suave) — no son $secondary/$accent,
 // son el mismo azul de marca en otro estado/uso.
-$primary-hover : #1D4ED8;
+$primary-hover : #16a7c1;
 $primary-soft  : #DBEAFE;
 
 // Tinte suave de $negative. El destructivo nunca va relleno de marca:
