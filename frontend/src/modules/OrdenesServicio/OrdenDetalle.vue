@@ -170,76 +170,27 @@
         <h4 class="os-detalle__h">
           Fotos del equipo <span class="os-detalle__sub">({{ orden.fotos?.length ?? 0 }})</span>
         </h4>
-        <template v-if="puedeEvidencia">
-          <!-- En el celular abre la cámara; en la PC, el explorador. -->
-          <input
-            ref="inputFotos"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            hidden
-            @change="subirFotos"
-          >
-          <q-btn
-            flat
-            dense
-            no-caps
-            icon="add_a_photo"
-            label="Agregar fotos"
-            color="primary"
-            :loading="subiendo"
-            @click="inputFotos.click()"
-          />
-        </template>
+        <q-spinner
+          v-if="subiendo"
+          size="16px"
+        />
       </div>
-      <div
-        v-if="orden.fotos?.length"
-        class="os-detalle__fotos"
-      >
-        <div
-          v-for="foto in orden.fotos"
-          :key="foto.id"
-          class="os-detalle__foto"
-        >
-          <a
-            :href="foto.url"
-            target="_blank"
-            rel="noopener"
-            :aria-label="`Ver foto ${foto.nombre}`"
-          >
-            <img
-              :src="foto.miniatura_url"
-              :alt="foto.nombre"
-              loading="lazy"
-            >
-          </a>
-          <button
-            v-if="userStore.hasPermission('ordenes-servicio.update')"
-            type="button"
-            class="os-detalle__fotoQuitar"
-            :aria-label="`Quitar foto ${foto.nombre}`"
-            @click="quitarFoto(foto)"
-          >
-            <q-icon
-              name="close"
-              size="14px"
-            />
-          </button>
-        </div>
-      </div>
+      <!-- La misma galería que en Productos (agregar, comprimir, ampliar en
+           el sistema). Acá cada cambio se guarda al toque: sube o quita. -->
+      <AppFotos
+        :model-value="orden.fotos ?? []"
+        label="Fotos del equipo"
+        :max="MAX_FOTOS"
+        :portada="false"
+        :solo-lectura="!puedeEvidencia || subiendo"
+        :errores="errorFotos ? [errorFotos] : []"
+        @update:model-value="cambiarFotos"
+      />
       <p
-        v-else
-        class="os-detalle__sub"
+        v-if="!orden.fotos?.length"
+        class="os-detalle__sub os-detalle__fotosAyuda"
       >
-        Sin fotos. Tomar fotos al recibir el equipo protege al taller ante reclamos.
-      </p>
-      <p
-        v-if="errorFotos"
-        class="os-detalle__error"
-        role="alert"
-      >
-        {{ errorFotos }}
+        Tomar fotos al recibir el equipo protege al taller ante reclamos.
       </p>
     </section>
 
@@ -340,6 +291,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppChip from '@/components/AppChip.vue'
 import AppFirma from '@/components/AppFirma.vue'
+import AppFotos from '@/components/AppFotos.vue'
 import AppTimeline from '@/components/AppTimeline.vue'
 import { useUserStore } from '@/stores/user-store'
 import OrdenServicioService from '@/services/OrdenServicioService'
@@ -375,7 +327,8 @@ const userStore = useUserStore()
 const puedeEvidencia = computed(() => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado']
   .some((p) => userStore.hasPermission(p)))
 
-const inputFotos = ref()
+// Igual que OrdenServicioArchivoController::MAX_FOTOS.
+const MAX_FOTOS = 20
 const subiendo = ref(false)
 const errorFotos = ref('')
 
@@ -384,27 +337,36 @@ function mensajeDe (error, porDefecto) {
   return Object.values(errores).flat()[0] ?? error.response?.data?.message ?? porDefecto
 }
 
-async function subirFotos (evento) {
-  const archivos = [...(evento.target.files ?? [])]
-  evento.target.value = ''
-  if (!archivos.length) return
-  subiendo.value = true
+// La galería devuelve la lista entera: lo nuevo trae `archivo` (ya
+// comprimido) y lo que falta respecto de antes es lo que se quitó.
+async function cambiarFotos (lista) {
+  const antes = orden.value.fotos ?? []
+  const nuevas = lista.filter((f) => f.archivo)
+  const quitadas = antes.filter((f) => f.id && !lista.some((l) => l.id === f.id))
   errorFotos.value = ''
-  try {
-    orden.value.fotos = await OrdenServicioService.subirFotos(orden.value.id, archivos)
-  } catch (error) {
-    errorFotos.value = mensajeDe(error, 'No se pudieron subir las fotos.')
-  } finally {
-    subiendo.value = false
-  }
-}
 
-async function quitarFoto (foto) {
-  errorFotos.value = ''
-  try {
-    orden.value.fotos = await OrdenServicioService.quitarFoto(orden.value.id, foto.id)
-  } catch (error) {
-    errorFotos.value = mensajeDe(error, 'No se pudo quitar la foto.')
+  if (nuevas.length) {
+    // Se ven al instante (vista previa) mientras suben.
+    orden.value.fotos = lista
+    subiendo.value = true
+    try {
+      orden.value.fotos = await OrdenServicioService.subirFotos(orden.value.id, nuevas.map((f) => f.archivo))
+    } catch (error) {
+      orden.value.fotos = antes
+      errorFotos.value = mensajeDe(error, 'No se pudieron subir las fotos.')
+    } finally {
+      nuevas.forEach((f) => URL.revokeObjectURL(f.url))
+      subiendo.value = false
+    }
+    return
+  }
+
+  for (const foto of quitadas) {
+    try {
+      orden.value.fotos = await OrdenServicioService.quitarFoto(orden.value.id, foto.id)
+    } catch (error) {
+      errorFotos.value = mensajeDe(error, 'No se pudo quitar la foto.')
+    }
   }
 }
 
@@ -631,42 +593,8 @@ const historial = computed(() => {
   }
 }
 
-.os-detalle__fotos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
-}
-
-.os-detalle__foto {
-  position: relative;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border: 1px solid var(--app-border-subtle);
-  border-radius: 10px;
-  background: var(--app-page);
-
-  img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.os-detalle__fotoQuitar {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #FFFFFF;
-  cursor: pointer;
+.os-detalle__fotosAyuda {
+  margin: 6px 0 0;
 }
 
 .os-detalle__firmas {

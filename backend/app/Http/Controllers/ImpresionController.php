@@ -15,8 +15,9 @@ use Illuminate\Contracts\View\View;
 class ImpresionController extends Controller
 {
     // orden = A4 entera; orden-doble = A4 partida en dos copias iguales
-    // (arriba la de la tienda, abajo la del cliente).
-    public const FORMATOS = ['orden', 'orden-doble', 'etiqueta'];
+    // (arriba la de la tienda, abajo la del cliente); orden-premium = A4 de
+    // presentación (cabecera con ondas, foto del equipo, pie con Puno).
+    public const FORMATOS = ['orden', 'orden-doble', 'orden-premium', 'etiqueta'];
 
     public function ordenServicio(OrdenServicio $orden, string $formato): View
     {
@@ -30,7 +31,11 @@ class ImpresionController extends Controller
         $total = (float) ($orden->pedido?->total ?? 0);
         $pagado = round((float) ($orden->pedido?->pagos->sum('monto') ?? 0), 2);
 
-        $vista = $formato === 'etiqueta' ? 'etiqueta-servicio' : 'orden-servicio';
+        $vista = match ($formato) {
+            'etiqueta' => 'etiqueta-servicio',
+            'orden-premium' => 'orden-premium',
+            default => 'orden-servicio',
+        };
 
         return view("impresion.{$vista}", [
             'doble' => $formato === 'orden-doble',

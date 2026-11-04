@@ -42,13 +42,16 @@
         </button>
 
         <span
-          v-if="i === 0"
+          v-if="i === 0 && portada"
           class="app-fotos__portada"
         >Portada</span>
 
-        <div class="app-fotos__acciones">
+        <div
+          v-if="!soloLectura"
+          class="app-fotos__acciones"
+        >
           <q-btn
-            v-if="i > 0"
+            v-if="i > 0 && portada"
             flat
             dense
             round
@@ -81,7 +84,7 @@
       </li>
 
       <li
-        v-else-if="model.length < max"
+        v-else-if="model.length < max && !soloLectura"
         class="app-fotos__item app-fotos__item--agregar"
       >
         <label class="app-fotos__agregar">
@@ -171,6 +174,16 @@ const props = defineProps({
   errores: {
     type: Array,
     default: () => []
+  },
+  // Sin portada: las fotos valen todas igual (p. ej. evidencia de una orden).
+  portada: {
+    type: Boolean,
+    default: true
+  },
+  // Sólo mirar y ampliar: sin agregar ni quitar.
+  soloLectura: {
+    type: Boolean,
+    default: false
   }
 })
 

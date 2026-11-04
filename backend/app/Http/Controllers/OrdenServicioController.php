@@ -124,6 +124,7 @@ class OrdenServicioController extends Controller
         return response()->json([
             'orden' => $enlace('orden'),
             'orden-doble' => $enlace('orden-doble'),
+            'orden-premium' => $enlace('orden-premium'),
             'etiqueta' => $enlace('etiqueta'),
         ]);
     }

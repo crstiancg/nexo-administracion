@@ -274,6 +274,14 @@ class OrdenServicioTest extends TestCase
             ->assertSee('data:image/svg+xml;base64,', false)
             ->assertDontSee('1234');
 
+        // El diseño premium (A4 de presentación), aparte de los otros.
+        $this->get($enlaces['orden-premium'])
+            ->assertOk()
+            ->assertSee('Datos del equipo')
+            ->assertSee($orden['codigo'])
+            ->assertSee('Ana Quispe')
+            ->assertDontSee('1234');
+
         $this->get($enlaces['etiqueta'])
             ->assertOk()
             ->assertSee($orden['codigo'])

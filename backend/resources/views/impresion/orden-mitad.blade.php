@@ -1,135 +1,172 @@
 {{-- Media hoja A4 (apaisada, 210 × 148 mm) con toda la orden. Se usa dos
-     veces en la misma hoja: copia de la tienda arriba y del cliente abajo. --}}
+     veces en la misma hoja: copia de la tienda arriba y del cliente abajo.
+
+     Mismo lenguaje que la proforma (CotizacionDocumento.vue): membrete con el
+     lema al centro, cuadro del RUC con la banda azul, línea de contacto entre
+     bordes azules, bloques con franja celeste, tabla de encabezado azul,
+     total en azul sólido y el sello punteado. Así los documentos de Nexo son
+     una sola familia. --}}
+@php($tienda = $copia === 'Copia tienda')
+@php($zona = \App\Support\Fechas::zona())
 <div class="mitad">
-    <div class="m-cab">
-        <img src="{{ $empresa['logo_url'] ?? asset('img/logo.png') }}" alt="{{ $empresa['nombre'] }}">
-        <div class="m-empresa">
-            <strong>{{ $empresa['nombre'] }}</strong> · RUC {{ $empresa['ruc'] }}<br>
-            {{ $orden->sede?->direccion ?: $empresa['direccion'] }} · Tel. {{ $orden->sede?->telefono ?: $empresa['telefono'] }}
+    <header class="os-membrete">
+        <img class="os-logo" src="{{ $empresa['logo_url'] ?? asset('img/logo.png') }}" alt="{{ $empresa['nombre'] }}">
+        <p class="os-lema">{{ $empresa['lema'] }}</p>
+        <div class="os-caja">
+            <div class="os-ruc">RUC {{ $empresa['ruc'] }}</div>
+            <div class="os-titulo">ORDEN DE SERVICIO</div>
+            <div class="os-codigo">N° {{ $orden->codigo }}</div>
         </div>
-        <div class="m-caja">
-            <div class="m-copia">{{ $copia }}</div>
-            <div class="m-codigo">{{ $orden->codigo }}</div>
-            <div>{{ $orden->recibido_at->timezone(\App\Support\Fechas::zona())->format('d/m/Y H:i') }}</div>
-        </div>
+    </header>
+
+    <div class="os-contacto">
+        <span>{{ $orden->sede?->direccion ?: $empresa['direccion'] }}</span>
+        <span>Contacto: {{ $orden->sede?->telefono ?: $empresa['telefono'] }}</span>
     </div>
 
-    <div class="m-cuerpo">
-        <div class="m-izq">
-            <div class="m-fila">
-                <div class="m-bloque">
-                    <h4>Cliente</h4>
-                    <strong>{{ $orden->cliente->nombre }}</strong><br>
-                    @if ($orden->cliente->numero_documento)
-                        {{ $orden->cliente->tipo_documento }} {{ $orden->cliente->numero_documento }}
-                    @endif
-                    @if ($orden->cliente->telefono)
-                        · Tel. {{ $orden->cliente->telefono }}
-                    @endif
-                </div>
-                <div class="m-bloque">
-                    <h4>Equipo</h4>
-                    <strong>{{ $orden->equipo() }}</strong><br>
-                    @if ($orden->serie)
-                        S/N: {{ $orden->serie }} ·
-                    @endif
-                    Bloqueo: {{ $seguridad }}
-                    @if ($orden->accesorios)
-                        <br>Accesorios: {{ $orden->accesorios }}
-                    @endif
-                </div>
-            </div>
+    <section class="os-bloque">
+        <h3 class="os-banda">Datos del cliente y del equipo</h3>
+        <div class="os-datos">
+            <dl>
+                <dt>Cliente</dt>
+                <dd class="os-fuerte">{{ $orden->cliente->nombre }}</dd>
+                <dt>{{ $orden->cliente->tipo_documento ?: 'DNI/RUC' }}</dt>
+                <dd>{{ $orden->cliente->numero_documento ?: '—' }}</dd>
+                <dt>Teléfono</dt>
+                <dd>{{ $orden->cliente->telefono ?: '—' }}</dd>
+            </dl>
+            <dl>
+                <dt>Equipo</dt>
+                <dd class="os-fuerte">{{ $orden->equipo() }}</dd>
+                <dt>Serie / IMEI</dt>
+                <dd>{{ $orden->serie ?: '—' }} · Bloqueo: {{ $seguridad }}</dd>
+                <dt>Accesorios</dt>
+                <dd>{{ $orden->accesorios ?: 'Ninguno' }}</dd>
+            </dl>
+            <dl>
+                <dt>Recibido</dt>
+                <dd>{{ $orden->recibido_at->timezone($zona)->format('d/m/Y H:i') }}</dd>
+                <dt>Técnico</dt>
+                <dd>{{ $orden->tecnico?->name ?? 'Por asignar' }}</dd>
+                <dt>Estado</dt>
+                <dd>{{ $estado }}{{ $orden->es_garantia ? ' (garantía)' : '' }}</dd>
+            </dl>
+        </div>
+    </section>
 
+    <table class="os-condiciones">
+        <tbody>
+            <tr>
+                <th>Falla reportada</th>
+                <td>
+                    {{ $orden->falla }}
+                    @if ($orden->observacion)
+                        <span class="os-obs">— Obs.: {{ $orden->observacion }}</span>
+                    @endif
+                </td>
+            </tr>
             @if ($orden->checklist)
-                <div class="m-check">
-                    <b>Al recibir:</b>
-                    @foreach ($orden->checklist as $punto => $ok)
-                        <span>{{ $ok ? '☑' : '☐' }} {{ $punto }}</span>
-                    @endforeach
-                </div>
-            @endif
-
-            <div class="m-bloque">
-                <h4>Falla reportada</h4>
-                <div class="m-texto">{{ $orden->falla }}</div>
-                @if ($orden->diagnostico)
-                    <h4 class="m-sub">Diagnóstico / trabajo</h4>
-                    <div class="m-texto">{{ $orden->diagnostico }}</div>
-                @endif
-                @if ($orden->observacion)
-                    <h4 class="m-sub">Observaciones</h4>
-                    <div class="m-texto">{{ $orden->observacion }}</div>
-                @endif
-            </div>
-
-            @if ($repuestos->isNotEmpty() || (float) $orden->mano_obra > 0)
-                <table class="m-tabla">
-                    <thead>
-                        <tr><th>Descripción</th><th class="num">Cant.</th><th class="num">Importe</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($repuestos->take(4) as $item)
-                            <tr>
-                                <td>{{ $item->variante?->producto?->nombre }} — {{ $item->variante?->presentacion }}</td>
-                                <td class="num">{{ rtrim(rtrim(number_format((float) $item->cantidad, 3, '.', ''), '0'), '.') }}</td>
-                                <td class="num">S/ {{ number_format((float) $item->subtotal, 2) }}</td>
-                            </tr>
+                <tr>
+                    <th>Estado al recibir</th>
+                    <td class="os-check">
+                        @foreach ($orden->checklist as $punto => $ok)
+                            <span class="{{ $ok ? '' : 'os-no' }}">{{ $ok ? '☑' : '☐' }} {{ $punto }}</span>
                         @endforeach
-                        @if ($repuestos->count() > 4)
-                            <tr>
-                                <td colspan="2">… y {{ $repuestos->count() - 4 }} repuestos más</td>
-                                <td class="num">S/ {{ number_format((float) $repuestos->skip(4)->sum('subtotal'), 2) }}</td>
-                            </tr>
-                        @endif
-                        @if ((float) $orden->mano_obra > 0)
-                            <tr>
-                                <td>Mano de obra</td>
-                                <td class="num">1</td>
-                                <td class="num">S/ {{ number_format((float) $orden->mano_obra, 2) }}</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
+                    </td>
+                </tr>
             @endif
+            @if ($tienda || $orden->diagnostico)
+                <tr>
+                    <th>Diagnóstico</th>
+                    <td class="{{ $tienda ? 'os-escribir' : '' }}">
+                        {{ $orden->diagnostico }}
+                        @if ($tienda)
+                            @for ($i = 0; $i < ($orden->diagnostico ? 2 : 3); $i++)<div class="os-renglon"></div>@endfor
+                        @endif
+                    </td>
+                </tr>
+            @endif
+            @unless ($tienda)
+                <tr>
+                    <th>Para recoger</th>
+                    <td>
+                        Presenta esta copia y tu documento en {{ $orden->sede?->nombre }}
+                        ({{ $orden->sede?->direccion ?: $empresa['direccion'] }}).
+                        @if ($orden->sede?->horario)
+                            Horario: {{ rtrim($orden->sede->horario, '. ') }}.
+                        @endif
+                        Te avisamos por WhatsApp cuando esté listo.
+                    </td>
+                </tr>
+            @endunless
+        </tbody>
+    </table>
+
+    <div class="os-cuerpo">
+        <div class="os-izq">
+            <table class="os-tabla">
+                <thead>
+                    <tr><th>Descripción</th><th class="os-cant">Cant.</th><th class="os-num">Importe</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($repuestos->take(3) as $item)
+                        <tr>
+                            <td class="os-producto">{{ $item->variante?->producto?->nombre }} — {{ $item->variante?->presentacion }}</td>
+                            <td class="os-cant">{{ rtrim(rtrim(number_format((float) $item->cantidad, 3, '.', ''), '0'), '.') }}</td>
+                            <td class="os-num">S/ {{ number_format((float) $item->subtotal, 2) }}</td>
+                        </tr>
+                    @endforeach
+                    @if ($repuestos->count() > 3)
+                        <tr>
+                            <td colspan="2">… y {{ $repuestos->count() - 3 }} repuestos más</td>
+                            <td class="os-num">S/ {{ number_format((float) $repuestos->skip(3)->sum('subtotal'), 2) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) $orden->mano_obra > 0)
+                        <tr>
+                            <td class="os-producto">Mano de obra</td>
+                            <td class="os-cant">1</td>
+                            <td class="os-num">S/ {{ number_format((float) $orden->mano_obra, 2) }}</td>
+                        </tr>
+                    @endif
+                    @if ($repuestos->isEmpty() && (float) $orden->mano_obra <= 0)
+                        <tr><td colspan="3" class="os-vacio">Se cotiza después del diagnóstico.</td></tr>
+                    @endif
+                </tbody>
+            </table>
         </div>
 
-        <div class="m-der">
-            <div class="m-datos">
-                <div><h4>Sede</h4>{{ $orden->sede?->nombre ?? '—' }}</div>
-                <div><h4>Técnico</h4>{{ $orden->tecnico?->name ?? 'Por asignar' }}</div>
-                <div><h4>Estado</h4>{{ $estado }}{{ $orden->es_garantia ? ' · Garantía' : '' }}</div>
-            </div>
+        <div class="os-der">
+            <dl class="os-totales">
+                <dt>Total</dt><dd>S/ {{ number_format($total, 2) }}</dd>
+                <dt>A cuenta</dt><dd>S/ {{ number_format($pagado, 2) }}</dd>
+                <dt class="os-total">{{ $saldo > 0 ? 'Saldo' : 'Pagado' }}</dt>
+                <dd class="os-total">S/ {{ number_format($saldo > 0 ? $saldo : $total, 2) }}</dd>
+            </dl>
+        </div>
 
-            @if ($total > 0)
-                <table class="m-totales">
-                    <tr><td>Total</td><td class="num">S/ {{ number_format($total, 2) }}</td></tr>
-                    <tr><td>A cuenta</td><td class="num">S/ {{ number_format($pagado, 2) }}</td></tr>
-                    <tr class="m-saldo"><td>Saldo</td><td class="num">S/ {{ number_format($saldo, 2) }}</td></tr>
-                </table>
-            @endif
-
-            <div class="m-qr">
-                <img src="{{ $qr }}" alt="QR de seguimiento">
-                <div>Escanee para ver el estado de su equipo</div>
-            </div>
+        <div class="os-qr">
+            <img src="{{ $qr }}" alt="QR de seguimiento">
+            <span>{{ $tienda ? 'Seguimiento' : 'Sigue tu reparación' }}</span>
         </div>
     </div>
 
-    <div class="m-pie">
-        <div class="m-condiciones">
+    <footer class="os-pie">
+        <div class="os-terminos">
             @if ($orden->garantia_dias > 0)
-                Garantía del trabajo: {{ $orden->garantia_dias }} días desde la entrega, sobre la falla reparada.
+                <strong>*** Garantía de {{ $orden->garantia_dias }} días</strong> desde la entrega, sobre la falla reparada.
             @endif
             {{ $empresa['terminos_orden'] }}
         </div>
-        <div class="m-firmas">
+        <div class="os-firmas">
             <div>
                 @if ($orden->firma_recepcion)
                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($orden->firma_recepcion) }}" alt="Firma del cliente">
                 @endif
                 Firma del cliente
             </div>
-            <div>Recibido por{{ $orden->usuario ? ': '.$orden->usuario->name : '' }}</div>
+            <div>{{ $orden->usuario?->name ?? $empresa['nombre'] }}<br><span>Recibido por</span></div>
         </div>
-    </div>
+        <div class="os-sello" aria-hidden="true">{{ $copia }}</div>
+    </footer>
 </div>

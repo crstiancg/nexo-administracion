@@ -253,6 +253,16 @@
               <q-item
                 v-close-popup
                 clickable
+                @click="imprimir(detalle, 'orden-premium')"
+              >
+                <q-item-section avatar>
+                  <q-icon name="auto_awesome" />
+                </q-item-section>
+                <q-item-section>Orden de servicio (diseño premium)</q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
                 @click="imprimir(detalle, 'etiqueta')"
               >
                 <q-item-section avatar>

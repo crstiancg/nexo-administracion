@@ -31,43 +31,81 @@
     .qr { width: 135px; text-align: center; font-size: 9.5px; }
     .qr img { width: 125px; height: 125px; }
     .sub { margin-top: 8px; }
-    .sub { margin-top: 8px; }
-    /* ── A4 en dos copias: cada mitad es 210 × 148,5 mm, con toda la orden ── */
+    /* ── A4 en dos copias, con el lenguaje de la proforma ──
+       Azul de relleno #1D4ED8 (AA con blanco), su tinte #DBEAFE, tinta y gris.
+       Mismas piezas que CotizacionDocumento.vue, a escala de media hoja. */
     .doble { width: 210mm; height: 296mm; overflow: hidden; margin: 0 auto 24px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
-    .mitad { display: flex; flex-direction: column; height: 148mm; padding: 6mm 8mm 5mm; overflow: hidden; font-size: 8.6px; line-height: 1.35; }
-    .corte { position: relative; height: 0; border-top: 1px dashed #6b7280; }
-    .corte span { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: #fff; font-size: 8px; color: #6b7280; }
-    .m-cab { display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 2px solid #2563EB; }
-    .m-cab img { height: 34px; }
-    .m-empresa { flex: 1; font-size: 8px; }
-    .m-empresa strong { font-size: 9.5px; }
-    .m-caja { min-width: 120px; padding: 3px 8px; border: 1.5px solid #2563EB; border-radius: 6px; text-align: center; font-size: 8px; }
-    .m-copia { background: #2563EB; color: #fff; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; padding: 1px 0; }
-    .m-codigo { font-family: monospace; font-size: 13px; font-weight: 700; }
-    .m-cuerpo { display: flex; gap: 8px; flex: 1; min-height: 0; margin-top: 6px; }
-    .m-izq { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-    .m-der { display: flex; flex-direction: column; gap: 6px; width: 46mm; }
-    .m-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .m-bloque { border: 1px solid #d1d5db; border-radius: 5px; padding: 4px 6px; }
-    .mitad h4 { margin: 0 0 1px; font-size: 7.5px; letter-spacing: .4px; text-transform: uppercase; color: #2563EB; }
-    .m-sub { margin-top: 3px !important; }
-    .m-texto { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .m-check { display: flex; flex-wrap: wrap; gap: 1px 9px; font-size: 8px; }
-    .m-tabla { width: 100%; border-collapse: collapse; }
-    .m-tabla th { background: #2563EB; color: #fff; text-align: left; font-size: 7.5px; text-transform: uppercase; padding: 2px 5px; }
-    .m-tabla td { border-bottom: 1px solid #e5e7eb; padding: 2px 5px; }
-    .m-datos { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; }
-    .m-totales { width: 100%; border-collapse: collapse; }
-    .m-totales td { padding: 1px 4px; }
-    .m-saldo td { font-size: 11px; font-weight: 800; border-top: 1px solid #111827; }
-    .m-qr { margin-top: auto; text-align: center; font-size: 7.5px; }
-    .m-qr img { width: 74px; height: 74px; }
-    .m-pie { display: flex; gap: 12px; align-items: flex-end; margin-top: 5px; padding-top: 4px; border-top: 1px solid #111827; }
-    .m-condiciones { flex: 1; font-size: 7.3px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-    .m-firmas { display: flex; gap: 12px; width: 92mm; padding-top: 22px; }
-    .m-firmas div { position: relative; flex: 1; border-top: 1px solid #111827; text-align: center; padding-top: 2px; font-size: 7.5px; }
-    .m-firmas img { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); height: 24px; }
-    .num { text-align: right; white-space: nowrap; }
+    .doble, .doble * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .mitad { display: flex; flex-direction: column; gap: 2.6mm; height: 148mm; padding: 6mm 9mm 5mm; overflow: hidden; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; line-height: 1.35; color: #111827; }
+    /* Ningún bloque se encoge: si no entra, se nota al probar y no se corta en silencio. */
+    .mitad > * { flex-shrink: 0; }
+    .corte { position: relative; height: 0; border-top: 0.75pt dashed #9CA3AF; }
+    .corte span { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: #fff; font-family: Arial, sans-serif; font-size: 7pt; color: #6B7280; }
+
+    /* Membrete: logo | lema | cuadro del RUC. */
+    .os-membrete { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+    .os-logo { display: block; height: 46px; }
+    .os-lema { margin: 0; font-size: 6.6pt; font-weight: 700; letter-spacing: .2px; line-height: 1.5; text-align: center; text-transform: uppercase; color: #4B5563; }
+    .os-caja { min-width: 46mm; padding: 4px 10px; border: 1.2pt solid #1D4ED8; border-radius: 6px; text-align: center; }
+    .os-ruc { font-size: 8pt; }
+    .os-titulo { margin: 2px 0; padding: 1px 0; background: #1D4ED8; font-size: 10pt; font-weight: 800; letter-spacing: 1.2px; color: #fff; }
+    .os-codigo { font-family: monospace; font-size: 9pt; font-weight: 700; }
+
+    .os-contacto { display: flex; justify-content: space-between; gap: 12px; padding: 1.2mm 1px; border-top: 2.2pt solid #1D4ED8; border-bottom: 0.75pt solid #1D4ED8; font-size: 7.4pt; font-weight: 700; text-transform: uppercase; }
+
+    /* Bloque con franja celeste. */
+    .os-bloque { overflow: hidden; border: 0.75pt solid #1D4ED8; border-radius: 6px; }
+    .os-banda { margin: 0; padding: 2px 8px; background: #DBEAFE; font-size: 7pt; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #1D4ED8; }
+    .os-datos { display: grid; grid-template-columns: 1.15fr 1.25fr .9fr; gap: 5mm; padding: 2mm 8px 2.2mm; }
+    .os-datos dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 7px; margin: 0; }
+    .os-datos dt { font-size: 6.4pt; font-weight: 700; text-transform: uppercase; color: #4B5563; padding-top: 1px; }
+    .os-datos dd { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .os-fuerte { font-weight: 700; text-transform: uppercase; }
+
+    /* Tabla de condiciones (etiqueta azul a la izquierda), como la proforma. */
+    .os-condiciones { width: 100%; border-collapse: collapse; font-size: 7.8pt; }
+    .os-condiciones th, .os-condiciones td { padding: 1.6mm 8px; border: 0.75pt solid #1D4ED8; text-align: left; vertical-align: top; }
+    .os-condiciones th { width: 34mm; background: #DBEAFE; font-weight: 700; text-transform: uppercase; color: #1D4ED8; }
+    .os-condiciones td { font-weight: 700; }
+    .os-obs { font-weight: 400; color: #4B5563; }
+    .os-check { font-weight: 400 !important; }
+    .os-check span { display: inline-block; margin-right: 9px; white-space: nowrap; }
+    .os-no { color: #B91C1C; font-weight: 700; }
+    .os-escribir { padding-bottom: .4mm !important; }
+    .os-renglon { height: 4.6mm; border-bottom: 0.5pt solid #BFDBFE; }
+
+    /* Detalle + totales + QR en una fila. */
+    .os-cuerpo { display: flex; align-items: flex-start; gap: 4mm; }
+    .os-izq { flex: 1; min-width: 0; }
+    .os-tabla { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 0.75pt solid #1D4ED8; border-radius: 6px; }
+    .os-tabla th { padding: 1.2mm 8px; background: #1D4ED8; font-size: 7pt; font-weight: 700; text-align: left; text-transform: uppercase; color: #fff; }
+    .os-tabla td { padding: 1.5mm 8px; border-top: 0.5pt solid #E5E7EB; }
+    .os-tabla tbody tr:nth-child(even) td { background: #F5F8FF; }
+    .os-producto { font-weight: 700; text-transform: uppercase; }
+    .os-cant { width: 12mm; text-align: center !important; white-space: nowrap; }
+    .os-num { width: 22mm; text-align: right !important; white-space: nowrap; }
+    .os-vacio { color: #4B5563; font-style: italic; }
+
+    .os-der { width: 50mm; }
+    .os-totales { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; margin: 0; }
+    .os-totales dt { color: #4B5563; }
+    .os-totales dd { margin: 0; text-align: right; }
+    .os-total { margin-top: 2px; padding: 1.2mm 6px !important; background: #1D4ED8; font-size: 9.5pt; font-weight: 800; text-transform: uppercase; color: #fff !important; }
+    dt.os-total { border-radius: 5px 0 0 5px; }
+    dd.os-total { border-radius: 0 5px 5px 0; }
+
+    .os-qr { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 22mm; font-size: 6pt; font-weight: 700; text-align: center; text-transform: uppercase; color: #1D4ED8; }
+    .os-qr img { width: 21mm; height: 21mm; }
+
+    /* Pie como el de la proforma: recuadro, firmas y el sello girado. */
+    .os-pie { display: flex; align-items: center; gap: 5mm; margin-top: auto; padding: 1.8mm 10px; border: 0.75pt solid #1D4ED8; border-radius: 6px; }
+    .os-terminos { flex: 1; font-size: 6.2pt; line-height: 1.35; color: #4B5563; }
+    .os-terminos strong { color: #111827; }
+    .os-firmas { display: flex; gap: 5mm; width: 74mm; padding-top: 16px; }
+    .os-firmas div { position: relative; flex: 1; border-top: 0.75pt solid #111827; text-align: center; padding-top: 1px; font-size: 6.6pt; font-weight: 700; }
+    .os-firmas span { font-weight: 400; color: #4B5563; }
+    .os-firmas img { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); height: 20px; }
+    .os-sello { flex-shrink: 0; width: 21mm; padding: 2mm 1mm; border: 1.5pt dashed #1D4ED8; border-radius: 999px; font-size: 6.4pt; font-weight: 800; line-height: 1.15; text-align: center; text-transform: uppercase; color: #1D4ED8; transform: rotate(-8deg); }
     @media print {
         .hoja { margin: 0; padding: 0; box-shadow: none; width: auto; min-height: 0; }
         .doble { margin: 0; box-shadow: none; }
