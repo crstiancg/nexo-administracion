@@ -3,7 +3,7 @@
 @section('titulo', "Orden de servicio {$orden->codigo}")
 
 @section('estilos')
-    @page { size: A4; margin: 12mm; }
+    @page { size: A4; margin: {{ $doble ? '0' : '12mm' }}; }
     .hoja { width: 210mm; min-height: 297mm; margin: 0 auto 24px; padding: 12mm; background: #fff; font-size: 12px; line-height: 1.45; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
     .cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 10px; border-bottom: 3px solid #2563EB; }
     .cabecera img { height: 58px; }
@@ -30,10 +30,58 @@
     .firmas img { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); height: 44px; }
     .qr { width: 135px; text-align: center; font-size: 9.5px; }
     .qr img { width: 125px; height: 125px; }
-    @media print { .hoja { margin: 0; padding: 0; box-shadow: none; width: auto; min-height: 0; } }
+    .sub { margin-top: 8px; }
+    .sub { margin-top: 8px; }
+    /* ── A4 en dos copias: cada mitad es 210 × 148,5 mm, con toda la orden ── */
+    .doble { width: 210mm; height: 296mm; overflow: hidden; margin: 0 auto 24px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .mitad { display: flex; flex-direction: column; height: 148mm; padding: 6mm 8mm 5mm; overflow: hidden; font-size: 8.6px; line-height: 1.35; }
+    .corte { position: relative; height: 0; border-top: 1px dashed #6b7280; }
+    .corte span { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: #fff; font-size: 8px; color: #6b7280; }
+    .m-cab { display: flex; align-items: center; gap: 10px; padding-bottom: 5px; border-bottom: 2px solid #2563EB; }
+    .m-cab img { height: 34px; }
+    .m-empresa { flex: 1; font-size: 8px; }
+    .m-empresa strong { font-size: 9.5px; }
+    .m-caja { min-width: 120px; padding: 3px 8px; border: 1.5px solid #2563EB; border-radius: 6px; text-align: center; font-size: 8px; }
+    .m-copia { background: #2563EB; color: #fff; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; padding: 1px 0; }
+    .m-codigo { font-family: monospace; font-size: 13px; font-weight: 700; }
+    .m-cuerpo { display: flex; gap: 8px; flex: 1; min-height: 0; margin-top: 6px; }
+    .m-izq { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+    .m-der { display: flex; flex-direction: column; gap: 6px; width: 46mm; }
+    .m-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .m-bloque { border: 1px solid #d1d5db; border-radius: 5px; padding: 4px 6px; }
+    .mitad h4 { margin: 0 0 1px; font-size: 7.5px; letter-spacing: .4px; text-transform: uppercase; color: #2563EB; }
+    .m-sub { margin-top: 3px !important; }
+    .m-texto { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .m-check { display: flex; flex-wrap: wrap; gap: 1px 9px; font-size: 8px; }
+    .m-tabla { width: 100%; border-collapse: collapse; }
+    .m-tabla th { background: #2563EB; color: #fff; text-align: left; font-size: 7.5px; text-transform: uppercase; padding: 2px 5px; }
+    .m-tabla td { border-bottom: 1px solid #e5e7eb; padding: 2px 5px; }
+    .m-datos { display: grid; gap: 3px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; }
+    .m-totales { width: 100%; border-collapse: collapse; }
+    .m-totales td { padding: 1px 4px; }
+    .m-saldo td { font-size: 11px; font-weight: 800; border-top: 1px solid #111827; }
+    .m-qr { margin-top: auto; text-align: center; font-size: 7.5px; }
+    .m-qr img { width: 74px; height: 74px; }
+    .m-pie { display: flex; gap: 12px; align-items: flex-end; margin-top: 5px; padding-top: 4px; border-top: 1px solid #111827; }
+    .m-condiciones { flex: 1; font-size: 7.3px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .m-firmas { display: flex; gap: 12px; width: 92mm; padding-top: 22px; }
+    .m-firmas div { position: relative; flex: 1; border-top: 1px solid #111827; text-align: center; padding-top: 2px; font-size: 7.5px; }
+    .m-firmas img { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); height: 24px; }
+    .num { text-align: right; white-space: nowrap; }
+    @media print {
+        .hoja { margin: 0; padding: 0; box-shadow: none; width: auto; min-height: 0; }
+        .doble { margin: 0; box-shadow: none; }
+    }
 @endsection
 
 @section('contenido')
+@if ($doble)
+<div class="doble">
+    @include('impresion.orden-mitad', ['copia' => 'Copia tienda'])
+    <div class="corte"><span>✂ Cortar aquí</span></div>
+    @include('impresion.orden-mitad', ['copia' => 'Copia cliente'])
+</div>
+@else
 <div class="hoja">
     <div class="cabecera">
         <img src="{{ $empresa['logo_url'] ?? asset('img/logo.png') }}" alt="{{ $empresa['nombre'] }}">
@@ -49,6 +97,12 @@
             <div class="codigo">{{ $orden->codigo }}</div>
             <div class="muted">{{ $orden->recibido_at->timezone(\App\Support\Fechas::zona())->format('d/m/Y H:i') }}</div>
         </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(3, 1fr)">
+        <div><h4>Sede</h4>{{ $orden->sede?->nombre ?? '—' }}</div>
+        <div><h4>Técnico</h4>{{ $orden->tecnico?->name ?? 'Por asignar' }}</div>
+        <div><h4>Tipo</h4>{{ $orden->es_garantia ? 'Garantía' : 'Servicio' }}</div>
     </div>
 
     <div class="grid">
@@ -90,8 +144,12 @@
         <h4>Falla reportada</h4>
         <div>{{ $orden->falla }}</div>
         @if ($orden->diagnostico)
-            <h4 style="margin-top: 8px">Diagnóstico / trabajo</h4>
+            <h4 class="sub">Diagnóstico / trabajo</h4>
             <div>{{ $orden->diagnostico }}</div>
+        @endif
+        @if ($orden->observacion)
+            <h4 class="sub">Observaciones</h4>
+            <div>{{ $orden->observacion }}</div>
         @endif
     </div>
 
@@ -146,4 +204,5 @@
         </div>
     </div>
 </div>
+@endif
 @endsection

@@ -243,6 +243,16 @@
               <q-item
                 v-close-popup
                 clickable
+                @click="imprimir(detalle, 'orden-doble')"
+              >
+                <q-item-section avatar>
+                  <q-icon name="content_cut" />
+                </q-item-section>
+                <q-item-section>A4 en dos copias (tienda y cliente)</q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
                 @click="imprimir(detalle, 'etiqueta')"
               >
                 <q-item-section avatar>
@@ -609,7 +619,8 @@ function guardada (orden) {
       position: 'bottom',
       timeout: 10000,
       actions: [
-        { label: 'Orden', color: 'white', handler: () => imprimir(orden, 'orden') },
+        { label: 'Orden A4', color: 'white', handler: () => imprimir(orden, 'orden') },
+        { label: '2 copias', color: 'white', handler: () => imprimir(orden, 'orden-doble') },
         { label: 'Etiqueta', color: 'white', handler: () => imprimir(orden, 'etiqueta') }
       ]
     })

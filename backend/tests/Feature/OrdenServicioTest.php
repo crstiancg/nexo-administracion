@@ -264,6 +264,16 @@ class OrdenServicioTest extends TestCase
             // La clave del equipo nunca sale impresa.
             ->assertDontSee('1234');
 
+        // A4 partida en dos: la copia de la tienda y la del cliente.
+        $this->get($enlaces['orden-doble'])
+            ->assertOk()
+            ->assertSee('Copia tienda')
+            ->assertSee('Copia cliente')
+            ->assertSee($orden['codigo'])
+            ->assertSee('Ana Quispe')
+            ->assertSee('data:image/svg+xml;base64,', false)
+            ->assertDontSee('1234');
+
         $this->get($enlaces['etiqueta'])
             ->assertOk()
             ->assertSee($orden['codigo'])

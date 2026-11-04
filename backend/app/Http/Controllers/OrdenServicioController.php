@@ -110,7 +110,8 @@ class OrdenServicioController extends Controller
     }
 
     /**
-     * Enlaces firmados (unos minutos) para abrir la orden en A4 y la etiqueta
+     * Enlaces firmados (unos minutos) para abrir la orden (A4 entera o partida
+     * en dos copias) y la etiqueta
      * del equipo en una pestaña nueva, que no lleva el token de la sesión.
      */
     public function impresion(OrdenServicio $orden): JsonResponse
@@ -122,6 +123,7 @@ class OrdenServicioController extends Controller
 
         return response()->json([
             'orden' => $enlace('orden'),
+            'orden-doble' => $enlace('orden-doble'),
             'etiqueta' => $enlace('etiqueta'),
         ]);
     }
