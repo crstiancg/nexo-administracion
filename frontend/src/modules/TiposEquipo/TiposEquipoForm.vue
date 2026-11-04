@@ -154,7 +154,7 @@ defineExpose({ form, submit })
   background: none;
   font-size: 12.5px;
   font-weight: 600;
-  color: $primary-hover;
+  color: var(--app-primary-hover);
   cursor: pointer;
 }
 

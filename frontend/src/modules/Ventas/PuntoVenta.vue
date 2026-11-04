@@ -592,8 +592,8 @@ onBeforeUnmount(() => {
 
   .pos__manija:hover &,
   .pos__manija:focus-visible & {
-    border-color: $primary;
-    background: $primary;
+    border-color: var(--q-primary);
+    background: var(--q-primary);
     color: #FFFFFF;
   }
 }
@@ -673,7 +673,7 @@ onBeforeUnmount(() => {
     min-width: 18px;
     padding: 0 5px;
     border-radius: 999px;
-    background: $primary;
+    background: var(--q-primary);
     font-size: 11px;
     font-weight: 700;
     line-height: 18px;
@@ -691,7 +691,7 @@ onBeforeUnmount(() => {
   color: var(--app-ink);
 
   .q-icon {
-    color: $primary;
+    color: var(--q-primary);
   }
 
   @media (max-width: 1279px) {
@@ -712,8 +712,8 @@ onBeforeUnmount(() => {
   color: var(--app-ink-2);
 
   &:focus-within {
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    border-color: var(--q-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 
   input {
@@ -792,8 +792,8 @@ onBeforeUnmount(() => {
     cursor: pointer;
 
     &.activo {
-      background: rgba($primary, 0.1);
-      color: $primary;
+      background: color-mix(in srgb, var(--q-primary) 10%, transparent);
+      color: var(--q-primary);
     }
   }
 

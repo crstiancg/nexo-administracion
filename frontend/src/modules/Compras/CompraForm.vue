@@ -504,11 +504,11 @@ defineExpose({ form, submit })
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
@@ -525,7 +525,7 @@ defineExpose({ form, submit })
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 

@@ -77,7 +77,7 @@ const a11y = computed(() => (
 
   // El relleno de marca. Éste es exactamente el uso que la regla de los dos
   // rojos permite: marca = siempre relleno.
-  background: $primary;
+  background: var(--q-primary);
 
   // #FFFFFF literal, no var(--app-surface): es blanco sobre el rojo de marca,
   // y el rojo de marca no cambia con el tema. Con la variable, en oscuro
@@ -88,7 +88,7 @@ const a11y = computed(() => (
 }
 
 .brand-mark--glow {
-  box-shadow: 0 calc(var(--mark-size) * 0.14) calc(var(--mark-size) * 0.52) rgba($primary, 0.42);
+  box-shadow: 0 calc(var(--mark-size) * 0.14) calc(var(--mark-size) * 0.52) color-mix(in srgb, var(--q-primary) 42%, transparent);
 }
 
 .brand-mark__letters {

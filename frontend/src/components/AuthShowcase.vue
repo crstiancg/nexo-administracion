@@ -243,7 +243,7 @@ $panel-ink-deep: mix($accent, #000000, 26%);
   left: -14%;
   width: 62%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, rgba($primary, 0.40), transparent 62%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--q-primary) 40%, transparent), transparent 62%);
 }
 
 .showcase__aurora--deep {
@@ -251,7 +251,7 @@ $panel-ink-deep: mix($accent, #000000, 26%);
   bottom: -22%;
   width: 70%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, rgba($primary-hover, 0.34), transparent 64%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--app-primary-hover) 34%, transparent), transparent 64%);
 }
 
 .showcase__aurora--light {
@@ -351,7 +351,7 @@ $panel-ink-deep: mix($accent, #000000, 26%);
 
   // Rojo crudo sobre este fondo da 4.9:1 — pasa AA para texto pequeño. Es el
   // único texto de marca del panel; el resto es blanco a distintas alphas.
-  color: mix($primary, #FFFFFF, 74%);
+  color: color-mix(in srgb, var(--q-primary) 74%, #FFFFFF);
 }
 
 .showcase__headline {
@@ -370,7 +370,7 @@ $panel-ink-deep: mix($accent, #000000, 26%);
   height: 3px;
   margin: 20px 0 18px;
   border-radius: 999px;
-  background: linear-gradient(90deg, $primary, rgba($primary, 0));
+  background: linear-gradient(90deg, var(--q-primary), color-mix(in srgb, var(--q-primary) 0%, transparent));
 }
 
 .showcase__lede {

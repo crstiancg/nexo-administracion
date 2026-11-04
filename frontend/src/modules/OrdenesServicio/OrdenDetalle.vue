@@ -324,22 +324,7 @@
       <h4 class="os-detalle__h">
         Historial
       </h4>
-      <ol class="os-detalle__historial">
-        <li
-          v-for="mov in [...orden.movimientos].reverse()"
-          :key="mov.id"
-        >
-          <AppChip
-            :status="ESTADOS[mov.estado]?.status ?? 'info'"
-            :label="mov.estado_label"
-          />
-          <span class="os-detalle__sub">{{ formatearFechaHora(mov.fecha) }}<template v-if="mov.usuario"> · {{ mov.usuario.name }}</template></span>
-          <span
-            v-if="mov.nota"
-            class="os-detalle__movNota"
-          >{{ mov.nota }}</span>
-        </li>
-      </ol>
+      <AppTimeline :items="historial" />
     </section>
   </div>
 
@@ -355,6 +340,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppChip from '@/components/AppChip.vue'
 import AppFirma from '@/components/AppFirma.vue'
+import AppTimeline from '@/components/AppTimeline.vue'
 import { useUserStore } from '@/stores/user-store'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import { formatearCantidad } from '@/utils/cantidad'
@@ -457,6 +443,20 @@ async function guardarFirma () {
 }
 
 defineExpose({ orden, actualizar, recargar: cargar })
+
+// Del más viejo al más nuevo; el último es donde está la orden ahora.
+const historial = computed(() => {
+  const movs = orden.value?.movimientos ?? []
+  return movs.map((mov, i) => ({
+    key: mov.id,
+    titulo: mov.estado_label,
+    fecha: formatearFechaHora(mov.fecha) + (mov.usuario ? ` · ${mov.usuario.name}` : ''),
+    descripcion: mov.nota,
+    icon: ESTADOS[mov.estado]?.icon,
+    color: ESTADOS[mov.estado]?.status ?? 'info',
+    estado: i === movs.length - 1 && mov.estado !== 'entregado' ? 'actual' : 'hecho'
+  }))
+})
 </script>
 
 <style lang="scss" scoped>
@@ -529,7 +529,7 @@ defineExpose({ orden, actualizar, recargar: cargar })
   padding: 0;
   border: 0;
   background: none;
-  color: $primary-hover;
+  color: var(--app-primary-hover);
   cursor: pointer;
 }
 
@@ -617,28 +617,6 @@ defineExpose({ orden, actualizar, recargar: cargar })
 
 .os-detalle__h {
   margin-bottom: 8px !important;
-}
-
-.os-detalle__historial {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-}
-
-.os-detalle__movNota {
-  flex-basis: 100%;
-  padding-left: 4px;
-  font-size: 12.5px;
 }
 
 .os-detalle__seccion {

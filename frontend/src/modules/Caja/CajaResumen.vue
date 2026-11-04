@@ -287,8 +287,8 @@ const textoDiferencia = computed(() => {
   }
 
   &--destacado {
-    border-color: $primary;
-    background: rgba($primary, 0.06);
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 6%, transparent);
 
     strong {
       font-size: 22px;

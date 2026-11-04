@@ -46,7 +46,7 @@ const props = defineProps({
   // La capa anterior también dibujaba el foco de teclado, así que lo
   // reponemos explícitamente para no perder accesibilidad.
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
@@ -56,12 +56,12 @@ const props = defineProps({
 // de marca no cambia con el tema. Con la var, en oscuro quedaría texto gris
 // oscuro sobre rojo.
 .app-btn--primary {
-  background: $primary;
-  color: #FFFFFF;
-  box-shadow: 0 1px 2px rgba($primary-hover, 0.28);
+  background: var(--q-primary);
+  color: var(--app-on-primary);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--app-primary-hover) 28%, transparent);
 
   &:hover {
-    background: $primary-hover;
+    background: var(--app-primary-hover);
   }
 }
 
@@ -76,7 +76,7 @@ const props = defineProps({
   }
 }
 
-// $primary-hover crudo sobre superficie oscura da 2.56:1: ilegible. El token
+// var(--app-primary-hover) crudo sobre superficie oscura da 2.56:1: ilegible. El token
 // se aclara solo cuando cambia el tema.
 .app-btn--tertiary {
   color: var(--app-brand-soft-ink);

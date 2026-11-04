@@ -165,7 +165,7 @@ async function ver (fila) {
   border: 0;
   background: none;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 
   &:hover {
@@ -173,7 +173,7 @@ async function ver (fila) {
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }

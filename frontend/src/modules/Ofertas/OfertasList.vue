@@ -324,7 +324,7 @@ async function confirmarEliminar () {
 .oferta-etiqueta {
   padding: 1px 7px;
   border-radius: 999px;
-  background: $primary;
+  background: var(--q-primary);
   font-size: 11px;
   font-weight: 700;
   color: #FFFFFF;

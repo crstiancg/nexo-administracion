@@ -41,6 +41,6 @@ const props = defineProps({
 // fondo por color. Sumarle elevación la ensucia y le compite al dato.
 .app-card--highlight {
   background: var(--app-brand-soft);
-  border: 1px solid rgba($primary, 0.18);
+  border: 1px solid color-mix(in srgb, var(--q-primary) 18%, transparent);
 }
 </style>

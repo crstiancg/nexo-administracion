@@ -1414,7 +1414,7 @@ defineExpose({ form, submit })
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 
@@ -1495,7 +1495,7 @@ defineExpose({ form, submit })
   cursor: pointer;
 
   &:hover {
-    color: $primary;
+    color: var(--q-primary);
   }
 }
 
@@ -1703,9 +1703,9 @@ defineExpose({ form, submit })
   flex-direction: column;
   gap: 12px;
   padding: 14px;
-  border: 1px dashed rgba($primary, 0.45);
+  border: 1px dashed color-mix(in srgb, var(--q-primary) 45%, transparent);
   border-radius: 12px;
-  background: rgba($primary, 0.03);
+  background: color-mix(in srgb, var(--q-primary) 3%, transparent);
 }
 
 .producto-form__stockTitulo {
@@ -1811,13 +1811,13 @@ defineExpose({ form, submit })
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 
   &--abierto {
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    border-color: var(--q-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 
   &--error {

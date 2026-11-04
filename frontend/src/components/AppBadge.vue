@@ -68,7 +68,7 @@ if (import.meta.env.DEV && props.dot && !props.srLabel) {
 // #FFFFFF literal, no var(--app-surface): es blanco sobre el relleno de
 // marca, que no cambia con el tema.
 .app-badge--brand {
-  background: $primary;
+  background: var(--q-primary);
   color: #FFFFFF;
 }
 

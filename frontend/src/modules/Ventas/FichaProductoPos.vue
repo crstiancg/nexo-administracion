@@ -304,7 +304,7 @@ defineExpose({ abrir })
   }
 
   &--activa {
-    border-color: $primary;
+    border-color: var(--q-primary);
   }
 }
 

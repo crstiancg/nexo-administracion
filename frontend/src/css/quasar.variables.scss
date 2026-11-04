@@ -14,15 +14,17 @@
 
 // ── TIPOGRAFÍA ───────────────────────────────────────────────────────────
 // $typography-font-family es de Quasar (default 'Roboto', con !default).
-// La pisamos acá por la misma razón que $dark: si sólo pusiéramos Manrope
+// La pisamos acá por la misma razón que $dark: si sólo pusiéramos la fuente
 // en el body, los componentes de Quasar seguirían en Roboto y tendríamos
 // dos tipografías en la misma pantalla.
 //
 // OJO con el nombre: @fontsource-variable declara la familia como
-// 'Manrope Variable', NO 'Manrope'. Con el nombre equivocado el browser no
+// 'DM Sans Variable', NO 'DM Sans'. Con el nombre equivocado el browser no
 // la encuentra, cae al fallback y no falla nada — es un bug silencioso.
-// 'Manrope' queda como segundo para quien la tenga instalada.
-$typography-font-family : 'Manrope Variable', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$typography-font-family : 'DM Sans Variable', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// Títulos de página: angosta, alta y en mayúsculas (estilo Bata).
+$font-display : 'Antonio Variable', 'Antonio', 'Oswald', 'Arial Narrow', sans-serif;
 
 // Cifras en columna: tablas y ejes de gráficos. NUNCA para cifras grandes
 // sueltas —el tabular le da a cada dígito el ancho de un 0 y un "121" se ve
@@ -30,10 +32,9 @@ $typography-font-family : 'Manrope Variable', 'Manrope', -apple-system, BlinkMac
 $font-mono : 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
 
-// Azul del anillo del logo de Nexo, un punto más profundo para que el
-// blanco encima pase AA (5.17:1).
-$primary   : #10a5db;
-$secondary : #6B7280;
+// Rojo de marca (estilo Bata): botones, enlaces y activos.
+$primary   : #D40001;
+$secondary : #756E65;
 $accent    : #0B1B3D;
 
 // Estas dos son de Quasar y su semántica coincide EXACTA con nuestros roles:
@@ -54,15 +55,16 @@ $warning   : #F2C037;
 
 // Custom neutral tokens — Quasar no trae variables propias para
 // texto/fondo/superficie, así que las declaramos acá.
-$text-primary   : #1F2937;
-$text-secondary : #6B7280;
-$page-background: #F8FAFC;
+// Tinta casi negra con un toque cálido, grises cálidos y fondo hueso.
+$text-primary   : #140000;
+$text-secondary : #756E65;
+$page-background: #FDFCFB;
 $surface        : #FFFFFF;
 
 // Variantes de $primary (hover y fondo suave) — no son $secondary/$accent,
 // son el mismo azul de marca en otro estado/uso.
-$primary-hover : #16a7c1;
-$primary-soft  : #DBEAFE;
+$primary-hover : #B00001;
+$primary-soft  : #FCE6E6;
 
 // Tinte suave de $negative. El destructivo nunca va relleno de marca:
 // se diferencia por contorno/tinte + ícono + palabra explícita.
@@ -71,12 +73,12 @@ $negative-soft : #FFEFEF;
 // Derivados de $text-primary. Bordes, sombras y deshabilitado NO son matices
 // nuevos: son la misma tinta en alpha. Están acá y no repetidos en cada
 // componente para que no deriven entre archivos.
-$border-subtle        : rgba(31, 41, 55, 0.09);
-$border-control       : rgba(31, 41, 55, 0.14);
-$border-control-hover : rgba(31, 41, 55, 0.26);
-$shadow-card          : 0 1px 2px rgba(31, 41, 55, 0.04);
-$disabled-bg          : rgba(31, 41, 55, 0.10);
-$disabled-text        : rgba(31, 41, 55, 0.34);
+$border-subtle        : rgba(20, 0, 0, 0.09);
+$border-control       : rgba(20, 0, 0, 0.14);
+$border-control-hover : rgba(20, 0, 0, 0.26);
+$shadow-card          : 0 1px 2px rgba(20, 0, 0, 0.04);
+$disabled-bg          : rgba(20, 0, 0, 0.10);
+$disabled-text        : rgba(20, 0, 0, 0.34);
 
 // ── TEMA OSCURO ──────────────────────────────────────────────────────────
 // Los valores de arriba son el tema claro. Estos son los mismos roles en

@@ -25,7 +25,7 @@ class CotizacionResource extends JsonResource
             'editable' => $this->editable(),
             'cliente_id' => $this->cliente_id,
             'cliente' => $this->whenLoaded('cliente', fn () => $this->cliente ? new ClienteResource($this->cliente) : null),
-            'sede' => $this->whenLoaded('sede', fn () => $this->sede?->only(['id', 'nombre', 'direccion', 'telefono'])),
+            'sede' => $this->whenLoaded('sede', fn () => $this->sede?->only(['id', 'nombre', 'direccion', 'telefono', 'horario'])),
             'fecha' => $this->created_at?->toIso8601String(),
             'valida_hasta' => $this->valida_hasta?->toDateString(),
             'forma_pago' => $this->forma_pago,

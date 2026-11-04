@@ -167,42 +167,7 @@
           </template>
         </p>
 
-        <table class="cred-cuotas">
-          <thead>
-            <tr>
-              <th>Cuota</th>
-              <th>Vence</th>
-              <th class="text-right">
-                Monto
-              </th>
-              <th class="text-right">
-                Falta
-              </th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="c in detalle.cuotas"
-              :key="c.id"
-            >
-              <td>{{ c.numero }}</td>
-              <td>{{ fechaCorta(c.vence) }}</td>
-              <td class="text-right text-mono">
-                {{ formatearPrecio(c.monto) }}
-              </td>
-              <td class="text-right text-mono">
-                {{ formatearPrecio(c.falta) }}
-              </td>
-              <td>
-                <AppChip
-                  :status="ESTADO_CUOTA[c.estado].status"
-                  :label="ESTADO_CUOTA[c.estado].label"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <AppTimeline :items="cronograma" />
 
         <div v-if="detalle.pagos?.length">
           <h4 class="cred-h">
@@ -278,6 +243,7 @@ import AppDialog from '@/components/AppDialog.vue'
 import AppFilterBar from '@/components/AppFilterBar.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
+import AppTimeline from '@/components/AppTimeline.vue'
 import { TIENDA } from '@/config/tienda'
 import PagoForm from '@/modules/Caja/PagoForm.vue'
 import { fechaCorta } from '@/modules/Cotizaciones/constantes'
@@ -298,11 +264,32 @@ const TABS = [
 ]
 
 const ESTADO_CUOTA = {
-  pagada: { status: 'positive', label: 'Pagada' },
-  parcial: { status: 'info', label: 'Parcial' },
-  pendiente: { status: 'warning', label: 'Pendiente' },
-  vencida: { status: 'negative', label: 'Vencida' }
+  pagada: { color: 'positive', label: 'Pagada', icon: 'check' },
+  parcial: { color: 'info', label: 'Pago parcial', icon: 'timelapse' },
+  pendiente: { color: 'neutral', label: 'Pendiente', icon: 'schedule' },
+  vencida: { color: 'negative', label: 'Vencida', icon: 'priority_high' }
 }
+
+// Cronograma: pagadas con check, vencidas en rojo y la próxima por cobrar
+// resaltada; las que siguen, en gris.
+const cronograma = computed(() => {
+  const cuotas = detalle.value?.cuotas ?? []
+  const proxima = cuotas.find((c) => c.estado !== 'pagada')
+  return cuotas.map((c) => {
+    const e = ESTADO_CUOTA[c.estado]
+    const enCurso = c.estado === 'vencida' || c === proxima
+    return {
+      key: c.id,
+      titulo: `Cuota ${c.numero}`,
+      extra: formatearPrecio(c.monto),
+      fecha: `${c.estado === 'pagada' ? 'Venció' : 'Vence'} el ${fechaCorta(c.vence)}`,
+      descripcion: c.estado === 'pagada' ? e.label : `${e.label} · falta ${formatearPrecio(c.falta)}`,
+      icon: e.icon,
+      color: e.color,
+      estado: c.estado === 'pagada' ? 'hecho' : enCurso ? 'actual' : 'pendiente'
+    }
+  })
+})
 
 function estadoDe (credito) {
   if (Number(credito.saldo) <= 0) return { status: 'positive', label: 'Pagado' }
@@ -456,7 +443,7 @@ async function pagoGuardado () {
   cursor: pointer;
 
   &--activo {
-    border-color: $primary;
+    border-color: var(--q-primary);
     background: var(--app-brand-soft);
     color: var(--app-brand-soft-ink);
   }
@@ -489,7 +476,7 @@ async function pagoGuardado () {
   span {
     display: block;
     height: 100%;
-    background: $primary;
+    background: var(--q-primary);
   }
 }
 
@@ -524,31 +511,6 @@ async function pagoGuardado () {
   strong {
     font-size: 16px;
     color: var(--app-ink);
-  }
-}
-
-.cred-cuotas {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-
-  th {
-    padding: 6px;
-    font-size: 11.5px;
-    font-weight: 700;
-    text-align: left;
-    text-transform: uppercase;
-    color: var(--app-ink-2);
-  }
-
-  td {
-    padding: 6px;
-    border-top: 1px solid var(--app-border-subtle);
-    color: var(--app-ink);
-  }
-
-  .text-right {
-    text-align: right;
   }
 }
 

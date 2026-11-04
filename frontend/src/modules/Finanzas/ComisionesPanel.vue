@@ -434,7 +434,7 @@ async function pagar () {
   cursor: pointer;
 
   &--activo {
-    border-color: $primary;
+    border-color: var(--q-primary);
     background: var(--app-brand-soft);
     color: var(--app-brand-soft-ink);
   }

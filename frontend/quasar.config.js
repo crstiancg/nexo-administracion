@@ -42,7 +42,7 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['axios', 'authGuard'],
+    boot: ['tema', 'axios', 'authGuard'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     // Fuentes auto-hosteadas y no desde Google Fonts: sin request a un
@@ -53,7 +53,8 @@ export default defineConfig((/* ctx */) => {
     // importar peso por peso. El mono va sólo en 400 y 500, que son los
     // únicos que usa el sistema para cifras en columna.
     css: [
-      '~@fontsource-variable/manrope/wght.css',
+      '~@fontsource-variable/dm-sans/wght.css',
+      '~@fontsource-variable/antonio/wght.css',
       '~@fontsource/ibm-plex-mono/latin-400.css',
       '~@fontsource/ibm-plex-mono/latin-500.css',
       'app.scss'

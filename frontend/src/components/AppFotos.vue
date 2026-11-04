@@ -308,7 +308,7 @@ function hacerPortada (i) {
   cursor: zoom-in;
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: -2px;
   }
 }
@@ -389,7 +389,7 @@ function hacerPortada (i) {
   }
 
   &:focus-within {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: -2px;
   }
 }

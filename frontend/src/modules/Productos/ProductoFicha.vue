@@ -1041,7 +1041,7 @@ onMounted(async () => {
   text-decoration: none;
 
   &:hover {
-    color: $primary;
+    color: var(--q-primary);
   }
 }
 

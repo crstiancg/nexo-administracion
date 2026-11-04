@@ -171,7 +171,7 @@ onMounted(async () => {
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 }
 
@@ -216,13 +216,13 @@ onMounted(async () => {
   cursor: pointer;
 
   &--activo {
-    border-color: $primary;
-    background: $primary;
+    border-color: var(--q-primary);
+    background: var(--q-primary);
     color: #FFFFFF;
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
@@ -242,11 +242,11 @@ onMounted(async () => {
   cursor: pointer;
 
   &--activo {
-    box-shadow: 0 0 0 2px var(--app-surface), 0 0 0 4px $primary;
+    box-shadow: 0 0 0 2px var(--app-surface), 0 0 0 4px var(--q-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 3px;
   }
 }

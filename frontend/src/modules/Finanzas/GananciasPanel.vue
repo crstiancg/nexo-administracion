@@ -441,7 +441,7 @@ function porcentaje (valor, base) {
     display: block;
     height: 100%;
     border-radius: 3px;
-    background: $primary;
+    background: var(--q-primary);
   }
 }
 

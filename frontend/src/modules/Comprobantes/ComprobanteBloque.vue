@@ -349,7 +349,7 @@ async function descargar (archivo) {
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 }
 

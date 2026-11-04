@@ -43,9 +43,11 @@ defineProps({
 
 .app-page-header__title {
   margin: 0 0 5px;
-  font-size: 25px;
+  font-family: $font-display;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 
   // Sin esto hereda el line-height default de Quasar para <h1> (6rem, pensado
   // para un display heading enorme): el título infla su caja y empuja todo

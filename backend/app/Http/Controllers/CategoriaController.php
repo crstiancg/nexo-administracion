@@ -14,7 +14,7 @@ class CategoriaController extends Controller
     {
         return $this->generateViewSetList(
             $request,
-            Categoria::query()->with('padre:id,nombre')->withCount('hijos'),
+            Categoria::query()->with('padre:id,nombre')->withCount(['hijos', 'productos']),
             ['parent_id'],
             ['nombre'],
             ['id', 'nombre', 'parent_id'],

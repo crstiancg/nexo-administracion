@@ -13,8 +13,10 @@
 // Los componentes leen var(--app-*); estos dos bloques son los únicos
 // lugares donde se decide qué valor tiene cada rol en cada tema.
 //
-// $primary y los colores de estado NO están acá: la marca no cambia de
-// tema. Lo que cambia es todo lo que la rodea.
+// La marca SÍ se cambia en runtime: cada quien elige su color en el menú
+// de tema (config/tema.js pisa --q-primary en <html>). Por eso sus
+// derivados (hover, tintes) se calculan acá con color-mix a partir de
+// --q-primary y no se hornean con Sass.
 // ─────────────────────────────────────────────────────────────────────────
 
 :root {
@@ -31,8 +33,11 @@
   --app-disabled-bg: #{$disabled-bg};
   --app-disabled-ink: #{$disabled-text};
 
-  --app-brand-soft: #{$primary-soft};
-  --app-brand-soft-ink: #{$primary-hover};
+  // Texto sobre el relleno de marca (blanco salvo colores claros).
+  --app-on-primary: #FFFFFF;
+  --app-primary-hover: color-mix(in srgb, var(--q-primary) 82%, #000000);
+  --app-brand-soft: color-mix(in srgb, var(--q-primary) 10%, #{$surface});
+  --app-brand-soft-ink: var(--app-primary-hover);
   --app-negative-soft: #{$negative-soft};
   --app-negative-border: #{rgba($negative, 0.42)};
 
@@ -59,8 +64,10 @@ body.body--dark {
   --app-disabled-bg: #{$dark-disabled-bg};
   --app-disabled-ink: #{$dark-disabled-text};
 
-  --app-brand-soft: #{mix($primary, $dark, 20%)};
-  --app-brand-soft-ink: #{mix($primary, #FFFFFF, 55%)};
+  --app-primary-hover: color-mix(in srgb, var(--q-primary) 85%, #FFFFFF);
+  --app-brand-soft: color-mix(in srgb, var(--q-primary) 20%, #{$dark});
+  // El tono 400 del modo oscuro ya es claro: se usa tal cual, sin lavarlo.
+  --app-brand-soft-ink: var(--q-primary);
   --app-negative-soft: #{mix($negative, $dark, 20%)};
   --app-negative-border: #{rgba(status-ink-dark($negative), 0.55)};
 
@@ -71,6 +78,8 @@ body.body--dark {
 }
 
 body {
+  // La fuente también se elige en el menú de tema.
+  font-family: var(--app-font, #{$typography-font-family});
   background-color: var(--app-page);
   color: var(--app-ink);
 }
@@ -224,4 +233,10 @@ body.body--dark {
 body.pos--arrastrando {
   cursor: col-resize;
   user-select: none;
+}
+
+// Los botones de Quasar con color="primary" ponen text-white: con un color
+// de marca claro (amarillo, lima) el texto pasa a oscuro.
+.bg-primary.text-white {
+  color: var(--app-on-primary) !important;
 }

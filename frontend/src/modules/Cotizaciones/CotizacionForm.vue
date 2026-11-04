@@ -37,19 +37,19 @@
         <label
           :for="`${uid}-validez`"
           class="cotizacion-form__label"
-        >Válida hasta <span class="cotizacion-form__requerido">*</span></label>
+        >Válida hasta</label>
         <q-input
           :id="`${uid}-validez`"
           v-model="form.cotizacion.valida_hasta"
           type="date"
           :min="hoy"
-          required
           dense
           outlined
           hide-bottom-space
           no-error-icon
           :error="Boolean(form.errors[`${PATH}.valida_hasta`])"
           :error-message="form.errors[`${PATH}.valida_hasta`]"
+          :hint="form.cotizacion.valida_hasta ? '' : `Vacía: vale ${DIAS_VALIDEZ} días (hasta el ${fechaCorta(hoyLocal(DIAS_VALIDEZ))})`"
           class="cotizacion-form__control"
           @change="form.validate(`${PATH}.valida_hasta`)"
         />
@@ -364,8 +364,8 @@ import { formatearPrecio } from '@/utils/moneda'
 import { desglosarIgv, ETIQUETA_IGV } from '@/utils/igv'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem, reprecio } from '@/modules/Pedidos/FormPedido'
-import formCotizacion, { ENTREGAS, FORMAS_PAGO } from './FormCotizacion'
-import { hoyLocal } from './constantes'
+import formCotizacion, { DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO } from './FormCotizacion'
+import { fechaCorta, hoyLocal } from './constantes'
 
 const PATH = 'cotizacion'
 
@@ -444,8 +444,8 @@ onMounted(async () => {
   form.setData({
     [PATH]: {
       cliente_id: cotizacion.cliente_id,
-      // Una vencida se edita para renovarla: la validez queda vacía para
-      // poner la nueva.
+      // Una vencida se edita para renovarla: la validez queda vacía (y si
+      // no se pone otra, vale DIAS_VALIDEZ días desde hoy).
       valida_hasta: cotizacion.valida_hasta < hoy ? '' : cotizacion.valida_hasta,
       forma_pago: cotizacion.forma_pago ?? '',
       entrega: cotizacion.entrega ?? '',
@@ -463,13 +463,8 @@ onMounted(async () => {
 })
 
 // Sin cliente se puede ("cotización sin nombre"), pero se avisa antes: a
-// veces es un olvido. La validez es obligatoria.
+// veces es un olvido. Sin validez, el backend le da DIAS_VALIDEZ días.
 function submit () {
-  if (!form.cotizacion.valida_hasta) {
-    form.setErrors({ ...form.errors, [`${PATH}.valida_hasta`]: 'Pon hasta cuándo vale la cotización.' })
-    return
-  }
-
   if (form.cotizacion.cliente_id) {
     guardar()
     return
@@ -581,11 +576,11 @@ defineExpose({ form, submit })
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
@@ -602,7 +597,7 @@ defineExpose({ form, submit })
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 

@@ -249,14 +249,14 @@ defineExpose({ form, submit })
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 
   &--activo {
-    border-color: $primary;
-    background: rgba($primary, 0.08);
-    color: $primary;
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 8%, transparent);
+    color: var(--q-primary);
   }
 }
 
@@ -302,7 +302,7 @@ defineExpose({ form, submit })
   a {
     margin-left: 6px;
     font-weight: 600;
-    color: $primary;
+    color: var(--q-primary);
   }
 }
 </style>

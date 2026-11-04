@@ -950,7 +950,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
 }
 
 .carrito__esperaLista {
-  color: $primary;
+  color: var(--q-primary);
 }
 
 .carrito__lineas {
@@ -993,12 +993,12 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   }
 
   &--activa {
-    border-color: rgba($primary, 0.35);
-    background: rgba($primary, 0.04);
+    border-color: color-mix(in srgb, var(--q-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--q-primary) 4%, transparent);
   }
 
   &--flash {
-    background: rgba($primary, 0.16);
+    background: color-mix(in srgb, var(--q-primary) 16%, transparent);
   }
 }
 
@@ -1246,13 +1246,13 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   cursor: pointer;
 
   &--activo {
-    border-color: $primary;
-    background: rgba($primary, 0.08);
-    color: $primary;
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 8%, transparent);
+    color: var(--q-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 1px;
   }
 }
@@ -1281,9 +1281,9 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
     color: var(--app-ink);
 
     &:focus {
-      border-color: $primary;
+      border-color: var(--q-primary);
       outline: none;
-      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
     }
 
     // Un solo pago: es el total, se muestra pero no se edita.
@@ -1332,7 +1332,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   border: 0;
   background: none;
   font-weight: 600;
-  color: $primary;
+  color: var(--q-primary);
   cursor: pointer;
 }
 
@@ -1366,7 +1366,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 1px;
   }
 }
@@ -1391,7 +1391,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
     padding: 4px 10px;
     border: 0;
     border-radius: 6px;
-    background: $primary;
+    background: var(--q-primary);
     font-weight: 600;
     color: #FFFFFF;
     cursor: pointer;
@@ -1460,7 +1460,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   height: 52px;
   border: 0;
   border-radius: 12px;
-  background: $primary;
+  background: var(--q-primary);
   font-size: 16px;
   font-weight: 700;
   color: #FFFFFF;
@@ -1481,7 +1481,7 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }

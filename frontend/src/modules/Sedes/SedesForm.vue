@@ -37,6 +37,16 @@
     />
 
     <AppTextField
+      v-model="form.sede.horario"
+      label="Horario de atención (opcional)"
+      icon="schedule"
+      placeholder="Lun a Sáb 9:00 a.m. - 7:00 p.m."
+      maxlength="150"
+      :error="form.errors[`${PATH}.horario`]"
+      @change="form.validate(`${PATH}.horario`)"
+    />
+
+    <AppTextField
       v-model="form.sede.codigo_sunat"
       label="Código de establecimiento SUNAT"
       icon="badge"
@@ -62,7 +72,8 @@
     </p>
 
     <p class="sede-form__hint">
-      La dirección y el teléfono salen en el ticket de las ventas de esta sede.
+      La dirección y el teléfono salen en el ticket de las ventas de esta sede;
+      el horario de atención, en las proformas.
       El código de establecimiento es el de la ficha RUC: 0000 si es el
       domicilio fiscal, o el del anexo (0001…) si es una sucursal.
     </p>
@@ -93,7 +104,7 @@ const props = defineProps({
 const emit = defineEmits(['save'])
 
 // Función y no objeto: useForm guarda estos datos como "originales" para el reset().
-const inicial = () => ({ sede: { nombre: '', direccion: '', telefono: '', codigo_sunat: '0000', activo: true } })
+const inicial = () => ({ sede: { nombre: '', direccion: '', telefono: '', horario: '', codigo_sunat: '0000', activo: true } })
 
 const form = props.id
   ? useForm('put', `api/sedes/${props.id}`, inicial)
@@ -102,8 +113,8 @@ const form = props.id
 onMounted(async () => {
   if (!props.id) return
 
-  const { nombre, direccion, telefono, codigo_sunat: codigoSunat, activo } = await SedeService.get(props.id)
-  form.setData({ [PATH]: { nombre, direccion: direccion ?? '', telefono: telefono ?? '', codigo_sunat: codigoSunat ?? '0000', activo } })
+  const { nombre, direccion, telefono, horario, codigo_sunat: codigoSunat, activo } = await SedeService.get(props.id)
+  form.setData({ [PATH]: { nombre, direccion: direccion ?? '', telefono: telefono ?? '', horario: horario ?? '', codigo_sunat: codigoSunat ?? '0000', activo } })
 })
 
 async function submit () {

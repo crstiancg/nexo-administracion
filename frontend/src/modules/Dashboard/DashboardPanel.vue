@@ -676,7 +676,7 @@ const atajos = computed(() => {
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 1px;
   }
 }
@@ -730,7 +730,7 @@ const atajos = computed(() => {
     display: block;
     height: 100%;
     border-radius: 3px;
-    background: $primary;
+    background: var(--q-primary);
   }
 }
 
@@ -905,7 +905,7 @@ const atajos = computed(() => {
   max-width: calc(100% - 32px);
   height: 3px;
   border-radius: 2px;
-  background: $primary;
+  background: var(--q-primary);
   opacity: 0.6;
 }
 

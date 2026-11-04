@@ -1,33 +1,44 @@
 <template>
   <div class="auth">
-    <AuthShowcase
-      class="auth__showcase"
-      :photo="loginHero"
-    />
+    <!-- Franja de arriba (en Bata van sus marcas): lo que hace Nexo. -->
+    <div class="auth__strip">
+      <span
+        v-for="s in SERVICIOS"
+        :key="s"
+      >{{ s }}</span>
+      <span class="auth__stripLugar">
+        <q-icon
+          name="place"
+          size="14px"
+        />
+        Puno - Perú
+      </span>
+    </div>
 
-    <div class="auth__form">
-      <!-- El toggle vive acá y no dentro de la tarjeta: el acceso es la
-           primera pantalla del sistema, así que es el primer lugar donde
-           alguien que trabaja en oscuro necesita poder cambiarlo. -->
+    <!-- Barra superior como en la tienda: logo al centro, nada más. -->
+    <header class="auth__bar">
+      <AppLogo :alto="40" />
       <div class="auth__theme">
         <SwitchDarkMode />
       </div>
+    </header>
 
+    <div class="auth__body">
       <main class="auth__panel">
         <header
           class="auth__head"
           style="--rise: 0"
         >
-          <p class="auth__eyebrow">Bienvenido de vuelta</p>
-          <h1 class="auth__title">Inicia sesión</h1>
+          <h1 class="auth__title">Ingresa a tu cuenta</h1>
           <p class="auth__subtitle">
-            Ingresa tus credenciales para entrar al panel.
+            ¡Bienvenido! Ingresa con el usuario y la contraseña que te dio tu
+            administrador. Si no la recuerdas, haz clic en
+            "¿Olvidaste tu contraseña?".
           </p>
         </header>
 
         <!-- <form> nativo y no QForm: la validación es de dos campos
-             obligatorios y la resolvemos acá. QForm sumaría su propio ciclo de
-             validación encima del nuestro sin aportar nada. -->
+             obligatorios y la resolvemos acá. -->
         <form
           class="auth__fields"
           novalidate
@@ -37,8 +48,7 @@
           <AppTextField
             v-model="username"
             size="lg"
-            label="Usuario"
-            icon="person_outline"
+            label="Usuario *"
             placeholder="tu.usuario"
             autocomplete="username"
             autofocus
@@ -49,9 +59,7 @@
             v-model="password"
             size="lg"
             type="password"
-            label="Contraseña"
-            icon="lock_outline"
-            placeholder="••••••••"
+            label="Contraseña *"
             autocomplete="current-password"
             :error="errors.password"
           />
@@ -60,15 +68,12 @@
             <q-checkbox
               v-model="remember"
               dense
-              size="xs"
-              color="primary"
-              label="Mantener la sesión iniciada"
+              size="sm"
+              label="Recuérdame"
               class="auth__remember"
             />
 
-            <!-- Es un <button> y no un <a>: no navega a ningún lado, despliega
-                 una aclaración. Un <a href="#"> acá haría que el lector de
-                 pantalla anuncie un enlace que no lleva a ninguna parte. -->
+            <!-- <button> y no <a>: no navega, despliega una aclaración. -->
             <button
               type="button"
               class="auth__link"
@@ -78,8 +83,6 @@
             </button>
           </div>
 
-          <!-- Hasta que haya un flujo de recuperación, la respuesta honesta es
-               decir a quién pedirla. -->
           <p
             v-if="hintOpen"
             class="auth__hint"
@@ -92,8 +95,7 @@
             que restablezca tu contraseña.
           </p>
 
-          <!-- La regla de los dos rojos: el error NUNCA va relleno de marca.
-               Tinte + contorno + ícono + la palabra. -->
+          <!-- El error NUNCA va relleno de marca: tinte + contorno + ícono + la palabra. -->
           <p
             v-if="formError"
             class="auth__error"
@@ -114,23 +116,88 @@
             :loading="pending"
             :disable="pending"
           >
-            <span>Ingresar</span>
-            <q-icon
-              name="arrow_forward"
-              size="17px"
-              class="auth__submitIcon"
-            />
+            Iniciar sesión
           </AppButton>
         </form>
-
-        <footer
-          class="auth__foot"
-          style="--rise: 2"
-        >
-          ¿Problemas para entrar? Escribile a tu administrador.
-        </footer>
       </main>
+
+      <!-- Informativa: lo que hay del otro lado de la puerta. -->
+      <aside
+        class="auth__info"
+        style="--rise: 2"
+      >
+        <h2 class="auth__infoTitle">
+          Todo Nexo en un solo lugar
+        </h2>
+        <p class="auth__infoText">
+          El panel de {{ TIENDA.nombre }} para el equipo de tienda y taller.
+        </p>
+        <ul class="auth__modulos">
+          <li
+            v-for="m in MODULOS"
+            :key="m.icon"
+          >
+            <span class="auth__modIcon">
+              <q-icon
+                :name="m.icon"
+                size="20px"
+              />
+            </span>
+            {{ m.texto }}
+          </li>
+        </ul>
+        <div class="auth__contacto">
+          <q-icon
+            name="support_agent"
+            size="18px"
+          />
+          Soporte: {{ TIENDA.telefono }}
+        </div>
+      </aside>
     </div>
+
+    <!-- Pie como el de la tienda: la marca grande y los datos de contacto. -->
+    <footer class="auth__pie">
+      <div class="auth__pieGrid">
+        <div>
+          <div class="auth__pieMarca">
+            Nexo Technology
+          </div>
+          <p class="auth__pieLema">
+            Tecnología que te conecta. Innovación al alcance de todos.
+          </p>
+        </div>
+        <div>
+          <h3 class="auth__pieTitulo">
+            Visítanos
+          </h3>
+          <p>{{ TIENDA.direccion }}</p>
+        </div>
+        <div>
+          <h3 class="auth__pieTitulo">
+            Contáctanos
+          </h3>
+          <p>{{ TIENDA.telefono }}</p>
+        </div>
+        <div>
+          <h3 class="auth__pieTitulo">
+            Empresa
+          </h3>
+          <p>{{ TIENDA.nombre }}</p>
+          <p>RUC {{ TIENDA.ruc }}</p>
+        </div>
+      </div>
+      <div class="auth__pieBase">
+        <span>© {{ anio }} {{ TIENDA.nombre }}</span>
+        <span class="auth__pieSeguro">
+          <q-icon
+            name="lock"
+            size="13px"
+          />
+          Conexión cifrada
+        </span>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -139,14 +206,21 @@ import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/AppButton.vue'
 import AppTextField from '@/components/AppTextField.vue'
-import AuthShowcase from '@/components/AuthShowcase.vue'
-
-// Se importa en vez de referenciar /public: así pasa por el build, se le pone
-// hash en el nombre y el navegador puede cachearla para siempre sin que una
-// foto nueva quede escondida detrás de la vieja.
-import loginHero from '@/assets/login-hero.webp'
+import AppLogo from '@/components/AppLogo.vue'
 import SwitchDarkMode from '@/components/SwitchDarkMode.vue'
+import { TIENDA } from '@/config/tienda'
 import { useUserStore, AuthError } from '@/stores/user-store'
+
+const SERVICIOS = ['Venta de equipos', 'Servicio técnico', 'Soluciones tecnológicas', 'Soporte especializado']
+const anio = new Date().getFullYear()
+
+// Lo que se hace en el sistema: la columna de la derecha (estilo Bata).
+const MODULOS = [
+  { icon: 'build', texto: 'Órdenes de servicio con seguimiento por QR y avisos por WhatsApp' },
+  { icon: 'point_of_sale', texto: 'Ventas, cotizaciones y comprobantes electrónicos SUNAT' },
+  { icon: 'account_balance_wallet', texto: 'Caja, créditos y ganancias siempre al día' },
+  { icon: 'inventory_2', texto: 'Inventario por sede, compras y traslados' }
+]
 
 const router = useRouter()
 const route = useRoute()
@@ -216,88 +290,123 @@ async function onSubmit () {
 </script>
 
 <style lang="scss" scoped>
-// ── Composición ───────────────────────────────────────────────────────────
-// Dos columnas: lienzo de marca y formulario. La del formulario lleva un
-// minmax con mínimo en px porque con dos fracciones, en 1024px el formulario
-// se comprimía por debajo de su ancho cómodo y los campos quedaban angostos
-// mientras el panel seguía enorme.
+// ── Composición (calcada del acceso de Bata) ─────────────────────────────
+// Barra blanca arriba con el logo al centro; abajo dos columnas de ~430px
+// separadas por una línea fina: el formulario y una columna informativa.
 .auth {
-  display: grid;
-  grid-template-columns: minmax(0, 1.65fr) minmax(430px, 1fr);
-
-  // dvh y no vh: en mobile el vh cuenta la barra del navegador como si no
-  // existiera, así que el pie quedaba cortado.
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
   background: var(--app-surface);
 }
 
-
-.auth__showcase {
-  min-width: 0;
+.auth__strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  height: 32px;
+  padding: 0 24px;
+  background: var(--app-page);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--app-ink-2);
 }
 
-.auth__form {
+.auth__stripLugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--q-primary);
+}
+
+.auth__bar {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  height: 72px;
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 .auth__theme {
   position: absolute;
-  top: 24px;
-  right: 28px;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+}
+
+.auth__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 430px) minmax(0, 430px);
+  justify-content: center;
+  align-items: start;
+  padding: 64px 24px 80px;
 }
 
 .auth__panel {
-  width: 100%;
-  max-width: 384px;
+  padding-right: 64px;
+  border-right: 1px solid var(--app-border-control);
 }
 
+.auth__info {
+  padding-left: 64px;
+}
 
 // ── Encabezado ──
 .auth__head {
-  margin-bottom: 28px;
-}
-
-.auth__eyebrow {
-  margin: 0 0 10px;
-  font-family: $font-mono;
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-
-  // El token, no $primary crudo: en oscuro el rojo de marca sobre superficie
-  // oscura da 2.56:1 y este texto es chico, que es el peor caso.
-  color: var(--app-brand-soft-ink);
+  margin-bottom: 26px;
 }
 
 .auth__title {
-  margin: 0 0 8px;
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -1px;
-
-  // Sin esto hereda el line-height default de Quasar para <h1> (6rem): el
-  // título infla su caja y empuja todo el formulario hacia abajo.
-  line-height: 1.1;
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  line-height: 30px;
+  text-transform: uppercase;
   color: var(--app-ink);
 }
 
 .auth__subtitle {
   margin: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--app-ink-2);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--app-ink);
 }
 
 // ── Formulario ──
 .auth__fields {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+
+  // Campos rectos con borde gris cálido, como los de la tienda.
+  :deep(.app-field .q-field__control) {
+    border-radius: 2px;
+  }
+
+  :deep(.app-field .q-field__control):before {
+    border-color: var(--app-ink-2);
+  }
+
+  // El autocompletado de Chrome pinta el input de celeste y en oscuro se ve
+  // un parche claro: se tapa con una sombra interna del color del campo.
+  :deep(input:-webkit-autofill) {
+    -webkit-box-shadow: 0 0 0 1000px var(--app-surface) inset;
+    -webkit-text-fill-color: var(--app-ink);
+    caret-color: var(--app-ink);
+    transition: background-color 9999s ease-out;
+  }
+
+  :deep(.app-field .app-field__label) {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+  }
 }
 
 .auth__row {
@@ -306,12 +415,11 @@ async function onSubmit () {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-top: -2px;
 }
 
 .auth__remember {
-  font-size: 12.5px;
-  color: var(--app-ink-2);
+  font-size: 15px;
+  color: var(--app-ink);
 }
 
 .auth__link {
@@ -319,19 +427,19 @@ async function onSubmit () {
   border: 0;
   background: none;
   font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--app-brand-soft-ink);
+  font-size: 15px;
+  color: var(--app-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 
   &:hover {
-    text-decoration: underline;
+    color: var(--q-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
-    border-radius: 3px;
   }
 }
 
@@ -341,10 +449,10 @@ async function onSubmit () {
   gap: 7px;
   margin: 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: var(--app-page);
   border: 1px solid var(--app-border-subtle);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.45;
   color: var(--app-ink-2);
 }
@@ -355,11 +463,11 @@ async function onSubmit () {
   gap: 9px;
   margin: 0;
   padding: 11px 13px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: var(--app-negative-soft);
   border: 1px solid var(--app-negative-border);
   color: var(--app-ink-negative);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
@@ -368,104 +476,225 @@ async function onSubmit () {
   margin-top: 1px;
 }
 
+// Botón sólido, recto, texto chico en mayúsculas espaciadas.
 .auth__submit {
   width: 100%;
   height: 48px;
-  margin-top: 4px;
-  font-size: 14.5px;
+  margin-top: 16px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
 
-  // El contenido es texto + flecha y el slot los deja pegados.
-  :deep(.q-btn__content) {
-    gap: 9px;
+// Negro como el de la tienda. Con los tokens de tinta y superficie se
+// invierte solo en oscuro (botón claro con letras oscuras) y no se pierde
+// sobre el fondo negro. La doble clase le gana al relleno de AppButton.
+.auth__submit.app-btn--primary {
+  background: var(--app-ink);
+  color: var(--app-surface);
+  box-shadow: none;
+
+  &:hover {
+    background: var(--app-ink);
+    opacity: 0.86;
   }
 }
 
-.auth__submitIcon {
-  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+// ── Columna informativa ──
+.auth__infoTitle {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 30px;
+  color: var(--app-ink);
 }
 
-.auth__submit:hover .auth__submitIcon {
-  transform: translateX(3px);
+.auth__infoText {
+  margin: 0 0 30px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--app-ink);
 }
 
-.auth__foot {
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid var(--app-border-subtle);
-  text-align: center;
-  font-size: 11.5px;
+.auth__modulos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 0 30px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+    line-height: 22px;
+    color: var(--app-ink);
+  }
+}
+
+// Ícono en círculo rojo con anillo, como los beneficios de la tienda.
+.auth__modIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--q-primary);
+  box-shadow: 0 0 0 2px var(--app-surface), 0 0 0 3.5px var(--q-primary);
+  color: var(--app-on-primary);
+}
+
+.auth__contacto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border: 1px solid var(--app-ink);
+  border-radius: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--app-ink);
+}
+
+// ── Pie ──
+.auth__pie {
+  padding: 48px 24px 0;
+  background: var(--app-page);
+  color: var(--app-ink);
+}
+
+.auth__pieGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+
+  p {
+    margin: 0 0 4px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+// La marca grande y roja, como el "BATA CLUB" del pie de la tienda.
+.auth__pieMarca {
+  font-family: $font-display;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--q-primary);
+}
+
+.auth__pieLema {
+  margin-top: 10px !important;
   color: var(--app-ink-2);
 }
 
+.auth__pieTitulo {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--app-ink-2);
+}
+
+.auth__pieBase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 0 20px;
+  border-top: 1px solid var(--app-border-control);
+  font-size: 12px;
+  color: var(--app-ink-2);
+}
+
+.auth__pieSeguro {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 // ── Movimiento ──
-// Igual que en el panel: todo adentro de la consulta, para que quien pidió
-// menos movimiento vea la pantalla entera y quieta, no más lenta.
 @media (prefers-reduced-motion: no-preference) {
   .auth__head,
   .auth__fields,
-  .auth__foot {
-    animation: auth-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-    animation-delay: calc(120ms + var(--rise, 0) * 90ms);
+  .auth__info {
+    animation: auth-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(80ms + var(--rise, 0) * 80ms);
   }
 }
 
 @keyframes auth-rise {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
 }
 
-// ── Sin lugar para el panel ───────────────────────────────────────────────
-// El corte es 1024 y no un breakpoint de Quasar porque lo decide el ancho
-// que necesita el panel para que el titular no se parta en tres líneas, no
-// la clase de dispositivo.
-@media (max-width: 1023px) {
-  .auth {
-    grid-template-columns: minmax(0, 1fr);
-
-    // Las filas van declaradas y no implícitas: con dos filas `auto`, el grid
-    // reparte el espacio sobrante ENTRE LAS DOS. La franja de 3px se quedaba
-    // con la mitad y bajaba el formulario ~125px, que en mobile se veía como
-    // un hueco enorme arriba. `auto 1fr` le da todo el resto al formulario.
-    grid-template-rows: auto 1fr;
-    background: var(--app-page);
+// ── Una columna ──
+// La informativa baja debajo del formulario y la línea pasa a ser horizontal.
+@media (max-width: 959px) {
+  .auth__body {
+    grid-template-columns: minmax(0, 460px);
+    padding: 40px 20px 56px;
   }
 
-  // El panel no se oculta: se reduce a una franja con la foto y la marca.
-  // La altura va acá y no adentro del componente porque es una decisión de
-  // esta composición —cuánto cede el formulario— y no del panel en sí.
-  .auth__showcase {
-    height: 240px;
+  .auth__panel {
+    padding: 0 0 40px;
+    border-right: 0;
+    border-bottom: 1px solid var(--app-border-control);
   }
 
-  .auth__form {
-    align-items: flex-start;
-    padding: 32px 24px 40px;
+  .auth__info {
+    padding: 40px 0 0;
   }
 
-  // Sale del flujo del formulario y se va sobre la franja: ahí tiene una
-  // fotografía oscura detrás —contraste de sobra— y deja de disputarle el
-  // renglón al encabezado, que en 390px es un renglón que no sobra.
-  .auth__theme {
-    position: fixed;
-    top: 14px;
-    right: 14px;
+  .auth__strip span:not(.auth__stripLugar) {
+    display: none;
+  }
+
+  .auth__pieGrid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 599px) {
-  .auth__form {
-    padding: 44px 18px 32px;
+  .auth__bar {
+    height: 60px;
   }
 
   .auth__theme {
-    top: 16px;
-    right: 16px;
+    right: 14px;
   }
 
-  .auth__title {
-    font-size: 26px;
+  .auth__title,
+  .auth__infoTitle {
+    font-size: 21px;
+  }
+
+  .auth__pieGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .auth__pieBase {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

@@ -10,9 +10,17 @@
         alt="Nexo Technology"
         class="cot-doc__logo"
       >
-      <p class="cot-doc__lema">
-        {{ TIENDA.lema }}
-      </p>
+      <div class="cot-doc__centro">
+        <p class="cot-doc__lema">
+          {{ TIENDA.lema }}
+        </p>
+        <p
+          v-if="cotizacion.sede?.horario"
+          class="cot-doc__horario"
+        >
+          Horario de atención: {{ cotizacion.sede.horario }}
+        </p>
+      </div>
       <div class="cot-doc__caja">
         <div class="cot-doc__ruc">
           RUC {{ TIENDA.ruc }}
@@ -260,6 +268,25 @@ $gris: #4B5563;
   text-align: center;
   text-transform: uppercase;
   color: $gris;
+}
+
+.cot-doc__centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cot-doc__horario {
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba($azul, 0.08);
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  color: $azul;
 }
 
 .cot-doc__caja {

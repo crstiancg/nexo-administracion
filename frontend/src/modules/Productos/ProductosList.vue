@@ -466,7 +466,7 @@ async function confirmarEliminar () {
   text-decoration: none;
 
   &:hover .producto-nombre {
-    color: $primary;
+    color: var(--q-primary);
     text-decoration: underline;
   }
 }

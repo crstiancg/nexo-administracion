@@ -544,7 +544,7 @@ defineExpose({ form, submit })
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 
@@ -620,7 +620,7 @@ defineExpose({ form, submit })
   font-weight: 600;
 
   &--cambia {
-    color: $primary;
+    color: var(--q-primary);
   }
 
   &--negativo {

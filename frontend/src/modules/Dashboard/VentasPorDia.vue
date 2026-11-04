@@ -203,7 +203,7 @@ const estiloTooltip = computed(() => {
 <style lang="scss" scoped>
 .grafico {
   // El azul de la marca (pasa 3:1 contra la superficie en claro y oscuro).
-  --grafico-barra: #{$primary};
+  --grafico-barra: var(--q-primary);
 
   position: relative;
   width: 100%;

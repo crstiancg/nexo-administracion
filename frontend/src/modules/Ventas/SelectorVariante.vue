@@ -242,12 +242,12 @@ function agregar (variante) {
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover:not(:disabled) {
-    border-color: $primary;
-    background: rgba($primary, 0.06);
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 6%, transparent);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 
@@ -257,8 +257,8 @@ function agregar (variante) {
   }
 
   &--flash {
-    border-color: $primary;
-    background: rgba($primary, 0.18);
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 18%, transparent);
   }
 }
 
@@ -328,7 +328,7 @@ function agregar (variante) {
   min-width: 22px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: $primary;
+  background: var(--q-primary);
   font-size: 11px;
   font-weight: 700;
   color: #FFFFFF;

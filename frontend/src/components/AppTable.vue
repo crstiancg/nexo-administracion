@@ -435,7 +435,7 @@ defineExpose({ requestServerInteraction, actualizar })
 }
 
 .app-table__tarjeta--seleccionada {
-  border-color: $primary;
+  border-color: var(--q-primary);
   background: var(--app-brand-soft);
 }
 
@@ -593,11 +593,11 @@ defineExpose({ requestServerInteraction, actualizar })
 }
 
 .app-table__pageNumber--active {
-  background: $primary;
+  background: var(--q-primary);
   color: #FFFFFF;
 
   &:hover {
-    background: $primary;
+    background: var(--q-primary);
   }
 }
 

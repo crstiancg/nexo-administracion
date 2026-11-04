@@ -30,6 +30,7 @@
             </template>
           </q-tooltip>
         </span>
+        <AppTema />
         <SwitchDarkMode />
 
         <AppAlertas />
@@ -230,6 +231,7 @@ import AppSedeSelector from '@/components/AppSedeSelector.vue'
 import AppUserMenu from '@/components/AppUserMenu.vue'
 import AppAlertas from '@/components/AppAlertas.vue'
 import AppBusquedaGlobal from '@/components/AppBusquedaGlobal.vue'
+import AppTema from '@/components/AppTema.vue'
 import SwitchDarkMode from '@/components/SwitchDarkMode.vue'
 import InventarioService from '@/services/InventarioService'
 import OrdenServicioService from '@/services/OrdenServicioService'
@@ -471,7 +473,7 @@ function toggleDrawer () {
 </script>
 
 <style lang="scss" scoped>
-// QHeader viene con fondo $primary por default. Acá eso sería una franja
+// QHeader viene con fondo var(--q-primary) por default. Acá eso sería una franja
 // roja de 64px cruzando la pantalla, justo lo que la paleta no quiere:
 // el rojo es acento, no superficie.
 .app-header {
@@ -589,7 +591,7 @@ function toggleDrawer () {
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 1px;
   }
 }
@@ -666,7 +668,7 @@ function toggleDrawer () {
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: -4px;
   }
 }

@@ -18,6 +18,8 @@ class StoreCotizacionRequest extends FormRequest
 {
     public const MAX_ITEMS = 200;
 
+    public const DIAS_VALIDEZ = 7;
+
     public function authorize(): bool
     {
         return true;
@@ -34,6 +36,10 @@ class StoreCotizacionRequest extends FormRequest
             if (is_string($cotizacion[$campo] ?? null)) {
                 $cotizacion[$campo] = trim($cotizacion[$campo]) ?: null;
             }
+        }
+        // Sin validez: vale DIAS_VALIDEZ días desde hoy.
+        if (in_array($cotizacion['valida_hasta'] ?? null, [null, ''], true)) {
+            $cotizacion['valida_hasta'] = Fechas::hoy()->addDays(self::DIAS_VALIDEZ)->toDateString();
         }
         if (in_array($cotizacion['descuento'] ?? null, [null, ''], true)) {
             $cotizacion['descuento'] = 0;

@@ -485,7 +485,7 @@ const vistaPrevia = computed(() => rellenarPlantilla(
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: $primary;
+  background: var(--q-primary);
 }
 
 .conf-editor {

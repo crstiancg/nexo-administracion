@@ -42,29 +42,9 @@
           />
         </div>
 
-        <!-- Los pasos del taller: dónde está el equipo ahora. -->
-        <ol class="seg__pasos">
-          <li
-            v-for="(paso, i) in PASOS"
-            :key="paso.estado"
-            :class="['seg__paso', {
-              'seg__paso--hecho': i < pasoActual,
-              'seg__paso--actual': i === pasoActual
-            }]"
-          >
-            <span class="seg__punto">
-              <q-icon
-                :name="i < pasoActual ? 'check' : ESTADOS[paso.estado].icon"
-                size="16px"
-              />
-            </span>
-            <span>{{ paso.label }}</span>
-          </li>
-        </ol>
-
-        <p class="seg__mensaje">
-          {{ mensaje }}
-        </p>
+        <!-- Los pasos del taller: dónde está el equipo ahora, con la fecha
+             de cada paso y el mensaje en el actual. -->
+        <AppTimeline :items="pasos" />
 
         <dl class="seg__datos">
           <dt>Recibido</dt>
@@ -112,6 +92,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLogo from '@/components/AppLogo.vue'
 import AppChip from '@/components/AppChip.vue'
+import AppTimeline from '@/components/AppTimeline.vue'
 import { ESTADOS, fechaCorta } from '@/modules/OrdenesServicio/constantes'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import { formatearFechaHora } from '@/utils/fechas'
@@ -156,6 +137,33 @@ const cargando = ref(true)
 
 const pasoActual = computed(() => PASO_DE[orden.value?.estado] ?? 0)
 const mensaje = computed(() => MENSAJES[orden.value?.estado] ?? '')
+
+// Fecha en que la orden llegó a cada paso (el último movimiento que cae ahí).
+function fechaDelPaso (i) {
+  const mov = [...(orden.value?.movimientos ?? [])].reverse().find((m) => PASO_DE[m.estado] === i)
+  return mov ? formatearFechaHora(mov.fecha) : ''
+}
+
+const pasos = computed(() => {
+  if (!orden.value) return []
+  const estado = orden.value.estado
+  const terminado = estado === 'entregado'
+  const status = ESTADOS[estado]?.status
+  return PASOS.map((paso, i) => {
+    const actual = i === pasoActual.value && !terminado
+    const hecho = i < pasoActual.value || terminado
+    return {
+      key: paso.estado,
+      // En el paso actual va el estado real ("Esperando repuesto", "Sin reparación").
+      titulo: actual ? orden.value.estado_label : paso.label,
+      fecha: hecho || actual ? fechaDelPaso(i) : '',
+      descripcion: actual || (terminado && i === PASOS.length - 1) ? mensaje.value : '',
+      icon: hecho ? 'check' : ESTADOS[actual ? estado : paso.estado].icon,
+      color: actual && status === 'negative' ? 'negative' : terminado && i === PASOS.length - 1 ? 'positive' : 'primary',
+      estado: hecho ? 'hecho' : actual ? 'actual' : 'pendiente'
+    }
+  })
+})
 
 onMounted(async () => {
   try {
@@ -229,65 +237,6 @@ onMounted(async () => {
   color: var(--app-ink-2);
 }
 
-.seg__pasos {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.seg__paso {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--app-ink-2);
-}
-
-.seg__punto {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 2px solid var(--app-border-control);
-  border-radius: 999px;
-}
-
-.seg__paso--hecho {
-  color: var(--app-ink);
-
-  .seg__punto {
-    border-color: var(--app-ink-positive);
-    background: var(--app-tint-positive);
-    color: var(--app-ink-positive);
-  }
-}
-
-.seg__paso--actual {
-  font-weight: 700;
-  color: var(--app-ink);
-
-  .seg__punto {
-    border-color: $primary-hover;
-    background: $primary-hover;
-    color: #FFFFFF;
-  }
-}
-
-.seg__mensaje {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--app-brand-soft);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--app-brand-soft-ink);
-}
-
 .seg__datos {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -323,7 +272,7 @@ onMounted(async () => {
   }
 
   a {
-    color: $primary-hover;
+    color: var(--app-primary-hover);
     font-weight: 600;
     text-decoration: none;
   }

@@ -502,7 +502,7 @@ defineExpose({ form, submit })
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 
@@ -573,14 +573,14 @@ defineExpose({ form, submit })
   cursor: pointer;
 
   &--activa {
-    border-color: $primary;
-    background: rgba($primary, 0.1);
+    border-color: var(--q-primary);
+    background: color-mix(in srgb, var(--q-primary) 10%, transparent);
     font-weight: 600;
-    color: $primary;
+    color: var(--q-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }

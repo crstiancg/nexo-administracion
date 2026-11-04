@@ -313,11 +313,11 @@ defineExpose({ refrescar: () => cargar(1) })
   cursor: pointer;
 
   &:hover {
-    color: $primary;
+    color: var(--q-primary);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 
@@ -343,13 +343,13 @@ defineExpose({ refrescar: () => cargar(1) })
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 
   &:hover:not(:disabled) {
-    border-color: rgba($primary, 0.5);
+    border-color: color-mix(in srgb, var(--q-primary) 50%, transparent);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 
@@ -435,7 +435,7 @@ defineExpose({ refrescar: () => cargar(1) })
   min-width: 28px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: $primary;
+  background: var(--q-primary);
   font-size: 12px;
   font-weight: 700;
   text-align: center;
@@ -544,8 +544,8 @@ defineExpose({ refrescar: () => cargar(1) })
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: rgba($primary, 0.1);
-  color: $primary;
+  background: color-mix(in srgb, var(--q-primary) 10%, transparent);
+  color: var(--q-primary);
 }
 
 .catalogo__vacio {

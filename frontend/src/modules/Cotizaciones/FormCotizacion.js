@@ -1,3 +1,6 @@
+// Validez por defecto (igual que StoreCotizacionRequest::DIAS_VALIDEZ).
+export const DIAS_VALIDEZ = 7
+
 // Opciones rápidas de la proforma (se puede escribir otra).
 export const FORMAS_PAGO = ['Contado', '50% de adelanto y saldo contra entrega', 'Crédito a 15 días', 'Crédito a 30 días']
 export const ENTREGAS = [
@@ -18,7 +21,7 @@ export default function formCotizacion () {
   return {
     cotizacion: {
       cliente_id: null,
-      // Vacía a propósito: la pone quien cotiza (es obligatoria).
+      // Vacía: si no se pone, el backend la deja en DIAS_VALIDEZ días.
       valida_hasta: '',
       // Salen impresos en la proforma; se proponen los de siempre.
       forma_pago: FORMAS_PAGO[0],

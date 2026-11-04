@@ -191,7 +191,7 @@ async function buscar (valor, update, abort) {
   }
 
   &.q-field--focused :deep(.q-field__control) {
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--q-primary) 12%, transparent);
   }
 }
 
@@ -200,7 +200,7 @@ async function buscar (valor, update, abort) {
 }
 
 .buscador-cliente__agregar {
-  color: $primary;
+  color: var(--q-primary);
   font-weight: 600;
 }
 

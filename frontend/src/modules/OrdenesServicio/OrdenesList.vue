@@ -765,13 +765,13 @@ async function pagoGuardado () {
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
 
 .os-estados__tab--activo {
-  border-color: $primary-hover;
+  border-color: var(--app-primary-hover);
   background: var(--app-brand-soft);
   color: var(--app-brand-soft-ink);
 }
@@ -790,7 +790,7 @@ async function pagoGuardado () {
   border: 0;
   background: none;
   font-weight: 700;
-  color: $primary-hover;
+  color: var(--app-primary-hover);
   cursor: pointer;
 }
 
@@ -851,13 +851,13 @@ async function pagoGuardado () {
   }
 
   &:focus-visible {
-    outline: 2px solid $primary;
+    outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
 }
 
 .os-cambio__opcion--activa {
-  border-color: $primary-hover;
+  border-color: var(--app-primary-hover);
   background: var(--app-brand-soft);
   color: var(--app-brand-soft-ink);
 }
