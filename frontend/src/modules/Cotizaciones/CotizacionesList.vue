@@ -188,7 +188,7 @@
     <!-- ── Crear / editar ── -->
     <AppDialog
       v-model="formDialog"
-      :title="editId ? 'Editar cotización' : 'Nueva cotización'"
+      :title="editId ? 'Editar cotización' : copiaId ? 'Nueva cotización (copia)' : 'Nueva cotización'"
       size="lg"
       persistent
     >
@@ -196,6 +196,7 @@
         :id="editId"
         ref="formRef"
         :key="editId ?? `nueva-${aperturas}`"
+        :copia-de="copiaId"
         @save="guardada"
       />
 
@@ -294,6 +295,14 @@
             </q-list>
           </q-menu>
         </AppButton>
+        <!-- "La misma de la vez pasada, pero con otro disco". -->
+        <AppButton
+          v-if="detalle && userStore.hasPermission('cotizaciones.store')"
+          variant="tertiary"
+          label="Duplicar"
+          icon="content_copy"
+          @click="duplicar(detalle)"
+        />
         <AppButton
           v-if="detalle"
           variant="tertiary"
@@ -627,10 +636,12 @@ function refrescar () {
 const formDialog = ref(false)
 const formRef = ref()
 const editId = ref(null)
+const copiaId = ref(null)
 const aperturas = ref(0)
 
 function crear () {
   editId.value = null
+  copiaId.value = null
   aperturas.value++
   formDialog.value = true
 }
@@ -638,6 +649,16 @@ function crear () {
 function editar (cotizacion) {
   detalleDialog.value = false
   editId.value = cotizacion.id
+  copiaId.value = null
+  formDialog.value = true
+}
+
+/** Una nueva con lo de ésta (no se guarda hasta que se revise y guarde). */
+function duplicar (cotizacion) {
+  detalleDialog.value = false
+  editId.value = null
+  copiaId.value = cotizacion.id
+  aperturas.value++
   formDialog.value = true
 }
 

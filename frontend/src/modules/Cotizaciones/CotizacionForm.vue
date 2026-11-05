@@ -701,6 +701,11 @@ const props = defineProps({
   id: {
     type: Number,
     default: null
+  },
+  // Crear una nueva a partir de esta (duplicar): mismos ítems y condiciones.
+  copiaDe: {
+    type: Number,
+    default: null
   }
 })
 
@@ -923,9 +928,62 @@ const total = computed(() => Math.max(0, subtotal.value - numero(form.cotizacion
 
 // ── Carga ──
 onMounted(async () => {
-  if (!props.id) return
+  if (props.id) {
+    await cargar(props.id)
+  } else if (props.copiaDe) {
+    await copiar(props.copiaDe)
+  }
+})
 
-  const cotizacion = await CotizacionService.get(props.id)
+/**
+ * Duplicar: una cotización NUEVA con los ítems y condiciones de otra. Lo del
+ * catálogo va con el precio de HOY (y avisa cuántos cambiaron); lo libre,
+ * como estaba. Las fotos no se copian (son de la otra cotización).
+ */
+async function copiar (id) {
+  const original = await CotizacionService.get(id)
+  cliente.value = original.cliente
+  let cambiaron = 0
+  form.setData({
+    [PATH]: {
+      ...formCotizacion().cotizacion,
+      tipo: original.tipo ?? 'normal',
+      mostrar_precios: original.mostrar_precios ?? true,
+      equipos: original.equipos ?? 1,
+      cliente_id: original.cliente_id,
+      forma_pago: original.forma_pago ?? '',
+      entrega: original.entrega ?? '',
+      garantia: original.garantia ?? '',
+      condiciones: original.condiciones ?? '',
+      items: original.items.map((item) => {
+        if (!item.variante) {
+          return {
+            ...nuevoItemLibre(item.componente),
+            descripcion: item.descripcion ?? '',
+            unidad: item.unidad ?? '',
+            cantidad: String(item.cantidad),
+            precio_unitario: item.precio_unitario
+          }
+        }
+        const nuevo = nuevoItem(item.variante, original.cliente)
+        if (nuevo.precio_unitario !== '' && Number(nuevo.precio_unitario) !== Number(item.precio_unitario)) cambiaron++
+        return conUid({ ...nuevo, componente: item.componente, cantidad: String(item.cantidad) })
+      })
+    }
+  })
+  if (cambiaron) {
+    $q.notify({
+      message: cambiaron === 1 ? 'Un precio se actualizó al de hoy.' : `${cambiaron} precios se actualizaron a los de hoy.`,
+      caption: `Copia de ${original.codigo}: revísala antes de guardar.`,
+      icon: 'info',
+      color: 'info',
+      position: 'top-right'
+    })
+  }
+}
+
+async function cargar (id) {
+  const cotizacion = await CotizacionService.get(id)
   cliente.value = cotizacion.cliente
   form.setData({
     _method: 'PUT',
@@ -956,7 +1014,7 @@ onMounted(async () => {
       }))
     }
   })
-})
+}
 
 // Sin cliente se puede ("cotización sin nombre"), pero se avisa antes: a
 // veces es un olvido. Sin validez, el backend le da DIAS_VALIDEZ días.
