@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CategoriaController;
@@ -211,6 +212,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('cotizaciones/{cotizacion}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
 
     Route::get('ganancias', [GananciaController::class, 'index'])->name('ganancias.index');
+    // Quién cambió qué y cuándo (sólo lectura).
+    Route::get('auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
     // Comisiones del período: cálculo, porcentajes de cada empleado y pago
     // (que queda como gasto "Comisiones").
     Route::get('comisiones', [ComisionController::class, 'index'])->name('comisiones.index');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Support\Fechas;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +24,11 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 #[Fillable(['presentacion', 'unidad_id', 'color_id', 'sku', 'codigo_barras', 'precio', 'precio_mayor'])]
 class Variante extends Model
 {
+    use Auditable;
+
+    /** Cambian con cada movimiento de inventario: sólo harían ruido. */
+    protected array $noAuditar = ['stock', 'costo_promedio'];
+
     protected function casts(): array
     {
         return [

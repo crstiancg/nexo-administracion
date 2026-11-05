@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['nombre', 'direccion', 'telefono', 'horario', 'codigo_sunat', 'activo'])]
 class Sede extends Model
 {
+    use Auditable;
+
     /**
      * Cada sede nueva nace con su serie de boleta y de factura.
      */

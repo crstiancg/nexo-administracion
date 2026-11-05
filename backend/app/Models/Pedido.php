@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Support\Igv;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable(['cliente_id', 'canal', 'descuento', 'observacion', 'user_id'])]
 class Pedido extends Model
 {
+    use Auditable;
+
     public const PENDIENTE = 'pendiente';
 
     public const CONFIRMADO = 'confirmado';

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['tipo_documento', 'numero_documento', 'nombre', 'mayorista', 'telefono', 'email', 'direccion'])]
 class Cliente extends Model
 {
+    use Auditable;
+
     public const DNI = 'DNI';
 
     public const RUC = 'RUC';

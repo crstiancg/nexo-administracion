@@ -359,7 +359,8 @@ const MENU = [
       { to: '/sedes', icon: 'storefront', label: 'Sedes', permiso: 'sedes.index' },
       { to: '/usuarios', icon: 'group', label: 'Usuarios', permiso: 'usuarios.index' },
       { to: '/roles', icon: 'badge', label: 'Roles', permiso: 'roles.index' },
-      { to: '/permisos', icon: 'key', label: 'Permisos', permiso: 'permisos.index' }
+      { to: '/permisos', icon: 'key', label: 'Permisos', permiso: 'permisos.index' },
+      { to: '/auditoria', icon: 'history', label: 'Auditoría', permiso: 'auditoria.index' }
     ]
   }
 ]

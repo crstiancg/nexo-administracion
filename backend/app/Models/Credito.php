@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Support\Fechas;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['frecuencia', 'numero_cuotas', 'observacion'])]
 class Credito extends Model
 {
+    use Auditable;
+
     /** "Por vencer": la próxima cuota vence hoy o en estos días (para recordarla). */
     public const DIAS_POR_VENCER = 3;
 

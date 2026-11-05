@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['nombre', 'incluye_subcategorias', 'tipo', 'valor', 'inicia_at', 'termina_at', 'activa'])]
 class Oferta extends Model
 {
+    use Auditable;
+
     public const PORCENTAJE = 'porcentaje';
 
     public const PRECIO_FIJO = 'precio_fijo';

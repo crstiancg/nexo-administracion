@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,8 @@ use LogicException;
 #[Fillable(['pedido_id', 'caja_id', 'metodo', 'monto', 'recibido', 'vuelto', 'referencia', 'motivo', 'user_id'])]
 class Pago extends Model
 {
+    use Auditable;
+
     public const METODOS = [
         'efectivo' => 'Efectivo',
         'yape' => 'Yape',

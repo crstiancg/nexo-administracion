@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Support\RutasProtegidas;
 use Illuminate\Console\Command;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -25,6 +26,7 @@ class SincronizarPermisos extends Command
         $nombres = $rutas->todas()->keys();
 
         $creados = 0;
+        $nuevos = [];
         foreach ($nombres as $nombre) {
             // firstOrCreate y no updateOrCreate: la descripción que editó un
             // administrador desde la pantalla no se pisa.
@@ -32,7 +34,16 @@ class SincronizarPermisos extends Command
                 ['name' => $nombre, 'guard_name' => 'api'],
                 ['description' => $rutas->describir($nombre)],
             );
-            $creados += $permiso->wasRecentlyCreated ? 1 : 0;
+            if ($permiso->wasRecentlyCreated) {
+                $creados++;
+                $nuevos[] = $permiso;
+            }
+        }
+
+        // El Administrador tiene todos los permisos: también los de rutas
+        // nuevas (si no, un módulo recién desplegado no lo ve nadie).
+        if ($nuevos) {
+            Role::query()->where('name', 'Administrador')->where('guard_name', 'api')->first()?->givePermissionTo($nuevos);
         }
 
         $borrados = 0;

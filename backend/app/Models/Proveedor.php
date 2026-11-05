@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['ruc', 'razon_social', 'contacto', 'telefono', 'email', 'direccion', 'activo'])]
 class Proveedor extends Model
 {
+    use Auditable;
+
     /**
      * Explícita: por convención Laravel pluraliza en inglés ("proveedors").
      */

@@ -146,6 +146,7 @@ return [
         'roles' => 'Roles',
         'permisos' => 'Permisos',
         'usuarios' => 'Usuarios',
+        'auditoria' => 'Auditoría',
         'colores' => 'Colores',
         'categorias' => 'Categorías',
         'marcas' => 'Marcas',
