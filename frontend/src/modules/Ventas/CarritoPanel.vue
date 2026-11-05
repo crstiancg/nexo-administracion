@@ -219,6 +219,19 @@
               {{ formatearPrecio(item.cantidad * Number(item.precio_unitario || 0)) }}
             </span>
           </div>
+          <!-- Con número de serie: cuáles se entregan. -->
+          <div
+            v-if="item.maneja_series"
+            class="linea__series"
+            @click.stop
+          >
+            <SeriesSelect
+              v-model="item.series"
+              :variante-id="item.variante_id"
+              :cantidad="item.cantidad"
+              :error="errores[`venta.items.${i}.series`]?.[0] ?? ''"
+            />
+          </div>
 
           <p
             v-if="errorItem(i)"
@@ -566,6 +579,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } fro
 import { useQuasar } from 'quasar'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
+import SeriesSelect from '@/components/SeriesSelect.vue'
 import ResumenVenta from './ResumenVenta.vue'
 import AbrirCajaForm from '@/modules/Caja/AbrirCajaForm.vue'
 import CerrarCajaForm from '@/modules/Caja/CerrarCajaForm.vue'
@@ -839,7 +853,12 @@ async function confirmarCobro () {
     const pedido = await VentaService.registrar({
       cliente_id: pos.cliente?.id ?? null,
       descuento: pos.descuento || 0,
-      items: pos.items.map((i) => ({ variante_id: i.variante_id, cantidad: i.cantidad, precio_unitario: i.precio_unitario })),
+      items: pos.items.map((i) => ({
+        variante_id: i.variante_id,
+        cantidad: i.cantidad,
+        precio_unitario: i.precio_unitario,
+        ...(i.maneja_series && i.series?.length ? { series: i.series } : {})
+      })),
       comprobante: pos.comprobante,
       pagos: pos.pagos.map((p) => ({
         metodo: p.metodo,
@@ -885,6 +904,10 @@ defineExpose({ cobrar, enfocarCliente, resumenAbierto: resumenDialog })
 </script>
 
 <style lang="scss" scoped>
+.linea__series {
+  margin-top: 6px;
+}
+
 // Diálogo de cobro: productos a la izquierda, cobro a la derecha.
 .cobro {
   display: grid;

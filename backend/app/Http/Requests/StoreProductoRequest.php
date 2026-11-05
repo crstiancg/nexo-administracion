@@ -49,7 +49,7 @@ class StoreProductoRequest extends FormRequest
         }
 
         // En multipart un booleano llega como texto.
-        foreach (['activo', 'maneja_lotes'] as $campo) {
+        foreach (['activo', 'maneja_lotes', 'maneja_series'] as $campo) {
             if (in_array($producto[$campo] ?? null, ['true', 'false'], true)) {
                 $producto[$campo] = $producto[$campo] === 'true';
             }
@@ -129,6 +129,9 @@ class StoreProductoRequest extends FormRequest
             'producto.precio' => ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
             'producto.activo' => ['required', 'boolean'],
             'producto.maneja_lotes' => ['required', 'boolean', $this->lotesSinStock($producto)],
+            // Laptops, celulares…: cada unidad con su número de serie.
+            'producto.maneja_series' => ['boolean'],
+            'producto.garantia_meses' => ['nullable', 'integer', 'min:1', 'max:120'],
             'producto.variantes' => ['required', 'array', 'min:1', $this->noQuitaVariantesConStock($producto)],
             // Stock inicial de las variantes nuevas: el costo general de la
             // compra (ajustable por variante) y la factura o guía.
@@ -173,7 +176,7 @@ class StoreProductoRequest extends FormRequest
             ];
             $rules["producto.variantes.{$i}.precio"] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
             $rules["producto.variantes.{$i}.precio_mayor"] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
-            $rules["producto.variantes.{$i}.stock_inicial"] = ['nullable', 'numeric', 'min:0', 'max:100000', 'decimal:0,3', $this->stockInicialValido($i)];
+            $rules["producto.variantes.{$i}.stock_inicial"] = ['nullable', 'numeric', 'min:0', 'max:100000', 'decimal:0,3', $this->stockInicialValido($i), $this->sinStockInicialConSeries()];
             $rules["producto.variantes.{$i}.costo_unitario"] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
             // Con lotes, el stock inicial entra a un lote (igual que una entrada).
             $conLote = Rule::requiredIf(fn () => $this->stockInicialConLote($i));
@@ -381,6 +384,16 @@ class StoreProductoRequest extends FormRequest
         };
     }
 
+    /** Con series, el stock entra con una compra o entrada (ahí se escriben). */
+    private function sinStockInicialConSeries(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) {
+            if ((float) $value > 0 && filter_var($this->input('producto.maneja_series'), FILTER_VALIDATE_BOOLEAN)) {
+                $fail('Con números de serie, el stock entra con una compra o una entrada: ahí se escribe la serie de cada unidad.');
+            }
+        };
+    }
+
     private function nombreUnico(?Producto $ignorar): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) use ($ignorar) {
@@ -516,6 +529,8 @@ class StoreProductoRequest extends FormRequest
             'producto.precio' => 'precio',
             'producto.activo' => 'activo',
             'producto.maneja_lotes' => 'maneja lotes',
+            'producto.maneja_series' => 'maneja números de serie',
+            'producto.garantia_meses' => 'garantía',
             'producto.variantes.*.presentacion' => 'presentación',
             'producto.variantes.*.unidad_id' => 'unidad',
             'producto.variantes.*.sedes.*.precio' => 'precio de la sede',

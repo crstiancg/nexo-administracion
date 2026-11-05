@@ -62,6 +62,7 @@ class Compras
                     'costo_unitario' => $item['costo_unitario'],
                     'lote' => $item['lote'] ?? null,
                     'vence_at' => $item['vence_at'] ?? null,
+                    'series' => $item['series'] ?? [],
                 ], array_values($datos['items'])),
                 $this->referencia($compra),
                 null,
@@ -100,8 +101,9 @@ class Compras
             $lineas = $entradas->map(fn (MovimientoInventario $m) => [
                 'variante_id' => $m->variante_id,
                 'cantidad' => $m->cantidad,
-                // Cada ítem entró a un solo lote: sale de ése.
+                // Cada ítem entró a un solo lote: sale de ése (y con sus series).
                 'lote_id' => $m->lotes->first()?->id,
+                'series' => Series::de($m),
             ])->all();
 
             try {

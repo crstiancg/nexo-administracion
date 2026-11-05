@@ -190,7 +190,7 @@ class PedidoController extends Controller
             // Stock de la sede del pedido (no el total): es de donde sale al
             // confirmar, y el front avisa antes de cobrar o confirmar.
             'items.variante' => fn ($q) => $q->conStockDeSede($pedido->sede_id),
-            'items.variante.producto:id,nombre,precio,categoria_id',
+            'items.variante.producto:id,nombre,precio,categoria_id,maneja_series',
             'items.variante.unidad:id,nombre,abreviatura,fraccionable',
             'items.variante.color:id,nombre,hexadecimal',
             'pagos' => fn ($q) => $q->orderBy('id'),

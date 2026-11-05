@@ -125,6 +125,14 @@
                 >
                   {{ errorDe(i, 'variante_id') }}
                 </p>
+                <SeriesSelect
+                  v-if="item.variante.maneja_series && Number(item.cantidad) > 0"
+                  v-model="item.series"
+                  :variante-id="item.variante_id"
+                  :cantidad="item.cantidad"
+                  :error="errorDe(i, 'series')"
+                  class="pedido-form__series"
+                />
               </td>
 
               <td class="pedido-form__numero">
@@ -308,6 +316,7 @@ import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import AppTextField from '@/components/AppTextField.vue'
+import SeriesSelect from '@/components/SeriesSelect.vue'
 import ClientesForm from '@/modules/Clientes/ClientesForm.vue'
 import BuscadorVariante from '@/modules/Inventario/BuscadorVariante.vue'
 import PedidoService from '@/services/PedidoService'
@@ -401,7 +410,8 @@ onMounted(async () => {
         variante: item.variante,
         cantidad: String(item.cantidad),
         precio_unitario: item.precio_unitario,
-        por_mayor: Boolean(item.por_mayor)
+        por_mayor: Boolean(item.por_mayor),
+        ...(item.variante?.maneja_series ? { series: item.series ?? [] } : {})
       }))
     }
   })
@@ -627,6 +637,11 @@ defineExpose({ form, submit })
   font-size: 16px;
   font-weight: 700;
   color: var(--app-ink) !important;
+}
+
+.pedido-form__series {
+  margin-top: 8px;
+  max-width: 360px;
 }
 
 .pedido-form__error {

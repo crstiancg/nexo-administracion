@@ -51,7 +51,10 @@ export function lineaDesdeCatalogo (producto, variante) {
     precio_mayor: variante.precio_mayor ?? null,
     precio_unitario: Number(variante.precio ?? producto.precio).toFixed(2),
     precio_lista: Number(variante.precio_lista ?? variante.precio ?? producto.precio).toFixed(2),
-    miniatura_url: variante.miniatura_url ?? producto.miniatura_url ?? null
+    miniatura_url: variante.miniatura_url ?? producto.miniatura_url ?? null,
+    // Con número de serie: cuáles se entregan (vacío = las primeras en entrar).
+    maneja_series: Boolean(producto.maneja_series),
+    series: []
   }
 }
 
@@ -71,7 +74,9 @@ export function lineaDesdeEscaner (variante) {
     precio_mayor: variante.precio_mayor ?? null,
     precio_unitario: Number(variante.precio ?? 0).toFixed(2),
     precio_lista: Number(variante.precio_lista ?? variante.precio ?? 0).toFixed(2),
-    miniatura_url: variante.miniatura_url ?? null
+    miniatura_url: variante.miniatura_url ?? null,
+    maneja_series: Boolean(variante.maneja_series),
+    series: []
   }
 }
 

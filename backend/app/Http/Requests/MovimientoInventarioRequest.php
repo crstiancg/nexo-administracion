@@ -78,6 +78,10 @@ abstract class MovimientoInventarioRequest extends FormRequest
                 'required', 'integer', 'exists:variantes,id', $this->varianteUnica($i),
             ];
             $rules = [...$rules, ...$this->reglasDeLinea($i)];
+            // Números de serie (productos con `maneja_series`): uno por unidad.
+            // Que cuadren con la cantidad y con el stock lo valida App\Services\Series.
+            $rules["movimiento.lineas.{$i}.series"] = ['nullable', 'array', 'max:10000'];
+            $rules["movimiento.lineas.{$i}.series.*"] = ['string', 'max:100'];
         }
 
         return $rules;

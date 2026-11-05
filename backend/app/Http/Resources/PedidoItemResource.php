@@ -21,6 +21,8 @@ class PedidoItemResource extends JsonResource
             // Sólo en los servicios (sin presentación): la mano de obra.
             'descripcion' => $this->descripcion,
             'cantidad' => $this->cantidad,
+            // Números de serie elegidos (productos con número de serie).
+            'series' => $this->series ?? [],
             'precio_unitario' => $this->precio_unitario,
             'por_mayor' => (bool) $this->por_mayor,
             'costo_unitario' => $this->costo_unitario,

@@ -193,6 +193,14 @@
                     <q-tooltip>Vencimiento</q-tooltip>
                   </q-input>
                 </div>
+                <!-- Con número de serie: la de cada unidad que llegó. -->
+                <SeriesInput
+                  v-if="item.variante.maneja_series && Number(item.cantidad) > 0"
+                  v-model="item.series"
+                  :cantidad="item.cantidad"
+                  :error="errorDe(i, 'series')"
+                  class="compra-form__series"
+                />
               </td>
 
               <td class="compra-form__numero">
@@ -332,6 +340,7 @@ import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import AppTextField from '@/components/AppTextField.vue'
+import SeriesInput from '@/components/SeriesInput.vue'
 import BuscadorVariante from '@/modules/Inventario/BuscadorVariante.vue'
 import ProveedoresForm from '@/modules/Proveedores/ProveedoresForm.vue'
 import { useUserStore } from '@/stores/user-store'
@@ -399,7 +408,8 @@ function agregar (variante) {
     variante,
     cantidad: '',
     costo_unitario: variante.costo_promedio !== null ? Number(variante.costo_promedio).toFixed(2) : '',
-    ...(variante.maneja_lotes ? { lote: '', vence_at: '' } : {})
+    ...(variante.maneja_lotes ? { lote: '', vence_at: '' } : {}),
+    ...(variante.maneja_series ? { series: [] } : {})
   })
 }
 
@@ -575,6 +585,10 @@ defineExpose({ form, submit })
 .compra-form__detalle {
   font-size: 12px;
   color: var(--app-ink-2);
+}
+
+.compra-form__series {
+  margin-top: 6px;
 }
 
 .compra-form__lote {

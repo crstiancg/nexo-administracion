@@ -114,6 +114,12 @@ class MovimientoInventario extends Model
         return $this->belongsToMany(Lote::class, 'movimiento_lotes')->withPivot('cantidad');
     }
 
+    /** Las unidades con número de serie que se movieron. */
+    public function series(): BelongsToMany
+    {
+        return $this->belongsToMany(Serie::class, 'movimiento_serie');
+    }
+
     public function sede(): BelongsTo
     {
         return $this->belongsTo(Sede::class);

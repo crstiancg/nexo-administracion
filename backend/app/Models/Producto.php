@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
-#[Fillable(['nombre', 'categoria_id', 'marca_id', 'descripcion', 'precio', 'activo', 'maneja_lotes'])]
+#[Fillable(['nombre', 'categoria_id', 'marca_id', 'descripcion', 'precio', 'activo', 'maneja_lotes', 'maneja_series', 'garantia_meses'])]
 class Producto extends Model
 {
     use Auditable;
@@ -22,6 +22,8 @@ class Producto extends Model
             'precio' => 'decimal:2',
             'activo' => 'boolean',
             'maneja_lotes' => 'boolean',
+            'maneja_series' => 'boolean',
+            'garantia_meses' => 'integer',
         ];
     }
 

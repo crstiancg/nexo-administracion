@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * que se cobró y lo que costó en ESE momento. Sin `variante_id` es un
  * servicio (la mano de obra de una orden): lleva `descripcion` y no mueve stock.
  */
-#[Fillable(['variante_id', 'descripcion', 'cantidad', 'precio_unitario', 'por_mayor', 'subtotal'])]
+#[Fillable(['variante_id', 'descripcion', 'cantidad', 'series', 'precio_unitario', 'por_mayor', 'subtotal'])]
 class PedidoItem extends Model
 {
     public $timestamps = false;
@@ -20,6 +20,8 @@ class PedidoItem extends Model
     {
         return [
             'cantidad' => 'float',
+            // Números de serie elegidos (productos con `maneja_series`).
+            'series' => 'array',
             'precio_unitario' => 'decimal:2',
             'por_mayor' => 'boolean',
             'costo_unitario' => 'decimal:4',

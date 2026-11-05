@@ -175,11 +175,37 @@
           Sólo se puede desactivar con el producto sin stock
         </q-tooltip>
       </q-toggle>
+      <q-toggle
+        v-model="form.producto.maneja_series"
+        label="Maneja números de serie"
+        color="primary"
+        class="producto-form__toggle"
+        @update:model-value="form.validate(`${PATH}.maneja_series`)"
+      />
+      <q-input
+        v-if="form.producto.maneja_series"
+        v-model="form.producto.garantia_meses"
+        type="number"
+        min="1"
+        max="120"
+        step="1"
+        label="Garantía"
+        suffix="meses"
+        dense
+        outlined
+        hide-bottom-space
+        no-error-icon
+        :error="Boolean(form.errors[`${PATH}.garantia_meses`])"
+        :error-message="form.errors[`${PATH}.garantia_meses`]"
+        class="producto-form__garantia"
+        @change="form.validate(`${PATH}.garantia_meses`)"
+      />
     </div>
 
     <ul class="producto-form__leyenda">
       <li><strong>Activo:</strong> apagado, el producto no aparece en el punto de venta ni en los buscadores (no se borra).</li>
       <li><strong>Maneja lotes y vencimiento:</strong> para productos que vencen. Cada entrada de mercadería pide n° de lote y fecha de vencimiento, y las ventas sacan primero lo que vence antes.</li>
+      <li><strong>Maneja números de serie:</strong> laptops, celulares, impresoras. Cada compra o entrada pide la serie de cada unidad, al vender se elige cuál se entrega y en Inventario › Números de serie se ve a quién se vendió y si sigue en garantía.</li>
     </ul>
 
     <p
@@ -1283,7 +1309,7 @@ onMounted(async () => {
     return
   }
 
-  const { nombre, categoria_id: categoriaId, marca_id: marcaId, descripcion, precio, activo, maneja_lotes: manejaLotes, archivos, variantes } = producto
+  const { nombre, categoria_id: categoriaId, marca_id: marcaId, descripcion, precio, activo, maneja_lotes: manejaLotes, maneja_series: manejaSeries, garantia_meses: garantiaMeses, archivos, variantes } = producto
   lotesGuardado.value = manejaLotes
 
   form.setData({
@@ -1296,6 +1322,8 @@ onMounted(async () => {
       precio: String(precio),
       activo,
       maneja_lotes: manejaLotes,
+      maneja_series: Boolean(manejaSeries),
+      garantia_meses: garantiaMeses ?? '',
       costo_compra: '',
       referencia_compra: '',
       archivos: archivos.map(aFoto),
@@ -1372,6 +1400,10 @@ defineExpose({ form, submit })
 
 .producto-form__precio {
   flex: 0 1 200px;
+}
+
+.producto-form__garantia {
+  width: 150px;
 }
 
 .producto-form__toggle {

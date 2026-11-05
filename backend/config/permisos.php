@@ -84,6 +84,10 @@ return [
         'clientes.show' => ['clientes.update'],
         // Quien ve la lista de clientes abre su ficha.
         'clientes.ficha' => ['clientes.index', 'clientes.show'],
+        // Las series: quien vende o mueve stock las elige; quien atiende
+        // garantías (ventas, taller, inventario) las consulta.
+        'series.index' => ['inventario.index', 'inventario.salidas', 'inventario.traslados', 'inventario.ajustes', 'ventas.store', 'pedidos.store', 'pedidos.update', 'ordenes-servicio.index'],
+        'series.show' => ['inventario.index', 'ventas.store', 'pedidos.index', 'ordenes-servicio.index'],
         // El kardex muestra costos: quien ve el valor del inventario.
         'reportes.kardex' => ['reportes.inventario'],
         'reportes.kardex-excel' => ['reportes.inventario', 'reportes.kardex'],

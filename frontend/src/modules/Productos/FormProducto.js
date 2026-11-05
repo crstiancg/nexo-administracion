@@ -23,6 +23,10 @@ export default function formProducto (editando = false) {
       // Con lotes, cada entrada pide lote y vencimiento. Prendido por defecto:
       // en tecnología casi nada vence (sólo tintas, pasta térmica…).
       maneja_lotes: true,
+      // Laptops, celulares, impresoras: cada unidad con su número de serie
+      // (y la garantía que se consulta por serie).
+      maneja_series: false,
+      garantia_meses: '',
       // Stock inicial de las presentaciones nuevas: entra como una entrada de
       // inventario ("Alta de producto") con este costo (ajustable por fila).
       costo_compra: '',

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\MovimientoInventario;
 use App\Models\Pedido;
+use App\Models\Serie;
 use App\Models\User;
 use App\Models\Variante;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +68,8 @@ class Pedidos
                     'variante_id' => $varianteId,
                     'descripcion' => $varianteId ? null : ($item['descripcion'] ?? null),
                     'cantidad' => $item['cantidad'],
+                    // Las series que se entregan (salen al confirmar).
+                    'series' => $varianteId && ! empty($item['series']) ? array_values(array_map([Serie::class, 'normalizar'], $item['series'])) : null,
                     'precio_unitario' => $item['precio_unitario'],
                     'por_mayor' => $varianteId && $preciosMayor->has($varianteId)
                         && abs((float) $preciosMayor->get($varianteId) - (float) $item['precio_unitario']) < 0.005,
@@ -118,7 +121,8 @@ class Pedidos
                 if ($items->isNotEmpty()) {
                     $this->inventario->salida(
                         $pedido->sede_id,
-                        $items->map(fn ($i) => ['variante_id' => $i->variante_id, 'cantidad' => $i->cantidad])->all(),
+                        // `series`: las que eligió el vendedor (si no, salen las primeras en entrar).
+                        $items->map(fn ($i) => ['variante_id' => $i->variante_id, 'cantidad' => $i->cantidad, 'series' => $i->series ?? []])->all(),
                         MovimientoInventario::MOTIVO_VENTA,
                         $pedido->codigo,
                         null,
@@ -261,6 +265,7 @@ class Pedidos
                 // Sin costo conocido, la devolución no toca el promedio.
                 'costo_unitario' => $i->costo_unitario,
                 'lotes' => Inventario::lotesDe($ventas[$i->variante_id] ?? null),
+                'series' => Series::de($ventas[$i->variante_id] ?? null),
             ])->all(),
             $pedido->codigo,
             null,

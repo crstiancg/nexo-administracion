@@ -210,6 +210,26 @@
                   :error-message="errorDe(i, 'lote_id')"
                   class="movimiento-form__control movimiento-form__lote"
                 />
+
+                <!-- Números de serie: los que entran se escriben; de los que
+                     salen se elige cuáles (vacío = los primeros en entrar). -->
+                <template v-if="linea.variante.maneja_series && unidadesSerie(linea) > 0">
+                  <SeriesInput
+                    v-if="entraSerie(linea)"
+                    v-model="linea.series"
+                    :cantidad="unidadesSerie(linea)"
+                    :error="errorDe(i, 'series')"
+                    class="movimiento-form__series"
+                  />
+                  <SeriesSelect
+                    v-else
+                    v-model="linea.series"
+                    :variante-id="linea.variante_id"
+                    :cantidad="unidadesSerie(linea)"
+                    :error="errorDe(i, 'series')"
+                    class="movimiento-form__series"
+                  />
+                </template>
               </td>
 
               <td class="text-right text-mono">
@@ -334,6 +354,8 @@
 import { computed, onMounted, ref, useId } from 'vue'
 import { useForm } from 'laravel-precognition-vue'
 import AppTextField from '@/components/AppTextField.vue'
+import SeriesInput from '@/components/SeriesInput.vue'
+import SeriesSelect from '@/components/SeriesSelect.vue'
 import InventarioService from '@/services/InventarioService'
 import SedeService from '@/services/SedeService'
 import { useUserStore } from '@/stores/user-store'
@@ -394,6 +416,20 @@ function agregar (variante) {
 }
 
 // ── Lotes para elegir en una salida (por presentación) ──
+// ── Números de serie ──
+// En un conteo, lo que sobra entra (con su serie) y lo que falta sale.
+function diferenciaConteo (linea) {
+  return Math.round(Number(linea.stock_real || 0) - Number(linea.variante.stock || 0))
+}
+
+function unidadesSerie (linea) {
+  return props.tipo === 'ajuste' ? Math.abs(diferenciaConteo(linea)) : Math.round(Number(linea.cantidad) || 0)
+}
+
+function entraSerie (linea) {
+  return props.tipo === 'entrada' || (props.tipo === 'ajuste' && diferenciaConteo(linea) > 0)
+}
+
 const lotesPorVariante = ref({})
 
 async function cargarLotes (varianteId) {
@@ -479,6 +515,10 @@ defineExpose({ form, submit })
 </script>
 
 <style lang="scss" scoped>
+.movimiento-form__series {
+  margin-top: 6px;
+}
+
 .movimiento-form__lote {
   display: flex;
   gap: 6px;

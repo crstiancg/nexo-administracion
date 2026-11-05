@@ -95,7 +95,7 @@ class OrdenCompraController extends Controller
             'usuario:id,name',
             'compra:id,codigo,estado',
             'items' => fn ($q) => $q->orderBy('id'),
-            'items.variante.producto:id,nombre,maneja_lotes',
+            'items.variante.producto:id,nombre,maneja_lotes,maneja_series',
             'items.variante.unidad:id,nombre,abreviatura,fraccionable',
             'items.variante.color:id,nombre,hexadecimal',
         ]);

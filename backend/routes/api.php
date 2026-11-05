@@ -36,6 +36,7 @@ use App\Http\Controllers\RespaldoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\SerieController;
 use App\Http\Controllers\SeguimientoController;
 use App\Http\Controllers\TipoEquipoController;
 use App\Http\Controllers\UnidadController;
@@ -231,6 +232,10 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('reportes/productos', [ReporteController::class, 'productos'])->name('reportes.productos');
     Route::get('reportes/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');
+    // Números de serie: para elegir qué unidad sale y la consulta de garantías.
+    Route::get('series', [SerieController::class, 'index'])->name('series.index');
+    Route::get('series/{serie}', [SerieController::class, 'show'])->name('series.show');
+
     // Kardex valorizado de una presentación (costo promedio ponderado).
     Route::get('reportes/kardex', [KardexController::class, 'show'])->name('reportes.kardex');
     Route::get('reportes/kardex/excel', [KardexController::class, 'excel'])->name('reportes.kardex-excel');

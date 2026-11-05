@@ -29,7 +29,7 @@ use Illuminate\Http\Request;
  */
 class InventarioController extends Controller
 {
-    private const RELACIONES = ['lotes', 'variante.producto:id,nombre,maneja_lotes', 'variante.unidad:id,nombre,abreviatura,fraccionable', 'variante.color:id,nombre,hexadecimal'];
+    private const RELACIONES = ['lotes', 'series', 'variante.producto:id,nombre,maneja_lotes,maneja_series', 'variante.unidad:id,nombre,abreviatura,fraccionable', 'variante.color:id,nombre,hexadecimal'];
 
     public function __construct(private Inventario $inventario) {}
 
@@ -86,7 +86,7 @@ class InventarioController extends Controller
         // Con sede, sólo las presentaciones que esa sede vende.
         $query = Variante::query()
             ->when($sedeId, fn (Builder $q) => $q->habilitadaEnSede($sedeId)->conStockDeSede($sedeId))
-            ->with(['producto:id,nombre,precio,categoria_id,marca_id,maneja_lotes', 'producto.portada', 'producto.marca:id,nombre', 'portada', 'unidad:id,nombre,abreviatura,fraccionable', 'color:id,nombre,hexadecimal'])
+            ->with(['producto:id,nombre,precio,categoria_id,marca_id,maneja_lotes,maneja_series', 'producto.portada', 'producto.marca:id,nombre', 'portada', 'unidad:id,nombre,abreviatura,fraccionable', 'color:id,nombre,hexadecimal'])
             ->whereHas('producto', fn (Builder $p) => $p->where('activo', true))
             // Por reponer de una marca (lo que se le pide a Kingston, …).
             ->when($request->filled('marca_id'), fn (Builder $q) => $q->whereHas('producto', fn (Builder $p) => $p->where('marca_id', $request->integer('marca_id'))));

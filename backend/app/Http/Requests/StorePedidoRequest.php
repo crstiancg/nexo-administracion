@@ -64,6 +64,10 @@ class StorePedidoRequest extends FormRequest
             ];
             $rules["pedido.items.{$i}.cantidad"] = [...Cantidades::positiva(10000), Cantidades::segunUnidad($this->input("pedido.items.{$i}.variante_id"))];
             $rules["pedido.items.{$i}.precio_unitario"] = ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
+            // Números de serie (productos con `maneja_series`): uno por unidad.
+            // Que cuadren con la cantidad y con el stock lo valida App\Services\Series.
+            $rules["pedido.items.{$i}.series"] = ['nullable', 'array', 'max:10000'];
+            $rules["pedido.items.{$i}.series.*"] = ['string', 'max:100'];
         }
 
         return $rules;

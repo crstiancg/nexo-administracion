@@ -105,7 +105,8 @@ const GRUPOS = [
   { clave: 'pedidos', label: 'Pedidos', icono: 'receipt_long' },
   { clave: 'clientes', label: 'Clientes', icono: 'groups' },
   { clave: 'productos', label: 'Productos', icono: 'inventory_2' },
-  { clave: 'cotizaciones', label: 'Cotizaciones', icono: 'request_quote' }
+  { clave: 'cotizaciones', label: 'Cotizaciones', icono: 'request_quote' },
+  { clave: 'series', label: 'Números de serie', icono: 'qr_code_scanner' }
 ]
 
 const route = useRoute()

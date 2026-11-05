@@ -36,6 +36,8 @@ export function nuevaLinea (tipo, variante) {
     if (tipo === 'entrada' || tipo === 'ajuste') Object.assign(linea, { lote: '', vence_at: '' })
     if (tipo === 'salida') linea.lote_id = null
   }
+  // Con número de serie: las que entran (se escriben) o las que salen (se eligen).
+  if (variante.maneja_series) linea.series = []
 
   if (tipo === 'entrada') {
     linea.cantidad = ''

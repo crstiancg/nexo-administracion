@@ -75,6 +75,10 @@ class RegistrarVentaRequest extends FormRequest
             ];
             $rules["venta.items.{$i}.cantidad"] = [...Cantidades::positiva(10000), Cantidades::segunUnidad($this->input("venta.items.{$i}.variante_id"))];
             $rules["venta.items.{$i}.precio_unitario"] = ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
+            // Números de serie (productos con `maneja_series`): uno por unidad.
+            // Que cuadren con la cantidad y con el stock lo valida App\Services\Series.
+            $rules["venta.items.{$i}.series"] = ['nullable', 'array', 'max:10000'];
+            $rules["venta.items.{$i}.series.*"] = ['string', 'max:100'];
         }
 
         foreach (array_keys((array) $this->input('venta.pagos', [])) as $j) {

@@ -73,6 +73,7 @@ class VentaController extends Controller
             'marca' => $producto->marca?->only(['id', 'nombre']),
             'categoria' => $producto->categoria?->only(['id', 'nombre']),
             'maneja_lotes' => (bool) $producto->maneja_lotes,
+            'maneja_series' => (bool) $producto->maneja_series,
             'fotos' => $producto->archivos->map(fn ($a) => [
                 'url' => $disco->url($a->ruta),
                 'miniatura_url' => $disco->url($a->miniatura ?? $a->ruta),

@@ -35,6 +35,9 @@ use Illuminate\Validation\ValidationException;
  *   vence primero (FEFO). Las ventas y traslados nunca usan lotes vencidos.
  * - Ajuste: lo que falta sale por FEFO (vencidos incluidos); lo que sobra
  *   entra al `lote` + `vence_at` de la línea.
+ *
+ * Números de serie (productos con `maneja_series`): `series` en la línea,
+ * uno por unidad (ver App\Services\Series).
  */
 class Inventario
 {
@@ -142,12 +145,13 @@ class Inventario
             $salidas = $this->salida($origenId, $lineas, MovimientoInventario::MOTIVO_TRASLADO_SALIDA, $referencia, $observacion, $usuario,
                 ['sede_relacionada_id' => $destinoId], $grupo);
 
-            // Cada línea entra a los mismos lotes de los que salió.
+            // Cada línea entra a los mismos lotes (y con las mismas series) de los que salió.
             $porVariante = $salidas->load('lotes')->keyBy('variante_id');
             $entrantes = array_map(fn ($l) => [
                 ...$l,
                 'costo_unitario' => null,
                 'lotes' => self::lotesDe($porVariante[(int) $l['variante_id']] ?? null),
+                'series' => Series::de($porVariante[(int) $l['variante_id']] ?? null),
             ], $lineas);
 
             $entradas = $this->entrada($destinoId, $entrantes, $referencia, $observacion, $usuario,
@@ -193,7 +197,7 @@ class Inventario
             // Bloqueadas en orden de id: dos documentos con las mismas
             // presentaciones en distinto orden no se trancan entre sí.
             $variantes = Variante::query()
-                ->with('producto:id,maneja_lotes')
+                ->with('producto:id,maneja_lotes,maneja_series')
                 ->whereKey($ids->all())
                 ->orderBy('id')
                 ->lockForUpdate()
@@ -275,6 +279,11 @@ class Inventario
                 foreach ($asignacion as [$lote, $cantidad]) {
                     $lote->forceFill(['cantidad' => round($lote->cantidad + $cantidad, 3)])->save();
                     $movimiento->lotes()->attach($lote->id, ['cantidad' => $cantidad]);
+                }
+
+                // Productos con número de serie: cada unidad que entra o sale.
+                if ($variante->producto->maneja_series) {
+                    app(Series::class)->mover($movimiento, $variante, $sedeId, $linea, $i, $errores);
                 }
 
                 $movimientos->push($movimiento);

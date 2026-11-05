@@ -8,6 +8,7 @@ use App\Models\Lote;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\Producto;
+use App\Models\Serie;
 use App\Services\Alertas;
 use App\Services\Cajas;
 use App\Support\Fechas;
@@ -163,6 +164,22 @@ class PanelController extends Controller
                     'titulo' => $c->codigo,
                     'detalle' => ($c->cliente?->nombre ?? 'Sin cliente').' · S/ '.number_format((float) $c->total, 2).' · '.$c->estadoVisible(),
                     'to' => "/cotizaciones?ver={$c->id}",
+                ]);
+        }
+
+        // Un número de serie escaneado: a quién se vendió y su garantía.
+        if ($puede('series.show')) {
+            $resultados['series'] = Serie::query()
+                ->with('variante:id,producto_id,presentacion', 'variante.producto:id,nombre')
+                ->where('numero', 'like', '%'.Serie::normalizar($request->input('q')).'%')
+                ->orderBy('numero')
+                ->limit(5)
+                ->get()
+                ->map(fn (Serie $s) => [
+                    'id' => $s->id,
+                    'titulo' => $s->numero,
+                    'detalle' => $s->variante->producto->nombre.' '.$s->variante->presentacion.' · '.str_replace('_', ' ', $s->estado),
+                    'to' => '/series?numero='.urlencode($s->numero),
                 ]);
         }
 

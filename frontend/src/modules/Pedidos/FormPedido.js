@@ -40,7 +40,9 @@ export function nuevoItem (variante, cliente = null) {
     cantidad: '1',
     precio_unitario: sinPrecio ? '' : precio,
     precio_auto: sinPrecio ? null : precio,
-    por_mayor: !sinPrecio && porMayor
+    por_mayor: !sinPrecio && porMayor,
+    // Con número de serie: cuáles se entregan (vacío = las primeras en entrar).
+    ...(variante.maneja_series ? { series: [] } : {})
   }
 }
 

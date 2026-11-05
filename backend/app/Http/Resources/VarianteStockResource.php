@@ -70,6 +70,8 @@ class VarianteStockResource extends JsonResource
             ...($this->conPrecio() ? $this->precioVigente() : []),
             'producto' => $this->whenLoaded('producto', fn () => $this->producto->only(['id', 'nombre'])),
             'maneja_lotes' => $this->whenLoaded('producto', fn () => (bool) $this->producto->maneja_lotes),
+            // El form pide (o deja elegir) la serie de cada unidad.
+            'maneja_series' => $this->whenLoaded('producto', fn () => (bool) $this->producto->maneja_series),
             'marca' => $this->when(
                 $this->relationLoaded('producto') && $this->producto->relationLoaded('marca'),
                 fn () => $this->producto->marca?->only(['id', 'nombre']),

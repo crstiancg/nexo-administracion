@@ -29,6 +29,8 @@ class ProductoResource extends JsonResource
             'precio' => $this->precio,
             'activo' => $this->activo,
             'maneja_lotes' => $this->maneja_lotes,
+            'maneja_series' => (bool) $this->maneja_series,
+            'garantia_meses' => $this->garantia_meses,
             'variantes_count' => $this->whenCounted('variantes'),
             // SUM llega como texto desde MySQL.
             'stock_total' => $this->whenHas('stock_total', fn ($total) => (float) $total),
