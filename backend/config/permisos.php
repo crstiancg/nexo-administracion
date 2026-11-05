@@ -82,6 +82,8 @@ return [
         'inventario.asignar-lote' => ['inventario.entradas'],
         'clientes.index' => ['pedidos.store', 'pedidos.update', 'ventas.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         'clientes.show' => ['clientes.update'],
+        // Quien ve la lista de clientes abre su ficha.
+        'clientes.ficha' => ['clientes.index', 'clientes.show'],
         'proveedores.show' => ['proveedores.update'],
         // El form de compras elige el proveedor.
         'proveedores.index' => ['compras.store', 'compras.index', 'ordenes-compra.store', 'ordenes-compra.update', 'ordenes-compra.index'],

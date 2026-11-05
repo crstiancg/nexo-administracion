@@ -13,6 +13,11 @@ class ClienteService {
     return (await api.get(`api/clientes/${id}`)).data
   }
 
+  // Compras, órdenes, cotizaciones, créditos y lo que debe (según permisos).
+  static async ficha (id) {
+    return (await api.get(`api/clientes/${id}/ficha`)).data
+  }
+
   static async delete (id) {
     return api.delete(`api/clientes/${id}`)
   }

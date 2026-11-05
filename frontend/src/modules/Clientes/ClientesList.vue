@@ -41,7 +41,12 @@
               :icono="esEmpresa(props.row) ? 'business' : null"
             />
             <div class="cliente-celda__texto">
-              <div class="cliente-nombre">
+              <button
+                type="button"
+                class="cliente-nombre"
+                :aria-label="`Ver la ficha de ${props.row.nombre}`"
+                @click="verFicha(props.row)"
+              >
                 {{ props.row.nombre }}
                 <AppChip
                   v-if="props.row.mayorista"
@@ -49,7 +54,7 @@
                   label="Mayorista"
                   class="q-ml-xs"
                 />
-              </div>
+              </button>
               <div
                 v-if="props.row.email"
                 class="cliente-detalle"
@@ -79,6 +84,16 @@
           :props="props"
           class="text-right"
         >
+          <q-btn
+            flat
+            dense
+            round
+            icon="visibility"
+            size="sm"
+            color="grey-7"
+            :aria-label="`Ver la ficha de ${props.row.nombre}`"
+            @click="verFicha(props.row)"
+          />
           <q-btn
             v-if="userStore.hasPermission('clientes.update')"
             flat
@@ -140,6 +155,29 @@
       </template>
     </AppDialog>
 
+    <!-- Ficha: todo lo del cliente en una pantalla. -->
+    <AppDialog
+      v-model="fichaDialog"
+      title="Ficha del cliente"
+      size="lg"
+    >
+      <ClienteFicha
+        v-if="fichaId"
+        :id="fichaId"
+        :key="fichaId"
+      />
+
+      <template #actions>
+        <AppButton
+          v-if="userStore.hasPermission('clientes.update')"
+          variant="secondary"
+          label="Editar"
+          icon="edit"
+          @click="fichaDialog = false; editar({ id: fichaId })"
+        />
+      </template>
+    </AppDialog>
+
     <AppDialog
       v-model="confirmDialog"
       title="Eliminar cliente"
@@ -179,10 +217,20 @@ import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
 import ClienteService from '@/services/ClienteService'
 import { useUserStore } from '@/stores/user-store'
+import ClienteFicha from './ClienteFicha.vue'
 import ClientesForm from './ClientesForm.vue'
 
 const $q = useQuasar()
 const userStore = useUserStore()
+
+// ── Ficha ──
+const fichaDialog = ref(false)
+const fichaId = ref(null)
+
+function verFicha (cliente) {
+  fichaId.value = cliente.id
+  fichaDialog.value = true
+}
 
 function esEmpresa (cliente) {
   return cliente.tipo_documento === 'RUC' && String(cliente.numero_documento ?? '').startsWith('20')
@@ -308,8 +356,19 @@ async function confirmarEliminar () {
 }
 
 .cliente-nombre {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   font-weight: 600;
+  text-align: left;
   color: var(--app-ink);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--app-primary-hover);
+    text-decoration: underline;
+  }
 }
 
 .cliente-detalle {

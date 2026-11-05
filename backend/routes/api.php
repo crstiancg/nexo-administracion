@@ -5,6 +5,7 @@ use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ComisionController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\ClienteFichaController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ComprobanteController;
@@ -119,6 +120,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
         Route::get('clientes/consultar-documento', [ClienteController::class, 'consultarDocumento'])
             ->name('clientes.consultar-documento');
         Route::apiResource('clientes', ClienteController::class);
+        // Todo lo del cliente en una pantalla (compras, OS, cotizaciones, créditos).
+        Route::get('clientes/{cliente}/ficha', [ClienteFichaController::class, 'show'])->name('clientes.ficha');
 
         // Va antes del resource: si no, {proveedor} captura "consultar-ruc".
         Route::get('proveedores/consultar-ruc', [ProveedorController::class, 'consultarRuc'])
