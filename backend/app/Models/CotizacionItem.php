@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class CotizacionItem extends Model
 {
@@ -30,5 +31,17 @@ class CotizacionItem extends Model
     public function variante(): BelongsTo
     {
         return $this->belongsTo(Variante::class);
+    }
+
+    /** Lo que la tienda no tiene: sin variante, se describe a mano. */
+    public function libre(): bool
+    {
+        return $this->variante_id === null;
+    }
+
+    /** La foto opcional que sale en la proforma (a lo sumo una). */
+    public function archivos(): MorphMany
+    {
+        return $this->morphMany(Archivo::class, 'archivable')->orderBy('orden');
     }
 }

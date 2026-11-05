@@ -29,6 +29,13 @@
       Se convirtió en el pedido <strong class="text-mono">{{ cotizacion.pedido.codigo }}</strong>:
       se confirma, cobra y entrega desde Pedidos.
     </p>
+    <p
+      v-if="cotizacion.orden_servicio"
+      class="cot-detalle__aviso"
+    >
+      Se convirtió en la orden de servicio <strong class="text-mono">{{ cotizacion.orden_servicio.codigo }}</strong>:
+      se sigue desde Órdenes de servicio.
+    </p>
 
     <!-- La misma vista que se imprime. -->
     <div class="cot-detalle__papel">

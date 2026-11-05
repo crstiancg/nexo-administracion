@@ -146,6 +146,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
             ->parameters(['ordenes-compra' => 'orden'])
             ->except(['destroy']);
 
+        // Va antes del resource: si no, {cotizacion} captura "usuarios".
+        Route::get('cotizaciones/usuarios', [CotizacionController::class, 'usuarios'])->name('cotizaciones.usuarios');
+
         // Sin destroy: se rechaza o se convierte en pedido.
         Route::apiResource('cotizaciones', CotizacionController::class)
             ->parameters(['cotizaciones' => 'cotizacion'])

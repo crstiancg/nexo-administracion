@@ -4,6 +4,24 @@
     novalidate
     @submit.prevent="submit"
   >
+    <!-- Desde una cotización aceptada: llega prellenada y queda convertida. -->
+    <p
+      v-if="cotizacion"
+      class="orden-form__desde"
+    >
+      <q-icon
+        name="request_quote"
+        size="18px"
+      />
+      <span>
+        Desde la cotización <strong class="text-mono">{{ cotizacion.codigo }}</strong>: completa los datos del equipo.
+        Al registrar la orden, la cotización queda convertida.
+        <template v-if="Number(cotizacion.descuento)">
+          El descuento cotizado ({{ formatearPrecio(cotizacion.descuento) }}) no se pasa: ajústalo en la mano de obra si corresponde.
+        </template>
+      </span>
+    </p>
+
     <!-- ── Cliente y técnico ── -->
     <section class="orden-form__seccion">
       <h3 class="orden-form__titulo">
@@ -494,6 +512,7 @@ import BuscadorVariante from '@/modules/Inventario/BuscadorVariante.vue'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem } from '@/modules/Pedidos/FormPedido'
 import MarcaService from '@/services/MarcaService'
+import CotizacionService from '@/services/CotizacionService'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import TipoEquipoService from '@/services/TipoEquipoService'
 import { useUserStore } from '@/stores/user-store'
@@ -506,6 +525,11 @@ const PATH = 'orden'
 const props = defineProps({
   // null = recibir un equipo; con id = editar (mientras no se entregue).
   id: {
+    type: Number,
+    default: null
+  },
+  // Al recibir: la cotización aceptada con la que se prellena la orden.
+  cotizacionId: {
     type: Number,
     default: null
   }
@@ -575,7 +599,8 @@ const total = computed(() => totalRepuestos.value + numero(form.orden.mano_obra)
 
 // Errores sin campo propio (caja cerrada para el adelanto, total por debajo
 // de lo abonado…).
-const errorGeneral = computed(() => form.errors.caja ?? form.errors['pedido.items'] ?? form.errors.estado ?? form.errors.sede ?? null)
+const errorGeneral = computed(() => form.errors.caja ?? form.errors['pedido.items'] ?? form.errors.estado ?? form.errors.sede ??
+  form.errors[`${PATH}.cotizacion_id`] ?? form.errors.cotizacion_id ?? null)
 
 // ── Carga ──
 onMounted(async () => {
@@ -592,6 +617,7 @@ onMounted(async () => {
   if (!props.id) {
     // Quien recibe suele ser quien la trabaja: se puede cambiar.
     form.orden.tecnico_id = tecnicos.value.some((t) => t.id === userStore.id) ? userStore.id : null
+    if (props.cotizacionId) await desdeCotizacion(props.cotizacionId)
     return
   }
 
@@ -629,6 +655,38 @@ onMounted(async () => {
     }
   })
 })
+
+// ── Desde una cotización ──
+const cotizacion = ref(null)
+
+/**
+ * Lo cotizado pasa a la orden: el cliente, los productos del catálogo como
+ * repuestos (al precio cotizado) y lo que no hay en tienda (servicios,
+ * trabajos por encargo) como mano de obra. El equipo lo completa quien lo
+ * recibe.
+ */
+async function desdeCotizacion (id) {
+  const datos = await CotizacionService.get(id)
+  cotizacion.value = datos
+  if (datos.cliente) cliente.value = datos.cliente
+
+  const libres = datos.items.filter((item) => !item.variante)
+  const manoObra = libres.reduce((suma, item) => suma + Number(item.subtotal), 0)
+
+  form.orden.cotizacion_id = datos.id
+  form.orden.repuestos = datos.items.filter((item) => item.variante).map((item) => ({
+    variante_id: item.variante_id,
+    variante: item.variante,
+    cantidad: String(item.cantidad),
+    precio_unitario: item.precio_unitario
+  }))
+  form.orden.mano_obra = manoObra ? manoObra.toFixed(2) : ''
+  form.orden.diagnostico = libres.map((item) => item.descripcion).join('\n')
+  form.orden.observacion = `Cotización ${datos.codigo}`
+  // "6 meses" → 180 días, si es una de las garantías de la orden.
+  const garantia = GARANTIAS.find((g) => g.label === datos.garantia || (datos.garantia === '7 días' && g.value === 7))
+  if (garantia) form.orden.garantia_dias = garantia.value
+}
 
 // El adelanto sin monto (o al editar) no se valida ni se cobra: el backend
 // sólo lo toma al crear y con monto.
@@ -865,6 +923,23 @@ defineExpose({ form, submit })
   margin: 4px 0 0;
   font-size: 11.5px;
   color: var(--q-warning);
+}
+
+.orden-form__desde {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--app-brand-soft);
+  font-size: 13px;
+  color: var(--app-ink);
+
+  .q-icon {
+    flex-shrink: 0;
+    color: var(--app-brand-soft-ink);
+  }
 }
 
 .orden-form__error {

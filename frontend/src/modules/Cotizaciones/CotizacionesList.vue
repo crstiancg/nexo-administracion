@@ -28,6 +28,38 @@
         label="Estado"
         :options="estadoOptions"
       />
+      <AppFilterPill
+        v-model="convertidaFilter"
+        label="Convertida en"
+        :options="convertidaOptions"
+      />
+      <AppFilterPill
+        v-model="tipoFilter"
+        label="Tipo"
+        :options="tipoOptions"
+      />
+      <AppFilterPill
+        v-if="sedes.length > 1"
+        v-model="sedeFilter"
+        label="Sede"
+        :options="sedeOptions"
+      />
+      <AppFilterPill
+        v-if="usuarios.length > 1"
+        v-model="usuarioFilter"
+        label="Atendido por"
+        :options="usuarioOptions"
+      />
+      <!-- Mes de la cotización (vacío = todos). -->
+      <q-input
+        v-model="mesFilter"
+        type="month"
+        dense
+        outlined
+        clearable
+        aria-label="Mes"
+        class="cot-mes"
+      />
     </AppFilterBar>
 
     <AppTable
@@ -51,6 +83,9 @@
           </button>
           <div class="cot-meta">
             {{ fechaCorta(props.row.fecha) }}
+            <template v-if="props.row.tipo === 'pc'">
+              · <q-icon name="computer" /> PC armada
+            </template>
           </div>
         </q-td>
       </template>
@@ -82,10 +117,10 @@
             :label="ESTADOS[props.row.estado].label"
           />
           <div
-            v-if="props.row.pedido"
+            v-if="props.row.pedido || props.row.orden_servicio"
             class="cot-meta text-mono"
           >
-            → {{ props.row.pedido.codigo }}
+            → {{ (props.row.pedido ?? props.row.orden_servicio).codigo }}
           </div>
         </q-td>
       </template>
@@ -193,6 +228,14 @@
           icon="edit"
           @click="editar(detalle)"
         />
+        <!-- Un presupuesto de reparación aceptado: se recibe el equipo con lo cotizado. -->
+        <AppButton
+          v-if="detalle?.estado === 'pendiente' && userStore.hasPermission('ordenes-servicio.store')"
+          variant="secondary"
+          label="Convertir en OS"
+          icon="build"
+          @click="convertirEnOrden"
+        />
         <AppButton
           v-if="detalle?.estado === 'pendiente' && userStore.hasPermission('cotizaciones.convertir')"
           variant="primary"
@@ -212,6 +255,15 @@
     >
       <p class="conv-ayuda">
         Desmarca lo que no lleva y baja la cantidad si pide menos. Los precios son los cotizados.
+      </p>
+      <!-- Los libres no tienen stock que descontar: se consiguen y cobran aparte. -->
+      <p
+        v-if="libres.length"
+        class="conv-ayuda conv-ayuda--aviso"
+      >
+        No pasa{{ libres.length === 1 ? '' : 'n' }} al pedido lo que no hay en tienda:
+        <strong>{{ libres.map((i) => i.descripcion).join(', ') }}</strong>.
+        Regístralo como producto si lo vas a vender con un pedido.
       </p>
 
       <div class="conv-tablaWrap">
@@ -323,6 +375,7 @@ import AppFilterPill from '@/components/AppFilterPill.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
 import CotizacionService from '@/services/CotizacionService'
+import SedeService from '@/services/SedeService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearCantidad } from '@/utils/cantidad'
 import { descargarArchivo } from '@/utils/descargar'
@@ -351,6 +404,43 @@ const columns = [
 const search = ref('')
 const busqueda = ref('')
 const estadoFilter = ref(null)
+const tipoFilter = ref(null)
+const convertidaFilter = ref(null)
+const sedeFilter = ref(null)
+const usuarioFilter = ref(null)
+const mesFilter = ref(null)
+
+const convertidaOptions = [
+  { label: 'Todas', value: null },
+  { label: 'Pedido', value: 'pedido' },
+  { label: 'Orden de servicio', value: 'os' }
+]
+
+const tipoOptions = [
+  { label: 'Todos', value: null },
+  { label: 'Ítems sueltos', value: 'normal' },
+  { label: 'PC armada', value: 'pc' }
+]
+
+// Sede y "Atendido por" sólo aparecen si hay más de una opción.
+const sedes = ref([])
+const sedeOptions = computed(() => [
+  { label: 'Todas', value: null },
+  ...sedes.value.map((s) => ({ label: s.nombre, value: s.id }))
+])
+const usuarios = ref([])
+const usuarioOptions = computed(() => [
+  { label: 'Todos', value: null },
+  ...usuarios.value.map((u) => ({ label: u.name, value: u.id }))
+])
+
+// El mes elegido como rango de días ({ desde, hasta } o nada).
+function rangoDelMes () {
+  if (!mesFilter.value) return {}
+  const [a, m] = mesFilter.value.split('-').map(Number)
+  const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate()
+  return { desde: `${mesFilter.value}-01`, hasta: `${mesFilter.value}-${String(ultimo).padStart(2, '0')}` }
+}
 
 let searchTimer
 watch(search, (value) => {
@@ -360,17 +450,33 @@ watch(search, (value) => {
 
 const estadoOptions = [
   { label: 'Todos', value: null },
-  ...Object.entries(ESTADOS).map(([value, { label }]) => ({ label, value }))
+  ...Object.entries(ESTADOS).map(([value, { label }]) => ({ label, value })),
+  // Pendientes que vencen hoy o en 2 días: para llamar al cliente a tiempo.
+  { label: 'Por vencer (2 días)', value: 'por_vencer' }
 ]
 
-const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value))
+const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value || tipoFilter.value || convertidaFilter.value ||
+  sedeFilter.value || usuarioFilter.value || mesFilter.value))
 
 function limpiarFiltros () {
   search.value = ''
   estadoFilter.value = null
+  tipoFilter.value = null
+  convertidaFilter.value = null
+  sedeFilter.value = null
+  usuarioFilter.value = null
+  mesFilter.value = null
 }
 
-const filtroTabla = computed(() => JSON.stringify({ search: busqueda.value, estado: estadoFilter.value }))
+const filtroTabla = computed(() => JSON.stringify({
+  search: busqueda.value,
+  estado: estadoFilter.value,
+  tipo: tipoFilter.value,
+  convertida: convertidaFilter.value,
+  sede: sedeFilter.value,
+  usuario: usuarioFilter.value,
+  mes: mesFilter.value
+}))
 
 // ── Tabla (paginación en el servidor) ──
 const tableRef = ref()
@@ -386,6 +492,11 @@ async function onRequest ({ pagination: requested }) {
     const columna = sortBy === 'codigo' ? 'id' : sortBy
     const params = { rowsPerPage, page, search: busqueda.value, order_by: descending ? `-${columna}` : columna }
     if (estadoFilter.value) params.estado = estadoFilter.value
+    if (tipoFilter.value) params.tipo = tipoFilter.value
+    if (convertidaFilter.value) params.convertida_en = convertidaFilter.value
+    if (sedeFilter.value) params.sede_id = sedeFilter.value
+    if (usuarioFilter.value) params.user_id = usuarioFilter.value
+    Object.assign(params, rangoDelMes())
 
     const { data, total = 0 } = await CotizacionService.getData({ params })
     rows.value = data
@@ -395,8 +506,16 @@ async function onRequest ({ pagination: requested }) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   tableRef.value.requestServerInteraction()
+
+  // Opciones de los filtros: no frenan la tabla y, si fallan, el filtro no aparece.
+  const [sedesResp, usuariosResp] = await Promise.allSettled([
+    userStore.hasPermission('sedes.index') ? SedeService.activas() : Promise.resolve([]),
+    CotizacionService.usuarios()
+  ])
+  if (sedesResp.status === 'fulfilled') sedes.value = sedesResp.value
+  if (usuariosResp.status === 'fulfilled') usuarios.value = usuariosResp.value
 })
 
 function refrescar () {
@@ -467,10 +586,16 @@ async function bajarExcel () {
 const convertirDialog = ref(false)
 const lineas = ref([])
 const erroresConvertir = ref({})
+// Lo que no hay en tienda (ítems libres): se cotizó, pero no pasa al pedido.
+const libres = computed(() => (detalle.value?.items ?? []).filter((item) => !item.variante))
+
+function convertirEnOrden () {
+  router.push({ path: '/ordenes-servicio', query: { desde_cotizacion: detalle.value.id } })
+}
 
 function abrirConvertir () {
   erroresConvertir.value = {}
-  lineas.value = detalle.value.items.map((item) => ({
+  lineas.value = detalle.value.items.filter((item) => item.variante).map((item) => ({
     variante_id: item.variante_id,
     variante: item.variante,
     cotizada: Number(item.cantidad),
@@ -580,6 +705,13 @@ async function ejecutar (accion) {
   margin: 0 0 12px;
   font-size: 13px;
   color: var(--app-ink-2);
+
+  &--aviso {
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--q-warning) 12%, transparent);
+    color: var(--app-ink);
+  }
 }
 
 .conv-tablaWrap {
@@ -633,6 +765,15 @@ async function ejecutar (accion) {
   strong {
     font-size: 16px;
     color: var(--app-ink);
+  }
+}
+
+.cot-mes {
+  width: 180px;
+
+  :deep(.q-field__control) {
+    height: 40px;
+    border-radius: 10px;
   }
 }
 

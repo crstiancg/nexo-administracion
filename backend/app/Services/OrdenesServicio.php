@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Cotizacion;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\User;
@@ -76,6 +77,17 @@ class OrdenesServicio
             );
             if ($nueva) {
                 $orden->forceFill(['pedido_id' => $pedido->id])->save();
+            }
+
+            // Nace de una cotización aceptada: queda convertida en esta orden.
+            if ($nueva && ! empty($datos['cotizacion_id'])) {
+                $cotizacion = Cotizacion::query()->whereKey($datos['cotizacion_id'])->lockForUpdate()->firstOrFail();
+                if ($cotizacion->estado !== Cotizacion::PENDIENTE) {
+                    throw ValidationException::withMessages([
+                        'cotizacion_id' => "La cotización {$cotizacion->codigo} ya está {$cotizacion->estado}.",
+                    ])->status(409);
+                }
+                $cotizacion->forceFill(['estado' => Cotizacion::CONVERTIDA, 'orden_servicio_id' => $orden->id])->save();
             }
 
             // El adelanto entra a la caja abierta, como cualquier cobro.

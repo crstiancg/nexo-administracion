@@ -184,6 +184,7 @@
         :id="editId"
         ref="formRef"
         :key="editId ?? `nueva-${aperturas}`"
+        :cotizacion-id="editId ? null : desdeCotizacion"
         @save="guardada"
       />
 
@@ -602,11 +603,22 @@ const formRef = ref()
 const editId = ref(null)
 const aperturas = ref(0)
 
-function crear () {
+// Al recibir desde una cotización aceptada (?desde_cotizacion=ID).
+const desdeCotizacion = ref(null)
+
+function crear (cotizacionId = null) {
   editId.value = null
+  desdeCotizacion.value = Number.isInteger(cotizacionId) ? cotizacionId : null
   aperturas.value++
   formDialog.value = true
 }
+
+// "Convertir en OS" desde Cotizaciones abre el form prellenado.
+watch(() => route.query.desde_cotizacion, (id) => {
+  if (!id) return
+  crear(Number(id))
+  router.replace({ query: { ...route.query, desde_cotizacion: undefined } })
+}, { immediate: true })
 
 function editar (orden) {
   detalleDialog.value = false

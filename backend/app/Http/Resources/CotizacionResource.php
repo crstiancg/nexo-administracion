@@ -20,6 +20,9 @@ class CotizacionResource extends JsonResource
         return [
             'id' => $this->id,
             'codigo' => $this->codigo,
+            // normal | pc (PC armada por componentes).
+            'tipo' => $this->tipo,
+            'mostrar_precios' => $this->mostrar_precios,
             // pendiente | vencida | convertida | rechazada
             'estado' => $this->estadoVisible(),
             'editable' => $this->editable(),
@@ -30,6 +33,7 @@ class CotizacionResource extends JsonResource
             'valida_hasta' => $this->valida_hasta?->toDateString(),
             'forma_pago' => $this->forma_pago,
             'entrega' => $this->entrega,
+            'garantia' => $this->garantia,
             'condiciones' => $this->condiciones,
             'observacion' => $this->observacion,
             'subtotal' => $this->subtotal,
@@ -46,12 +50,19 @@ class CotizacionResource extends JsonResource
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'id' => $item->id,
                 'variante_id' => $item->variante_id,
+                'componente' => $item->componente,
+                // Libre (fuera del catálogo): sin variante, con su descripción.
+                'descripcion' => $item->descripcion,
+                'unidad' => $item->unidad,
                 'cantidad' => $item->cantidad,
                 'precio_unitario' => $item->precio_unitario,
                 'subtotal' => $item->subtotal,
-                'variante' => (new VarianteStockResource($item->variante))->resolve($request),
+                // [] o [foto]: el mismo formato que las fotos de un producto.
+                'archivos' => ArchivoResource::collection($item->archivos)->resolve($request),
+                'variante' => $item->variante ? (new VarianteStockResource($item->variante))->resolve($request) : null,
             ])),
             'pedido' => $this->whenLoaded('pedido', fn () => $this->pedido?->only(['id', 'codigo', 'estado'])),
+            'orden_servicio' => $this->whenLoaded('ordenServicio', fn () => $this->ordenServicio?->only(['id', 'codigo', 'estado'])),
             'usuario' => $this->whenLoaded('usuario', fn () => $this->usuario?->only(['id', 'name'])),
         ];
     }

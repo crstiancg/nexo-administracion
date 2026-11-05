@@ -80,10 +80,12 @@ class Exportaciones
             $variante = $item->variante;
             $hoja->fromArray([
                 $n + 1,
-                trim("{$variante->producto?->nombre} — {$variante->presentacion} ".($variante->color?->nombre ?? '')),
-                $variante->sku,
+                ($item->componente ? "{$item->componente}: " : '').($variante
+                    ? trim("{$variante->producto?->nombre} — {$variante->presentacion} ".($variante->color?->nombre ?? ''))
+                    : $item->descripcion),
+                $variante?->sku,
                 (float) $item->cantidad,
-                $variante->unidad?->abreviatura,
+                $variante ? $variante->unidad?->abreviatura : $item->unidad,
                 (float) $item->precio_unitario,
                 (float) $item->subtotal,
             ], null, "A{$fila}");
@@ -109,6 +111,11 @@ class Exportaciones
             if ($etiqueta === 'TOTAL') {
                 $hoja->getStyle("F{$fila}:G{$fila}")->getFont()->setBold(true)->setSize(12);
             }
+        }
+
+        if ($cotizacion->garantia) {
+            $fila += 2;
+            $hoja->setCellValue("A{$fila}", 'Garantía: '.$cotizacion->garantia)->getStyle("A{$fila}")->getFont()->setBold(true);
         }
 
         // ── Condiciones ──

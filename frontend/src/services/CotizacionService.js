@@ -9,6 +9,11 @@ class CotizacionService {
     return (await api.get('api/cotizaciones', config)).data
   }
 
+  // Quienes hicieron alguna cotización (filtro "Atendido por").
+  static async usuarios () {
+    return (await api.get('api/cotizaciones/usuarios')).data
+  }
+
   static async get (id) {
     return (await api.get(`api/cotizaciones/${id}`)).data
   }

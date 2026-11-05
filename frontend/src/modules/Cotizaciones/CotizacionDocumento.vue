@@ -72,48 +72,112 @@
       </div>
     </section>
 
-    <!-- ── Detalle ── -->
-    <table class="cot-doc__tabla">
+    <!-- ── Detalle ──
+         PC armada: N° | componente | descripción | cantidad, y los precios
+         de cada pieza sólo si se pidió (si no, sale únicamente el total). -->
+    <table :class="['cot-doc__tabla', { 'cot-doc__tabla--pc': esPc }]">
       <thead>
         <tr>
-          <th class="cot-doc__cant">
+          <template v-if="esPc">
+            <th class="cot-doc__n">
+              N°
+            </th>
+            <th class="cot-doc__componente">
+              Producto
+            </th>
+          </template>
+          <th
+            v-else
+            class="cot-doc__cant"
+          >
             Cant.
           </th>
           <th>Descripción</th>
-          <th class="cot-doc__num">
-            P. unitario
+          <th
+            v-if="esPc"
+            class="cot-doc__cant"
+          >
+            Cantidad
           </th>
-          <th class="cot-doc__num">
-            P. total
-          </th>
+          <template v-if="conPrecios">
+            <th class="cot-doc__num">
+              P. unitario
+            </th>
+            <th class="cot-doc__num">
+              P. total
+            </th>
+          </template>
         </tr>
       </thead>
       <tbody>
         <tr
-          v-for="item in cotizacion.items"
+          v-for="(item, n) in cotizacion.items"
           :key="item.id"
         >
-          <td class="cot-doc__cant">
+          <template v-if="esPc">
+            <td class="cot-doc__n">
+              {{ n + 1 }}
+            </td>
+            <td class="cot-doc__componente">
+              {{ item.componente || '—' }}
+            </td>
+          </template>
+          <td
+            v-else
+            class="cot-doc__cant"
+          >
             {{ formatearCantidad(item.cantidad) }}
-            <span class="cot-doc__und">{{ item.variante.unidad?.abreviatura }}</span>
+            <span class="cot-doc__und">{{ item.variante ? item.variante.unidad?.abreviatura : item.unidad }}</span>
           </td>
           <td>
-            <div class="cot-doc__producto">
-              {{ descripcion(item) }}
+            <div class="cot-doc__item">
+              <img
+                v-if="item.archivos?.length"
+                :src="item.archivos[0].url"
+                :alt="descripcion(item)"
+                class="cot-doc__foto"
+              >
+              <div>
+                <div class="cot-doc__producto">
+                  {{ descripcion(item) }}
+                </div>
+                <div
+                  v-if="item.variante"
+                  class="cot-doc__sku"
+                >
+                  {{ item.variante.sku }}
+                </div>
+              </div>
             </div>
-            <div class="cot-doc__sku">
-              {{ item.variante.sku }}
-            </div>
           </td>
-          <td class="cot-doc__num">
-            {{ formatearPrecio(item.precio_unitario) }}
+          <td
+            v-if="esPc"
+            class="cot-doc__cant"
+          >
+            {{ formatearCantidad(item.cantidad) }}
           </td>
-          <td class="cot-doc__num">
-            {{ formatearPrecio(item.subtotal) }}
-          </td>
+          <template v-if="conPrecios">
+            <td class="cot-doc__num">
+              {{ formatearPrecio(item.precio_unitario) }}
+            </td>
+            <td class="cot-doc__num">
+              {{ formatearPrecio(item.subtotal) }}
+            </td>
+          </template>
         </tr>
       </tbody>
     </table>
+
+    <!-- PC armada: la franja de garantía bajo el detalle, como en el Excel. -->
+    <p
+      v-if="esPc"
+      class="cot-doc__franja"
+    >
+      <template v-if="cotizacion.garantia">
+        Garantía {{ cotizacion.garantia }} ·
+      </template>
+      Precios incluyen IGV
+    </p>
 
     <!-- ── Totales ── -->
     <div class="cot-doc__resumen">
@@ -158,6 +222,10 @@
           <th>Entrega</th>
           <td>{{ cotizacion.entrega }}</td>
         </tr>
+        <tr v-if="cotizacion.garantia">
+          <th>Garantía</th>
+          <td>{{ cotizacion.garantia }}</td>
+        </tr>
         <tr v-if="cotizacion.condiciones">
           <th>Condiciones</th>
           <td class="cot-doc__multilinea">
@@ -170,6 +238,14 @@
             class="cot-doc__garantia"
           >
             *** {{ TIENDA.garantia }}
+          </td>
+        </tr>
+        <tr v-if="esPc">
+          <td
+            colspan="2"
+            class="cot-doc__servicios"
+          >
+            // Consulte por garantía o diagnóstico de PC a domicilio y contratos de mantenimiento preventivo y correctivo //
           </td>
         </tr>
       </tbody>
@@ -210,12 +286,20 @@ const props = defineProps({
   }
 })
 
-/** "Tinta 544 — Botella 65 ml Negro": producto, presentación y color. */
+/**
+ * "Tinta 544 — Botella 65 ml Negro": producto, presentación y color. Un ítem
+ * libre (lo que la tienda no tiene) trae su descripción escrita a mano.
+ */
 function descripcion (item) {
   const v = item.variante
+  if (!v) return item.descripcion
   const presentacion = [v.presentacion, v.color?.nombre].filter(Boolean).join(' ')
   return [v.producto?.nombre, presentacion].filter(Boolean).join(' — ')
 }
+
+const esPc = computed(() => props.cotizacion.tipo === 'pc')
+// Una PC armada puede salir sólo con el total.
+const conPrecios = computed(() => !esPc.value || props.cotizacion.mostrar_precios !== false)
 
 /** "7 días (hasta el 10/04/2026), sujeto a variación de precios sin previo aviso." */
 const validez = computed(() => {
@@ -438,6 +522,58 @@ $gris: #4B5563;
   font-family: monospace;
   font-size: 8pt;
   color: $gris;
+}
+
+// ── PC armada ──
+.cot-doc__n {
+  width: 34px;
+  text-align: center !important;
+  font-weight: 700;
+}
+
+.cot-doc__componente {
+  width: 150px;
+  font-weight: 700;
+  text-align: right !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cot-doc__franja {
+  margin: 8px 0 0;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: $azul-tinte;
+  font-size: 10pt;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-align: center;
+  text-transform: uppercase;
+  color: $azul;
+}
+
+.cot-doc__servicios {
+  font-size: 8.5pt;
+  font-style: italic;
+  text-align: center !important;
+  color: $gris;
+}
+
+// Foto del ítem a la izquierda de la descripción.
+.cot-doc__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cot-doc__foto {
+  flex-shrink: 0;
+  width: 22mm;
+  height: 22mm;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #fff;
 }
 
 // ── Totales ──

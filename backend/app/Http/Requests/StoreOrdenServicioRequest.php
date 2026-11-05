@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Cotizacion;
 use App\Models\OrdenServicio;
 use App\Models\Pago;
 use App\Support\Cantidades;
@@ -77,6 +78,11 @@ class StoreOrdenServicioRequest extends FormRequest
             'orden.repuestos' => ['present', 'array', 'max:'.self::MAX_REPUESTOS],
         ];
 
+        // Sólo al recibir: la cotización aceptada de la que nace la orden.
+        if ($this->isMethod('post')) {
+            $rules['orden.cotizacion_id'] = ['nullable', 'integer', $this->cotizacionConvertible()];
+        }
+
         foreach (array_keys((array) $this->input('orden.repuestos', [])) as $i) {
             $varianteId = $this->input("orden.repuestos.{$i}.variante_id");
             $rules["orden.repuestos.{$i}.variante_id"] = [
@@ -125,6 +131,21 @@ class StoreOrdenServicioRequest extends FormRequest
 
             if ((float) $value > round($total, 2)) {
                 $fail('El adelanto no puede ser mayor que el total de la orden.');
+            }
+        };
+    }
+
+    private function cotizacionConvertible(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) {
+            $cotizacion = Cotizacion::find($value);
+
+            if (! $cotizacion) {
+                $fail('La cotización no existe.');
+            } elseif ($cotizacion->estado !== Cotizacion::PENDIENTE) {
+                $fail("La cotización {$cotizacion->codigo} ya está {$cotizacion->estado}.");
+            } elseif ($cotizacion->vencida()) {
+                $fail("La cotización {$cotizacion->codigo} venció: renuévala antes de convertirla.");
             }
         };
     }

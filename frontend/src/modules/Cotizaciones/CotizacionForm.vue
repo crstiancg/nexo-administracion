@@ -4,6 +4,28 @@
     novalidate
     @submit.prevent="submit"
   >
+    <!-- ── Tipo: ítems sueltos o una PC armada por componentes ── -->
+    <div class="cotizacion-form__tipo">
+      <q-btn-toggle
+        :model-value="form.cotizacion.tipo"
+        :options="[
+          { label: 'Ítems sueltos', value: 'normal', icon: 'list_alt' },
+          { label: 'PC armada', value: 'pc', icon: 'computer' }
+        ]"
+        no-caps
+        unelevated
+        toggle-color="primary"
+        class="cotizacion-form__toggle"
+        @update:model-value="cambiarTipo"
+      />
+      <q-toggle
+        v-if="form.cotizacion.tipo === 'pc'"
+        v-model="form.cotizacion.mostrar_precios"
+        label="Mostrar el precio de cada componente en la proforma"
+        dense
+      />
+    </div>
+
     <!-- ── Cliente y validez ── -->
     <div class="cotizacion-form__row">
       <div class="cotizacion-form__field cotizacion-form__grow">
@@ -58,11 +80,35 @@
 
     <!-- ── Ítems ── -->
     <section class="cotizacion-form__items">
-      <BuscadorVariante
-        label="Agregar producto: SKU o nombre"
-        :excluir="form.cotizacion.items.map((i) => i.variante_id)"
-        @elegir="agregar"
-      />
+      <div class="cotizacion-form__agregar">
+        <BuscadorVariante
+          class="cotizacion-form__grow"
+          label="Agregar producto: SKU o nombre"
+          :excluir="form.cotizacion.items.map((i) => i.variante_id).filter(Boolean)"
+          @elegir="agregar"
+        />
+        <!-- Lo que la tienda no tiene se cotiza igual, descrito a mano. -->
+        <AppButton
+          variant="secondary"
+          icon="add_box"
+          label="Ítem que no hay en tienda"
+          @click="agregarLibre()"
+        />
+        <AppButton
+          v-if="form.cotizacion.tipo === 'pc' && faltanCasilleros"
+          variant="tertiary"
+          icon="playlist_add"
+          label="Completar casilleros"
+          @click="completarCasilleros"
+        />
+      </div>
+      <p
+        v-if="form.cotizacion.tipo === 'pc'"
+        class="cotizacion-form__ayudaPc"
+      >
+        Llena cada casillero buscando en el catálogo (lupa) o escribiendo el componente.
+        Los que queden vacíos no se guardan ni salen en la proforma.
+      </p>
 
       <p
         v-if="form.errors[`${PATH}.items`]"
@@ -79,6 +125,9 @@
         <table class="cotizacion-form__tabla">
           <thead>
             <tr>
+              <th scope="col">
+                <span class="sr-only">Foto</span>
+              </th>
               <th scope="col">
                 Producto
               </th>
@@ -102,10 +151,125 @@
           <tbody>
             <tr
               v-for="(item, i) in form.cotizacion.items"
-              :key="item.variante_id"
+              :key="item.uid"
             >
+              <td class="cotizacion-form__fotoCelda">
+                <!-- Foto opcional: sale en la proforma junto a la descripción. -->
+                <button
+                  type="button"
+                  :class="['cotizacion-form__fotoBtn', { 'cotizacion-form__fotoBtn--error': erroresFoto(i).length }]"
+                  :aria-label="item.archivos.length ? `Cambiar la foto de ${etiquetaDe(item)}` : `Agregar una foto a ${etiquetaDe(item)}`"
+                >
+                  <img
+                    v-if="item.archivos.length"
+                    :src="item.archivos[0].miniatura_url ?? item.archivos[0].url"
+                    alt=""
+                    width="40"
+                    height="40"
+                    class="cotizacion-form__fotoThumb"
+                  >
+                  <q-icon
+                    v-else
+                    name="add_a_photo"
+                    size="16px"
+                  />
+                  <q-menu
+                    anchor="bottom left"
+                    self="top left"
+                  >
+                    <div class="cotizacion-form__fotoPanel">
+                      <AppFotos
+                        v-model="item.archivos"
+                        :max="1"
+                        :portada="false"
+                        :label="`Foto de ${etiquetaDe(item)}`"
+                        :errores="erroresFoto(i)"
+                      />
+                    </div>
+                  </q-menu>
+                </button>
+              </td>
+
               <td>
-                <div class="cotizacion-form__variante">
+                <!-- PC armada: el casillero de este componente. -->
+                <q-select
+                  v-if="form.cotizacion.tipo === 'pc'"
+                  v-model="item.componente"
+                  :options="COMPONENTES_PC"
+                  aria-label="Componente"
+                  placeholder="Componente"
+                  use-input
+                  fill-input
+                  hide-selected
+                  new-value-mode="add"
+                  input-debounce="0"
+                  maxlength="40"
+                  dense
+                  borderless
+                  hide-bottom-space
+                  class="cotizacion-form__componente"
+                  @input-value="(v) => { item.componente = v || null }"
+                />
+                <!-- Libre: lo que la tienda no tiene, descrito a mano. -->
+                <template v-if="!item.variante">
+                  <div class="cotizacion-form__libre">
+                    <q-input
+                      v-model="item.descripcion"
+                      aria-label="Descripción del ítem"
+                      placeholder="Describe el producto o servicio"
+                      maxlength="200"
+                      dense
+                      outlined
+                      autogrow
+                      hide-bottom-space
+                      no-error-icon
+                      :error="Boolean(errorDe(i, 'descripcion') || errorDe(i, 'variante_id'))"
+                      :error-message="errorDe(i, 'descripcion') || errorDe(i, 'variante_id')"
+                      class="cotizacion-form__control cotizacion-form__grow"
+                    />
+                    <q-input
+                      v-model="item.unidad"
+                      aria-label="Unidad"
+                      placeholder="und"
+                      maxlength="20"
+                      dense
+                      outlined
+                      hide-bottom-space
+                      class="cotizacion-form__control cotizacion-form__unidad"
+                    />
+                    <!-- Del catálogo: reemplaza la fila y conserva el casillero. -->
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="search"
+                      size="sm"
+                      color="grey-7"
+                      :aria-label="`Buscar ${item.componente ?? 'el producto'} en el catálogo`"
+                    >
+                      <q-tooltip>Buscar en el catálogo</q-tooltip>
+                      <q-menu
+                        anchor="bottom right"
+                        self="top right"
+                      >
+                        <div class="cotizacion-form__buscarPanel">
+                          <BuscadorVariante
+                            :label="`${item.componente ?? 'Producto'}: SKU o nombre`"
+                            :excluir="form.cotizacion.items.map((otro) => otro.variante_id).filter(Boolean)"
+                            @elegir="(variante) => usarDelCatalogo(i, variante)"
+                          />
+                        </div>
+                      </q-menu>
+                    </q-btn>
+                  </div>
+                  <span
+                    v-if="!casilleroVacio(item)"
+                    class="cotizacion-form__encargo"
+                  >Por encargo · no pasa al pedido</span>
+                </template>
+                <div
+                  v-else
+                  class="cotizacion-form__variante">
                   <span
                     class="cotizacion-form__swatch"
                     :style="{ background: item.variante.color?.hexadecimal }"
@@ -121,7 +285,7 @@
                   </div>
                 </div>
                 <p
-                  v-if="errorDe(i, 'variante_id')"
+                  v-if="item.variante && errorDe(i, 'variante_id')"
                   class="cotizacion-form__error"
                 >
                   {{ errorDe(i, 'variante_id') }}
@@ -131,11 +295,11 @@
               <td class="cotizacion-form__numero">
                 <q-input
                   v-model="item.cantidad"
-                  :aria-label="`Cantidad de ${item.variante.sku}`"
+                  :aria-label="`Cantidad de ${etiquetaDe(item)}`"
                   type="number"
                   min="0"
-                  :step="item.variante.unidad?.fraccionable ? '0.001' : '1'"
-                  :suffix="item.variante.unidad?.abreviatura"
+                  :step="!item.variante || item.variante.unidad?.fraccionable ? '0.001' : '1'"
+                  :suffix="item.variante ? item.variante.unidad?.abreviatura : item.unidad"
                   dense
                   outlined
                   hide-bottom-space
@@ -157,7 +321,7 @@
               <td class="cotizacion-form__numero">
                 <q-input
                   v-model="item.precio_unitario"
-                  :aria-label="`Precio de ${item.variante.sku}`"
+                  :aria-label="`Precio de ${etiquetaDe(item)}`"
                   type="number"
                   min="0"
                   step="0.01"
@@ -189,7 +353,7 @@
                   icon="close"
                   size="sm"
                   color="grey-7"
-                  :aria-label="`Quitar ${item.variante.sku}`"
+                  :aria-label="`Quitar ${etiquetaDe(item)}`"
                   @click="quitar(i)"
                 />
               </td>
@@ -202,7 +366,7 @@
         v-else
         class="cotizacion-form__vacio"
       >
-        Busca los productos arriba para agregarlos a la cotización.
+        Busca los productos arriba para agregarlos a la cotización, o agrega uno que no hay en tienda.
       </p>
     </section>
 
@@ -245,6 +409,26 @@
           :error-message="form.errors[`${PATH}.entrega`]"
           class="cotizacion-form__control"
           @input-value="(v) => { form.cotizacion.entrega = v }"
+        />
+        <q-select
+          v-model="form.cotizacion.garantia"
+          :options="GARANTIAS"
+          label="Garantía"
+          use-input
+          fill-input
+          hide-selected
+          new-value-mode="add"
+          input-debounce="0"
+          maxlength="100"
+          clearable
+          dense
+          outlined
+          hide-bottom-space
+          :error="Boolean(form.errors[`${PATH}.garantia`])"
+          :error-message="form.errors[`${PATH}.garantia`]"
+          class="cotizacion-form__control"
+          @input-value="(v) => { form.cotizacion.garantia = v }"
+          @clear="form.cotizacion.garantia = ''"
         />
         <AppTextField
           v-model="form.cotizacion.condiciones"
@@ -355,6 +539,7 @@ import { useQuasar } from 'quasar'
 import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
+import AppFotos from '@/components/AppFotos.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import ClientesForm from '@/modules/Clientes/ClientesForm.vue'
 import BuscadorVariante from '@/modules/Inventario/BuscadorVariante.vue'
@@ -364,7 +549,9 @@ import { formatearPrecio } from '@/utils/moneda'
 import { desglosarIgv, ETIQUETA_IGV } from '@/utils/igv'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem, reprecio } from '@/modules/Pedidos/FormPedido'
-import formCotizacion, { DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO } from './FormCotizacion'
+import formCotizacion, {
+  casilleroVacio, COMPONENTES_PC, conUid, DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO, GARANTIAS, nuevoItemLibre
+} from './FormCotizacion'
 import { fechaCorta, hoyLocal } from './constantes'
 
 const PATH = 'cotizacion'
@@ -384,9 +571,10 @@ const userStore = useUserStore()
 const uid = `cotizacion-${useId()}`
 const hoy = hoyLocal()
 
+// Editar va por POST + _method=PUT (ver FormCotizacion.js).
 const form = props.id
-  ? useForm('put', `api/cotizaciones/${props.id}`, formCotizacion)
-  : useForm('post', 'api/cotizaciones', formCotizacion)
+  ? useForm('post', `api/cotizaciones/${props.id}`, () => formCotizacion(true))
+  : useForm('post', 'api/cotizaciones', () => formCotizacion())
 
 // ── Cliente ──
 // El objeto completo para mostrarlo; al backend viaja sólo el id.
@@ -410,8 +598,53 @@ function errorDe (i, campo) {
   return form.errors[`${PATH}.items.${i}.${campo}`]
 }
 
+function erroresFoto (i) {
+  return Object.entries(form.errors)
+    .filter(([clave]) => clave.startsWith(`${PATH}.items.${i}.archivos`))
+    .map(([, mensaje]) => mensaje)
+}
+
+/** Para los aria-label: SKU del catálogo o la descripción del libre. */
+function etiquetaDe (item) {
+  return item.variante?.sku ?? (item.descripcion || 'ítem sin descripción')
+}
+
 function agregar (variante) {
-  form.cotizacion.items.push(nuevoItem(variante, cliente.value))
+  form.cotizacion.items.push(conUid(nuevoItem(variante, cliente.value)))
+}
+
+function agregarLibre () {
+  form.cotizacion.items.push(nuevoItemLibre())
+}
+
+// ── PC armada ──
+const faltanCasilleros = computed(() => COMPONENTES_PC.some((c) => !form.cotizacion.items.some((item) => item.componente === c)))
+
+/** Agrega, en orden, los casilleros que todavía no están. */
+function completarCasilleros () {
+  const usados = new Set(form.cotizacion.items.map((item) => item.componente))
+  form.cotizacion.items.push(...COMPONENTES_PC.filter((c) => !usados.has(c)).map((c) => nuevoItemLibre(c)))
+}
+
+function cambiarTipo (tipo) {
+  form.cotizacion.tipo = tipo
+  if (tipo === 'pc') {
+    completarCasilleros()
+  } else {
+    // Ítems sueltos: los casilleros vacíos sobran.
+    form.cotizacion.items = form.cotizacion.items.filter((item) => !casilleroVacio(item))
+  }
+}
+
+/** El casillero se llena con un producto del catálogo (mantiene el componente y la cantidad). */
+function usarDelCatalogo (i, variante) {
+  const anterior = form.cotizacion.items[i]
+  form.cotizacion.items.splice(i, 1, conUid({
+    ...nuevoItem(variante, cliente.value),
+    componente: anterior.componente,
+    cantidad: anterior.cantidad || '1',
+    archivos: anterior.archivos
+  }))
 }
 
 function quitar (i) {
@@ -428,7 +661,7 @@ function subtotalDe (item) {
 }
 
 function faltaStock (item) {
-  return numero(item.cantidad) > item.variante.stock
+  return Boolean(item.variante) && numero(item.cantidad) > item.variante.stock
 }
 
 // Vista previa: el total que vale es el que calcula el backend.
@@ -442,21 +675,30 @@ onMounted(async () => {
   const cotizacion = await CotizacionService.get(props.id)
   cliente.value = cotizacion.cliente
   form.setData({
+    _method: 'PUT',
     [PATH]: {
+      tipo: cotizacion.tipo ?? 'normal',
+      mostrar_precios: cotizacion.mostrar_precios ?? true,
       cliente_id: cotizacion.cliente_id,
       // Una vencida se edita para renovarla: la validez queda vacía (y si
       // no se pone otra, vale DIAS_VALIDEZ días desde hoy).
       valida_hasta: cotizacion.valida_hasta < hoy ? '' : cotizacion.valida_hasta,
       forma_pago: cotizacion.forma_pago ?? '',
       entrega: cotizacion.entrega ?? '',
+      garantia: cotizacion.garantia ?? '',
       condiciones: cotizacion.condiciones ?? '',
       descuento: Number(cotizacion.descuento) ? cotizacion.descuento : '',
       observacion: cotizacion.observacion ?? '',
-      items: cotizacion.items.map((item) => ({
+      items: cotizacion.items.map((item) => conUid({
+        componente: item.componente,
         variante_id: item.variante_id,
         variante: item.variante,
+        descripcion: item.descripcion ?? '',
+        unidad: item.unidad ?? '',
         cantidad: String(item.cantidad),
-        precio_unitario: item.precio_unitario
+        precio_unitario: item.precio_unitario,
+        // Una guardada viaja como { id }: el backend la conserva.
+        archivos: (item.archivos ?? []).map(({ id, url, miniatura_url: miniaturaUrl, nombre }) => ({ id, url, miniatura_url: miniaturaUrl, nombre }))
       }))
     }
   })
@@ -487,6 +729,8 @@ function submit () {
 }
 
 async function guardar () {
+  // Los casilleros de la PC que quedaron vacíos no viajan.
+  form.cotizacion.items = form.cotizacion.items.filter((item) => !casilleroVacio(item))
   try {
     const respuesta = await form.submit()
     form.reset()
@@ -583,6 +827,122 @@ defineExpose({ form, submit })
     outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
+}
+
+.cotizacion-form__tipo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.cotizacion-form__toggle {
+  border: 1px solid var(--app-border-control);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cotizacion-form__ayudaPc {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--app-ink-2);
+}
+
+// El casillero va arriba de la descripción, como una etiqueta editable.
+.cotizacion-form__componente {
+  margin-bottom: 2px;
+
+  :deep(.q-field__control),
+  :deep(.q-field__native) {
+    min-height: 22px;
+    padding: 0;
+  }
+
+  :deep(input) {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--q-primary);
+  }
+}
+
+.cotizacion-form__buscarPanel {
+  width: 360px;
+  padding: 12px;
+}
+
+.cotizacion-form__agregar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cotizacion-form__libre {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.cotizacion-form__unidad {
+  flex: 0 0 70px;
+}
+
+.cotizacion-form__encargo {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--app-brand-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 17px;
+  color: var(--app-brand-soft-ink);
+}
+
+.cotizacion-form__fotoCelda {
+  width: 52px;
+}
+
+// Como el botón de fotos de cada presentación en Productos.
+.cotizacion-form__fotoBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--app-border-control);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--app-surface);
+  color: var(--app-ink-2);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--app-border-control-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--q-primary);
+    outline-offset: 2px;
+  }
+
+  &--error {
+    border-color: var(--q-negative);
+  }
+}
+
+.cotizacion-form__fotoThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cotizacion-form__fotoPanel {
+  width: 280px;
+  padding: 12px;
 }
 
 // Mismo radio, borde y foco que AppTextField.

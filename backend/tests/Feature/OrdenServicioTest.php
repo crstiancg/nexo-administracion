@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Cotizacion;
 use App\Models\Marca;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
@@ -16,6 +17,7 @@ use App\Models\User;
 use App\Models\Variante;
 use App\Services\Cajas;
 use App\Services\Inventario;
+use App\Support\Fechas;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -399,5 +401,55 @@ class OrdenServicioTest extends TestCase
 
         $this->getJson('/api/panel/buscar?q=PF3XYZ')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
         $this->getJson('/api/panel/buscar?q=987654321')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
+    }
+    private function cotizacion(array $cambios = []): Cotizacion
+    {
+        $cotizacion = (new Cotizacion)->forceFill(array_merge([
+            'codigo' => 'COT-000001',
+            'cliente_id' => $this->cliente->id,
+            'sede_id' => $this->sede->id,
+            'estado' => Cotizacion::PENDIENTE,
+            'valida_hasta' => Fechas::hoy()->addDays(7)->toDateString(),
+            'subtotal' => 230,
+            'descuento' => 0,
+            'total' => 230,
+        ], $cambios));
+        $cotizacion->save();
+
+        return $cotizacion;
+    }
+
+    public function test_una_cotizacion_aceptada_se_convierte_en_orden(): void
+    {
+        $this->recepcion('ordenes-servicio.store');
+        $cotizacion = $this->cotizacion();
+
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload(['cotizacion_id' => $cotizacion->id]))
+            ->assertCreated()->json('id');
+
+        $cotizacion->refresh();
+        $this->assertSame(Cotizacion::CONVERTIDA, $cotizacion->estado);
+        $this->assertSame($id, $cotizacion->orden_servicio_id);
+    }
+
+    public function test_no_convierte_una_cotizacion_que_ya_no_esta_pendiente(): void
+    {
+        $this->recepcion('ordenes-servicio.store');
+        $cotizacion = $this->cotizacion(['estado' => Cotizacion::RECHAZADA]);
+
+        $this->postJson('/api/ordenes-servicio', $this->payload(['cotizacion_id' => $cotizacion->id]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('orden.cotizacion_id');
+        $this->assertSame(0, OrdenServicio::count());
+    }
+
+    public function test_no_convierte_una_cotizacion_vencida(): void
+    {
+        $this->recepcion('ordenes-servicio.store');
+        $cotizacion = $this->cotizacion(['valida_hasta' => Fechas::hoy()->subDay()->toDateString()]);
+
+        $this->postJson('/api/ordenes-servicio', $this->payload(['cotizacion_id' => $cotizacion->id]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('orden.cotizacion_id');
     }
 }

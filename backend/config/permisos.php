@@ -93,6 +93,8 @@ return [
         'cotizaciones.show' => ['cotizaciones.index', 'cotizaciones.update'],
         // Quien ve una cotización (o la lista de productos) la baja en Excel.
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
+        // El filtro "Atendido por" de la lista.
+        'cotizaciones.usuarios' => ['cotizaciones.index'],
         'productos.exportar' => ['productos.index'],
         'pedidos.exportar' => ['pedidos.index'],
         // El form de cotizaciones busca clientes y presentaciones.

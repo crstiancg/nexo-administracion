@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Archivo;
 use App\Models\Cotizacion;
 use App\Models\Pedido;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,11 +16,12 @@ use Illuminate\Validation\ValidationException;
  */
 class Cotizaciones
 {
-    public function __construct(private Pedidos $pedidos) {}
+    public function __construct(private Pedidos $pedidos, private ArchivosService $archivos) {}
 
     /**
      * Crea o reemplaza los ítems de una cotización PENDIENTE y recalcula los
-     * totales (nunca se confía en los del navegador).
+     * totales (nunca se confía en los del navegador). La foto de cada ítem va
+     * en `archivos` (polimórfico), como las de un producto.
      *
      * @param  array<string, mixed>  $datos  cotización validada (con `items`)
      */
@@ -43,18 +46,37 @@ class Cotizaciones
                 $cotizacion->forceFill(['codigo' => 'COT-'.str_pad((string) $cotizacion->id, 6, '0', STR_PAD_LEFT)])->save();
             }
 
+            // Sin FK en el polimórfico: sus fotos siguen ahí hasta el final.
+            $viejos = $cotizacion->items()->get();
             $cotizacion->items()->delete();
             $subtotal = 0.0;
             foreach ($datos['items'] as $item) {
                 $linea = round((float) $item['cantidad'] * (float) $item['precio_unitario'], 2);
                 $subtotal += $linea;
 
-                $cotizacion->items()->create([
-                    'variante_id' => $item['variante_id'],
+                $libre = empty($item['variante_id']);
+                $nuevo = $cotizacion->items()->create([
+                    'variante_id' => $libre ? null : $item['variante_id'],
+                    'componente' => ($datos['tipo'] ?? 'normal') === 'pc' ? ($item['componente'] ?? null) : null,
+                    // La descripción y la unidad sólo valen en los libres.
+                    'descripcion' => $libre ? $item['descripcion'] : null,
+                    'unidad' => $libre ? ($item['unidad'] ?? null) : null,
                     'cantidad' => $item['cantidad'],
                     'precio_unitario' => $item['precio_unitario'],
                     'subtotal' => $linea,
                 ]);
+
+                // Una foto que se conserva pasa al ítem nuevo (sin copiarla).
+                $foto = array_values($item['archivos'] ?? [])[0] ?? null;
+                if (! empty($foto['id'])) {
+                    Archivo::query()->whereKey($foto['id'])->update(['archivable_id' => $nuevo->id, 'orden' => 0]);
+                } elseif (($foto['archivo'] ?? null) instanceof UploadedFile) {
+                    $this->archivos->sincronizar($nuevo, [['archivo' => $foto['archivo']]], "cotizaciones/{$cotizacion->id}");
+                }
+            }
+            // Las que no pasaron a un ítem nuevo ya no las usa nadie.
+            foreach ($viejos as $viejo) {
+                $this->archivos->eliminarDe($viejo);
             }
 
             $cotizacion->forceFill([
@@ -69,6 +91,9 @@ class Cotizaciones
     /**
      * El cliente aceptó: nace un pedido PENDIENTE con los precios cotizados
      * (se confirma, cobra y entrega por el flujo de pedidos).
+     *
+     * Los ítems libres (lo que la tienda no tiene) no pasan: no hay qué
+     * descontar del stock; se consiguen y cobran aparte.
      *
      * `$elegidos` ([{variante_id, cantidad}]): lo que de verdad pide, si no
      * es todo. Sólo ítems de la cotización y sin pasar la cantidad cotizada;
@@ -116,9 +141,16 @@ class Cotizaciones
      */
     private function itemsElegidos(Cotizacion $cotizacion, ?array $elegidos): array
     {
-        $cotizados = $cotizacion->items()->with('variante.unidad:id,fraccionable')->orderBy('id')->get()->keyBy('variante_id');
+        $cotizados = $cotizacion->items()->whereNotNull('variante_id')
+            ->with('variante.unidad:id,fraccionable')->orderBy('id')->get()->keyBy('variante_id');
 
         if ($elegidos === null) {
+            if ($cotizados->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'items' => 'Esta cotización sólo tiene ítems por encargo (fuera del catálogo): regístralos como producto para venderlos con un pedido.',
+                ]);
+            }
+
             return $cotizados->map(fn ($i) => [
                 'variante_id' => $i->variante_id,
                 'cantidad' => $i->cantidad,

@@ -5,7 +5,8 @@
 export const ESTADOS = {
   pendiente: { label: 'Pendiente', status: 'warning' },
   vencida: { label: 'Vencida', status: 'negative' },
-  convertida: { label: 'Convertida en pedido', status: 'positive' },
+  // En un pedido o en una orden de servicio (la lista muestra a cuál).
+  convertida: { label: 'Convertida', status: 'positive' },
   rechazada: { label: 'Rechazada', status: 'info' }
 }
 
