@@ -31,6 +31,11 @@ return [
     // Consulta de DNI (RENIEC) y RUC (SUNAT) al registrar clientes. El token
     // va SÓLO en el .env; sin token la consulta se desactiva y el cliente se
     // carga a mano.
+    // Asistente de cotización (Claude). Sin clave, el asistente avisa que no está configurado.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
     'apis_net_pe' => [
         'url' => env('APIS_NET_PE_URL', 'https://api.apis.net.pe'),
         'token' => env('APIS_NET_PE_TOKEN'),

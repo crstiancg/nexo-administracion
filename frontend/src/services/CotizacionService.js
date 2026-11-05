@@ -14,6 +14,14 @@ class CotizacionService {
     return (await api.get('api/cotizaciones/usuarios')).data
   }
 
+  /**
+   * Asistente con IA: arma un borrador ({ cliente, cotizacion, notas }) a
+   * partir de lo que escribe el vendedor. No guarda nada.
+   */
+  static async asistente (texto) {
+    return (await api.post('api/cotizaciones/asistente', { texto }, { timeout: 120000 })).data
+  }
+
   static async get (id) {
     return (await api.get(`api/cotizaciones/${id}`)).data
   }

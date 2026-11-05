@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "anthropic-ai/sdk": "^1.5",
         "bacon/bacon-qr-code": "^3.0",
         "codersfree/laravel-greenter": "^2.0",
         "intervention/image": "^3",

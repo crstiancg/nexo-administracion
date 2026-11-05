@@ -148,6 +148,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
 
         // Va antes del resource: si no, {cotizacion} captura "usuarios".
         Route::get('cotizaciones/usuarios', [CotizacionController::class, 'usuarios'])->name('cotizaciones.usuarios');
+        // Llama a la IA: con límite para que no se dispare el gasto.
+        Route::post('cotizaciones/asistente', [CotizacionController::class, 'asistente'])
+            ->middleware('throttle:20,1')->name('cotizaciones.asistente');
 
         // Sin destroy: se rechaza o se convierte en pedido.
         Route::apiResource('cotizaciones', CotizacionController::class)

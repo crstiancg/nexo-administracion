@@ -4,6 +4,57 @@
     novalidate
     @submit.prevent="submit"
   >
+    <!-- ── Asistente con IA: escribe lo que pide el cliente y arma el borrador ── -->
+    <section
+      v-if="userStore.hasPermission('cotizaciones.store') || userStore.hasPermission('cotizaciones.update')"
+      class="cotizacion-form__ia"
+    >
+      <div class="cotizacion-form__iaCabecera">
+        <q-icon
+          name="auto_awesome"
+          size="18px"
+        />
+        <strong>Armar con IA</strong>
+        <span class="cotizacion-form__opcional">Escribe lo que pide el cliente; tú revisas antes de guardar.</span>
+      </div>
+      <div class="cotizacion-form__iaFila">
+        <q-input
+          v-model="pedidoIa"
+          type="textarea"
+          autogrow
+          dense
+          outlined
+          maxlength="2000"
+          placeholder="Ej.: PC core i5 con 16 GB de RAM y SSD de 500 sin monitor para Juan Pérez, garantía 1 año, contado"
+          aria-label="Pedido del cliente para el asistente"
+          class="cotizacion-form__control cotizacion-form__grow"
+          :disable="armandoIa"
+          @keydown.ctrl.enter="armarConIa"
+        />
+        <AppButton
+          variant="primary"
+          icon="auto_awesome"
+          :label="armandoIa ? 'Armando…' : 'Armar'"
+          :loading="armandoIa"
+          :disable="pedidoIa.trim().length < 5"
+          @click="armarConIa"
+        />
+      </div>
+      <p
+        v-if="errorIa"
+        class="cotizacion-form__error"
+        role="alert"
+      >
+        {{ errorIa }}
+      </p>
+      <p
+        v-if="notasIa"
+        class="cotizacion-form__iaNotas"
+      >
+        <q-icon name="tips_and_updates" /> {{ notasIa }}
+      </p>
+    </section>
+
     <!-- ── Tipo: ítems sueltos o una PC armada por componentes ── -->
     <div class="cotizacion-form__tipo">
       <q-btn-toggle
@@ -617,6 +668,44 @@ function agregarLibre () {
   form.cotizacion.items.push(nuevoItemLibre())
 }
 
+// ── Asistente con IA ──
+const pedidoIa = ref('')
+const armandoIa = ref(false)
+const errorIa = ref('')
+const notasIa = ref('')
+
+/**
+ * Pide el borrador y lo vuelca en el form (reemplaza los ítems). No se
+ * guarda: el vendedor revisa precios y cantidades y guarda como siempre.
+ */
+async function armarConIa () {
+  if (armandoIa.value || pedidoIa.value.trim().length < 5) return
+  armandoIa.value = true
+  errorIa.value = ''
+  notasIa.value = ''
+  try {
+    const { cliente: elegido, cotizacion, notas } = await CotizacionService.asistente(pedidoIa.value.trim())
+    if (elegido) cliente.value = elegido
+    form.cotizacion.tipo = cotizacion.tipo
+    if (cotizacion.garantia) form.cotizacion.garantia = cotizacion.garantia
+    if (cotizacion.forma_pago) form.cotizacion.forma_pago = cotizacion.forma_pago
+    if (cotizacion.entrega) form.cotizacion.entrega = cotizacion.entrega
+    form.cotizacion.items = cotizacion.items.map((item) => conUid({
+      ...item,
+      descripcion: item.descripcion ?? '',
+      unidad: item.unidad ?? '',
+      cantidad: String(item.cantidad),
+      precio_unitario: String(item.precio_unitario)
+    }))
+    notasIa.value = notas
+  } catch (error) {
+    const { data } = error.response ?? {}
+    errorIa.value = data?.errors?.texto?.[0] ?? data?.message ?? 'No se pudo conectar con el asistente. Intenta de nuevo.'
+  } finally {
+    armandoIa.value = false
+  }
+}
+
 // ── PC armada ──
 const faltanCasilleros = computed(() => COMPONENTES_PC.some((c) => !form.cotizacion.items.some((item) => item.componente === c)))
 
@@ -827,6 +916,44 @@ defineExpose({ form, submit })
     outline: 2px solid var(--q-primary);
     outline-offset: 2px;
   }
+}
+
+.cotizacion-form__ia {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--q-primary) 30%, transparent);
+  border-radius: 12px;
+  background: var(--app-brand-soft);
+}
+
+.cotizacion-form__iaCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 13px;
+  color: var(--app-ink);
+
+  .q-icon {
+    color: var(--app-brand-soft-ink);
+  }
+}
+
+.cotizacion-form__iaFila {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cotizacion-form__iaNotas {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--app-ink);
 }
 
 .cotizacion-form__tipo {

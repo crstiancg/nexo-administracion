@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCotizacionRequest;
 use App\Http\Resources\CotizacionResource;
 use App\Models\Cotizacion;
 use App\Models\User;
+use App\Services\AsistenteCotizacion;
 use App\Services\Cotizaciones;
 use App\Services\Exportaciones;
 use App\Support\Fechas;
@@ -91,6 +92,17 @@ class CotizacionController extends Controller
             ['id', 'total', 'valida_hasta'],
             CotizacionResource::class,
         );
+    }
+
+    /**
+     * Asistente: arma un BORRADOR a partir de lo que el vendedor escribe (no
+     * guarda nada; el form lo carga para revisarlo).
+     */
+    public function asistente(Request $request, AsistenteCotizacion $asistente): JsonResponse
+    {
+        $datos = $request->validate(['texto' => ['required', 'string', 'min:5', 'max:2000']], [], ['texto' => 'pedido']);
+
+        return response()->json($asistente->borrador($datos['texto'], $request->user()));
     }
 
     /** Para el filtro "Atendido por": quienes hicieron alguna cotización. */

@@ -95,6 +95,8 @@ return [
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
         // El filtro "Atendido por" de la lista.
         'cotizaciones.usuarios' => ['cotizaciones.index'],
+        // El asistente arma borradores para el form de cotizaciones.
+        'cotizaciones.asistente' => ['cotizaciones.store', 'cotizaciones.update'],
         'productos.exportar' => ['productos.index'],
         'pedidos.exportar' => ['pedidos.index'],
         // El form de cotizaciones busca clientes y presentaciones.
