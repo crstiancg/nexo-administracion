@@ -59,6 +59,24 @@
 
         <q-separator />
 
+        <!-- Sólo cuando el navegador permite instalarla (y todavía no está). -->
+        <q-item
+          v-if="instalable"
+          v-close-popup
+          clickable
+          @click="instalar"
+        >
+          <q-item-section avatar>
+            <q-icon name="install_desktop" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Instalar Nexo como app</q-item-label>
+            <q-item-label caption>
+              Con ícono en el escritorio o el celular, a pantalla completa
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+
         <q-item
           v-close-popup
           clickable
@@ -78,6 +96,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { instalable, instalar } from '@/config/pwa'
 import { useUserStore } from '@/stores/user-store'
 
 const router = useRouter()

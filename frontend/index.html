@@ -14,6 +14,14 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';<% if (ctx.dev) { %> connect-src 'self' ws://localhost:* http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; img-src 'self' blob: data: http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; worker-src 'self' blob:;<% } else { %> connect-src 'self' <%= apiOrigin %>; img-src 'self' blob: data: <%= apiOrigin %>;<% } %>"
     />
 
+    <!-- Instalable como app (PWA): ver public/manifest.webmanifest y public/sw.js. -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#111111">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Nexo">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
     <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">

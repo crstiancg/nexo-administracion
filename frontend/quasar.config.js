@@ -42,7 +42,7 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['tema', 'iconos', 'axios', 'authGuard'],
+    boot: ['tema', 'iconos', 'pwa', 'axios', 'authGuard'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     // Fuentes auto-hosteadas y no desde Google Fonts: sin request a un

@@ -108,6 +108,7 @@ export const LUCIDE = {
   image: 'image',
   indeterminate_check_box: 'square-minus',
   info: 'info',
+  install_desktop: 'monitor-down',
   info_outline: 'info',
   insights: 'chart-line',
   inventory: 'package',
