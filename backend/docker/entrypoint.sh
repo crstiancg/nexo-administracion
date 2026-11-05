@@ -47,4 +47,11 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# Scheduler (backups diarios, ver routes/console.php). Sin cron en la
+# imagen: corre al lado del servidor web. NEXO_SCHEDULER=false lo apaga (p. ej.
+# si se corre en un contenedor aparte).
+if [ "${NEXO_SCHEDULER:-true}" = "true" ]; then
+  su -s /bin/sh www-data -c "php artisan schedule:work --no-interaction" &
+fi
+
 exec "$@"

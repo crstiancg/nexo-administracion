@@ -227,6 +227,8 @@
           </div>
         </div>
       </AppCard>
+
+      <RespaldosCard v-if="userStore.hasPermission('respaldos.index')" />
     </template>
   </div>
 </template>
@@ -244,8 +246,11 @@ import { ESTADOS, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, va
 import * as Cotizacion from '@/modules/Cotizaciones/constantes'
 import * as Credito from '@/modules/Creditos/constantes'
 import ConfiguracionService from '@/services/ConfiguracionService'
+import { useUserStore } from '@/stores/user-store'
+import RespaldosCard from './RespaldosCard.vue'
 
 const $q = useQuasar()
+const userStore = useUserStore()
 
 const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden']
 

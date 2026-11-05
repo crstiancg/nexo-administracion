@@ -172,6 +172,7 @@ return [
         'movimientos-financieros' => 'Ingresos y gastos',
         'ganancias' => 'Ganancias',
         'configuracion' => 'Configuración',
+        'respaldos' => 'Backups',
         'creditos' => 'Créditos',
         'comisiones' => 'Comisiones',
     ],

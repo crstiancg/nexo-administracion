@@ -47,6 +47,21 @@ return [
             'report' => false,
         ],
 
+        // Destino de los backups fuera del servidor: S3 o compatible
+        // (Cloudflare R2, Backblaze B2, Wasabi). Se activa con
+        // BACKUP_DISKS=local,backups.
+        'backups' => [
+            'driver' => 's3',
+            'key' => env('BACKUP_S3_KEY'),
+            'secret' => env('BACKUP_S3_SECRET'),
+            'region' => env('BACKUP_S3_REGION', 'auto'),
+            'bucket' => env('BACKUP_S3_BUCKET'),
+            'endpoint' => env('BACKUP_S3_ENDPOINT'),
+            'use_path_style_endpoint' => env('BACKUP_S3_PATH_STYLE', false),
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

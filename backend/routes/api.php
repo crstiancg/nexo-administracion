@@ -31,6 +31,7 @@ use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\RespaldoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
@@ -86,6 +87,13 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
     Route::post('configuracion/logo', [ConfiguracionController::class, 'logo'])->name('configuracion.logo');
     Route::delete('configuracion/logo', [ConfiguracionController::class, 'quitarLogo'])->name('configuracion.logo.quitar');
+
+    // Backups de la base y los archivos (también se hacen solos cada día).
+    Route::get('respaldos', [RespaldoController::class, 'index'])->name('respaldos.index');
+    Route::post('respaldos', [RespaldoController::class, 'store'])->middleware('throttle:3,10')->name('respaldos.store');
+    Route::get('respaldos/{disco}/{archivo}', [RespaldoController::class, 'descargar'])
+        ->where('archivo', '[A-Za-z0-9_\-.]+\.zip')
+        ->name('respaldos.descargar');
 
     Route::middleware(HandlePrecognitiveRequests::class)->group(function () {
         Route::apiResource('roles', RolController::class);

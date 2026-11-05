@@ -19,6 +19,11 @@ RUN install-php-extensions gd pdo_mysql intl zip bcmath exif opcache pcntl soap 
     # SoapClient no sale ningún comprobante: que falle el build y no producción.
     && php -r 'exit(function_exists("imageavif") && function_exists("imagewebp") && class_exists("SoapClient") ? 0 : 1);'
 
+# mysqldump para los backups de la base (spatie/laravel-backup).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-nexo.ini
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/entrypoint.sh /usr/local/bin/nexo-entrypoint
