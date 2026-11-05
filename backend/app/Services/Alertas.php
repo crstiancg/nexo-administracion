@@ -91,6 +91,12 @@ class Alertas
                     $this->plural($vencidos, 'crédito con cuotas vencidas', 'créditos con cuotas vencidas'),
                     'Clientes atrasados en sus pagos: llámalos o escríbeles.', $vencidos, '/creditos?estado=vencidos');
             }
+            $porVencer = $this->creditos->conCuotasPorVencer($sedeId);
+            if ($porVencer) {
+                $alertas[] = $this->alerta('creditos_por_vencer', 'info',
+                    $this->plural($porVencer, 'cuota vence en estos días', 'cuotas vencen en estos días'),
+                    'Recuérdaselas por WhatsApp antes de que se atrasen.', $porVencer, '/creditos?estado=por_vencer');
+            }
         }
 
         // ── Lotes ──

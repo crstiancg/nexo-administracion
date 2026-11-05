@@ -244,9 +244,9 @@ import AppFilterBar from '@/components/AppFilterBar.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTable from '@/components/AppTable.vue'
 import AppTimeline from '@/components/AppTimeline.vue'
-import { TIENDA } from '@/config/tienda'
 import PagoForm from '@/modules/Caja/PagoForm.vue'
 import { fechaCorta } from '@/modules/Cotizaciones/constantes'
+import { enlaceWhatsapp } from './constantes'
 import CreditoService from '@/services/CreditoService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearFechaHora } from '@/utils/fechas'
@@ -258,6 +258,8 @@ const userStore = useUserStore()
 
 const TABS = [
   { value: 'activos', label: 'Activos' },
+  // La próxima cuota vence en estos días: para recordarla a tiempo.
+  { value: 'por_vencer', label: 'Por vencer' },
   { value: 'vencidos', label: 'Con cuotas vencidas' },
   { value: 'pagados', label: 'Pagados' },
   { value: 'todos', label: 'Todos' }
@@ -343,18 +345,8 @@ function refrescar () {
 
 onMounted(refrescar)
 
-/** wa.me con el recordatorio de la próxima cuota. */
-function recordatorio (credito) {
-  let numero = (credito.cliente?.telefono ?? '').replace(/\D/g, '')
-  if (!numero || !credito.proxima) return null
-  if (numero.length === 9) numero = `51${numero}`
-  const nombre = credito.cliente.nombre.split(' ')[0]
-  const c = credito.proxima
-  const texto = c.estado === 'vencida'
-    ? `Hola ${nombre}, te recordamos que tu cuota ${c.numero} de ${formatearPrecio(c.falta)} venció el ${fechaCorta(c.vence)}. ¿Cuándo podrías pasar a pagarla?`
-    : `Hola ${nombre}, te recordamos que tu cuota ${c.numero} de ${formatearPrecio(c.falta)} vence el ${fechaCorta(c.vence)}.`
-  return `https://wa.me/${numero}?text=${encodeURIComponent(`${texto}\n— ${TIENDA.nombre}`)}`
-}
+/** wa.me con el recordatorio de la próxima cuota (mensaje de Configuración). */
+const recordatorio = enlaceWhatsapp
 
 // ── Detalle ──
 const detalleDialog = ref(false)

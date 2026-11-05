@@ -89,6 +89,20 @@ class Creditos
             ->count();
     }
 
+    /** Créditos cuya próxima cuota vence pronto (para recordarla a tiempo). */
+    public function conCuotasPorVencer(int $sedeId): int
+    {
+        $hoy = Fechas::hoy();
+
+        return Credito::query()
+            ->where('sede_id', $sedeId)
+            ->whereHas('cuotas', fn ($q) => $q->whereDate('vence', '>=', $hoy)->whereDate('vence', '<=', $hoy->copy()->addDays(Credito::DIAS_POR_VENCER)))
+            ->with(['cuotas', 'pedido'])
+            ->get()
+            ->filter(fn (Credito $c) => Credito::proximaPorVencer(collect($c->estadoCuotas())->first(fn ($cuota) => $cuota['estado'] !== 'pagada')))
+            ->count();
+    }
+
     private function falla(string $mensaje): never
     {
         throw ValidationException::withMessages(['credito' => $mensaje])->status(409);

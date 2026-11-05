@@ -150,8 +150,8 @@
           <q-icon name="mdi-whatsapp" /> Mensajes de WhatsApp
         </h2>
         <p class="conf-ayuda">
-          El mensaje que se arma al avisarle al cliente según el estado de su orden, y el que manda la
-          proforma de una cotización. Toca una variable para agregarla; un mensaje vacío usa el de por defecto.
+          El mensaje que se arma al avisarle al cliente según el estado de su orden, el que manda la
+          proforma de una cotización y los recordatorios de cuotas de un crédito. Toca una variable para agregarla; un mensaje vacío usa el de por defecto.
         </p>
         <div class="conf-variables">
           <button
@@ -171,12 +171,12 @@
             role="tablist"
           >
             <button
-              v-for="{ clave, label } in MENSAJES"
+              v-for="{ clave, label, aparte } in MENSAJES"
               :key="clave"
               type="button"
               role="tab"
               :aria-selected="String(estado === clave)"
-              :class="['conf-estado', { 'conf-estado--activo': estado === clave, 'conf-estado--aparte': clave === 'cotizacion' }]"
+              :class="['conf-estado', { 'conf-estado--activo': estado === clave, 'conf-estado--aparte': aparte }]"
               @click="estado = clave"
             >
               {{ label }}
@@ -242,6 +242,7 @@ import AppTextField from '@/components/AppTextField.vue'
 import { aplicarConfiguracion, TIENDA } from '@/config/tienda'
 import { ESTADOS, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, valoresWhatsapp } from '@/modules/OrdenesServicio/constantes'
 import * as Cotizacion from '@/modules/Cotizaciones/constantes'
+import * as Credito from '@/modules/Creditos/constantes'
 import ConfiguracionService from '@/services/ConfiguracionService'
 
 const $q = useQuasar()
@@ -249,10 +250,69 @@ const $q = useQuasar()
 const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden']
 
 const empresa = reactive(Object.fromEntries(CAMPOS.map((c) => [c, ''])))
-// Un mensaje por estado de la orden y el de la proforma de una cotización.
+const EJEMPLO = {
+  codigo: 'OS-000012',
+  estado: 'reparado',
+  equipo: 'Laptop HP 250 G7',
+  token: 'a'.repeat(32),
+  total: '408.00',
+  saldo: '208.00',
+  garantia_hasta: '2026-12-03',
+  cliente: { nombre: 'Ana Quispe' }
+}
+
+const EJEMPLO_COTIZACION = {
+  codigo: 'COT-000010',
+  total: '1250.00',
+  valida_hasta: '2026-11-12',
+  token: 'a'.repeat(32),
+  cliente: { nombre: 'Ana Quispe' }
+}
+
+const EJEMPLO_CREDITO = {
+  numero_cuotas: 4,
+  saldo: '240.00',
+  proxima: { numero: 2, falta: '80.00', vence: '2026-11-12' },
+  cliente: { nombre: 'Ana Quispe' }
+}
+
+/**
+ * Los mensajes de WhatsApp que se pueden cambiar: uno por estado de la orden,
+ * el de la proforma y los recordatorios de cuotas. Cada uno con su texto por
+ * defecto, sus variables y datos de ejemplo para la vista previa. `aparte`:
+ * empieza otro grupo en la lista.
+ */
 const MENSAJES = [
-  ...Object.entries(ESTADOS).map(([clave, { label }]) => ({ clave, label })),
-  { clave: 'cotizacion', label: 'Cotización' }
+  ...Object.entries(ESTADOS).map(([clave, { label }]) => ({
+    clave,
+    label,
+    plantilla: PLANTILLAS_WHATSAPP[clave],
+    variables: VARIABLES_WHATSAPP,
+    ejemplo: () => valoresWhatsapp({ ...EJEMPLO, estado: clave })
+  })),
+  {
+    clave: 'cotizacion',
+    label: 'Cotización',
+    aparte: true,
+    plantilla: Cotizacion.PLANTILLA_WHATSAPP,
+    variables: Cotizacion.VARIABLES_WHATSAPP,
+    ejemplo: () => Cotizacion.valoresWhatsapp(EJEMPLO_COTIZACION)
+  },
+  {
+    clave: 'cuota_por_vencer',
+    label: 'Cuota por vencer',
+    aparte: true,
+    plantilla: Credito.PLANTILLAS_WHATSAPP.cuota_por_vencer,
+    variables: Credito.VARIABLES_WHATSAPP,
+    ejemplo: () => Credito.valoresWhatsapp(EJEMPLO_CREDITO)
+  },
+  {
+    clave: 'cuota_vencida',
+    label: 'Cuota vencida',
+    plantilla: Credito.PLANTILLAS_WHATSAPP.cuota_vencida,
+    variables: Credito.VARIABLES_WHATSAPP,
+    ejemplo: () => Credito.valoresWhatsapp(EJEMPLO_CREDITO)
+  }
 ]
 const whatsapp = reactive(Object.fromEntries(MENSAJES.map(({ clave }) => [clave, ''])))
 const cargado = ref(false)
@@ -316,11 +376,11 @@ async function quitarLogo () {
 const estado = ref('reparado')
 const editorRef = ref()
 
-const esCotizacion = computed(() => estado.value === 'cotizacion')
-const variables = computed(() => (esCotizacion.value ? Cotizacion.VARIABLES_WHATSAPP : VARIABLES_WHATSAPP))
+const mensaje = computed(() => MENSAJES.find((m) => m.clave === estado.value))
+const variables = computed(() => mensaje.value.variables)
 
 function porDefecto (clave) {
-  return clave === 'cotizacion' ? Cotizacion.PLANTILLA_WHATSAPP : PLANTILLAS_WHATSAPP[clave]
+  return MENSAJES.find((m) => m.clave === clave).plantilla
 }
 
 // Agrega {variable} donde está el cursor (o al final).
@@ -333,30 +393,9 @@ async function insertar (clave) {
   campo?.focus()
 }
 
-const EJEMPLO = {
-  codigo: 'OS-000012',
-  estado: 'reparado',
-  equipo: 'Laptop HP 250 G7',
-  token: 'a'.repeat(32),
-  total: '408.00',
-  saldo: '208.00',
-  garantia_hasta: '2026-12-03',
-  cliente: { nombre: 'Ana Quispe' }
-}
-
-const EJEMPLO_COTIZACION = {
-  codigo: 'COT-000010',
-  total: '1250.00',
-  valida_hasta: '2026-11-12',
-  token: 'a'.repeat(32),
-  cliente: { nombre: 'Ana Quispe' }
-}
-
 const vistaPrevia = computed(() => rellenarPlantilla(
-  whatsapp[estado.value] || porDefecto(estado.value),
-  esCotizacion.value
-    ? Cotizacion.valoresWhatsapp(EJEMPLO_COTIZACION)
-    : valoresWhatsapp({ ...EJEMPLO, estado: estado.value })
+  whatsapp[estado.value] || mensaje.value.plantilla,
+  mensaje.value.ejemplo()
 ))
 </script>
 

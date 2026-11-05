@@ -17,10 +17,10 @@ final class Empresa
     public const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden'];
 
     /**
-     * Mensajes de WhatsApp que se pueden cambiar: uno por estado de una orden
-     * y el que manda la proforma de una cotización.
+     * Mensajes de WhatsApp que se pueden cambiar: uno por estado de una orden,
+     * el que manda la proforma de una cotización y los recordatorios de cuotas.
      */
-    public const ESTADOS_WHATSAPP = ['recibido', 'diagnostico', 'esperando_repuesto', 'en_reparacion', 'reparado', 'sin_reparacion', 'entregado', 'abandonado', 'cotizacion'];
+    public const ESTADOS_WHATSAPP = ['recibido', 'diagnostico', 'esperando_repuesto', 'en_reparacion', 'reparado', 'sin_reparacion', 'entregado', 'abandonado', 'cotizacion', 'cuota_por_vencer', 'cuota_vencida'];
 
     private const CACHE = 'empresa.configuracion';
 

@@ -28,7 +28,7 @@ class CreditoController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'estado' => ['nullable', Rule::in(['activos', 'vencidos', 'pagados', 'todos'])],
+            'estado' => ['nullable', Rule::in(['activos', 'por_vencer', 'vencidos', 'pagados', 'todos'])],
         ]);
 
         $creditos = Credito::query()
@@ -44,6 +44,7 @@ class CreditoController extends Controller
         $estado = $request->input('estado', 'activos');
         $filtrados = $creditos->filter(fn (array $c) => match ($estado) {
             'activos' => (float) $c['saldo'] > 0,
+            'por_vencer' => Credito::proximaPorVencer($c['proxima']),
             'vencidos' => $c['cuotas_vencidas'] > 0,
             'pagados' => (float) $c['saldo'] <= 0,
             default => true,
@@ -59,6 +60,7 @@ class CreditoController extends Controller
                 'vencido' => round($creditos->sum(fn ($c) => (float) $c['monto_vencido']), 2),
                 'activos' => $creditos->filter(fn ($c) => (float) $c['saldo'] > 0)->count(),
                 'con_vencidas' => $creditos->filter(fn ($c) => $c['cuotas_vencidas'] > 0)->count(),
+                'por_vencer' => $creditos->filter(fn ($c) => Credito::proximaPorVencer($c['proxima']))->count(),
             ],
         ]);
     }

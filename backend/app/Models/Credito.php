@@ -16,6 +16,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['frecuencia', 'numero_cuotas', 'observacion'])]
 class Credito extends Model
 {
+    /** "Por vencer": la próxima cuota vence hoy o en estos días (para recordarla). */
+    public const DIAS_POR_VENCER = 3;
+
     public const FRECUENCIAS = [
         'semanal' => 'Semanal',
         'quincenal' => 'Quincenal',
@@ -54,6 +57,19 @@ class Credito extends Model
     public function cuotas(): HasMany
     {
         return $this->hasMany(CreditoCuota::class)->orderBy('numero');
+    }
+
+    /**
+     * La próxima cuota (sin vencer) vence hoy o en DIAS_POR_VENCER días:
+     * para recordarla antes de que se atrase.
+     *
+     * @param  array<string, mixed>|null  $proxima  una de estadoCuotas()
+     */
+    public static function proximaPorVencer(?array $proxima): bool
+    {
+        return $proxima !== null
+            && $proxima['estado'] !== 'vencida'
+            && $proxima['vence'] <= Fechas::hoy()->addDays(self::DIAS_POR_VENCER)->toDateString();
     }
 
     /** Lo abonado al crédito: lo pagado del pedido desde que se otorgó. */

@@ -126,6 +126,26 @@ class CreditosTest extends TestCase
         $this->assertTrue($claves->contains('creditos_vencidos'));
     }
 
+    public function test_las_cuotas_que_vencen_pronto_se_listan_para_recordarlas(): void
+    {
+        $orden = $this->ordenReparada();
+        // La primera vence en 2 días: entra en "por vencer" (3 días).
+        $credito = $this->darCredito($orden['pedido_id'], ['primer_vencimiento' => Fechas::hoy()->addDays(2)->toDateString()]);
+
+        $this->getJson('/api/creditos?estado=por_vencer')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.proxima.numero', 1)
+            ->assertJsonPath('resumen.por_vencer', 1);
+
+        $claves = collect($this->getJson('/api/panel/alertas')->json('data'))->pluck('clave');
+        $this->assertTrue($claves->contains('creditos_por_vencer'));
+
+        // A una semana todavía no.
+        Credito::find($credito['id'])->cuotas()->where('numero', 1)->update(['vence' => Fechas::hoy()->addDays(7)->toDateString()]);
+        $this->getJson('/api/creditos?estado=por_vencer')->assertJsonPath('total', 0);
+    }
+
     public function test_no_se_da_credito_dos_veces_ni_sin_saldo(): void
     {
         $orden = $this->ordenReparada();
