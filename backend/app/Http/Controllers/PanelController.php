@@ -48,6 +48,7 @@ class PanelController extends Controller
             'top_productos' => $veVentas && $sedeId ? $this->topProductos($sedeId) : null,
             'ultimas_ventas' => $puede('pedidos.index') && $sedeId ? $this->ultimasVentas($sedeId) : null,
             'taller' => $puede('ordenes-servicio.index') && $sedeId ? $this->taller($sedeId) : null,
+            'cotizaciones' => $puede('cotizaciones.index') && $sedeId ? $this->cotizaciones($sedeId) : null,
             'alertas' => $this->alertas->para($user),
         ]);
     }
@@ -322,6 +323,69 @@ class PanelController extends Controller
                 ->get()
                 ->map(fn ($f) => ['tecnico' => $f->tecnico, 'total' => (int) $f->total])
                 ->values(),
+        ];
+    }
+
+    /**
+     * Seguimiento de cotizaciones de la sede: las que vencen pronto (para
+     * llamar al cliente a tiempo) y cuántas de las emitidas este mes ya se
+     * convirtieron, en total y por vendedor.
+     *
+     * @return array<string, mixed>
+     */
+    private function cotizaciones(int $sedeId): array
+    {
+        $hoy = Fechas::hoy();
+
+        $porVencer = Cotizacion::query()
+            ->with('cliente:id,nombre,telefono')
+            ->where('sede_id', $sedeId)
+            ->where('estado', Cotizacion::PENDIENTE)
+            ->whereDate('valida_hasta', '>=', $hoy)
+            ->whereDate('valida_hasta', '<=', $hoy->copy()->addDays(CotizacionController::POR_VENCER_DIAS))
+            ->orderBy('valida_hasta')
+            ->orderByDesc('total');
+
+        // Las emitidas este mes (y qué pasó con ellas), por quien las hizo.
+        $porVendedor = Cotizacion::query()
+            ->where('cotizaciones.sede_id', $sedeId)
+            ->where('cotizaciones.created_at', '>=', Fechas::inicioDelDia($hoy->copy()->startOfMonth()))
+            ->leftJoin('users', 'users.id', '=', 'cotizaciones.user_id')
+            ->selectRaw("COALESCE(users.name, 'Sin usuario') as vendedor, COUNT(*) as emitidas")
+            ->selectRaw('SUM(cotizaciones.estado = ?) as convertidas', [Cotizacion::CONVERTIDA])
+            ->selectRaw('SUM(CASE WHEN cotizaciones.estado = ? THEN cotizaciones.total ELSE 0 END) as monto', [Cotizacion::CONVERTIDA])
+            ->groupBy('users.name')
+            ->orderByDesc('emitidas')
+            ->get()
+            ->map(fn ($f) => [
+                'vendedor' => $f->vendedor,
+                'emitidas' => (int) $f->emitidas,
+                'convertidas' => (int) $f->convertidas,
+                'monto' => round((float) $f->monto, 2),
+                'tasa' => (int) round(100 * $f->convertidas / max(1, $f->emitidas)),
+            ]);
+
+        $emitidas = $porVendedor->sum('emitidas');
+        $convertidas = $porVendedor->sum('convertidas');
+
+        return [
+            'por_vencer_total' => (clone $porVencer)->count(),
+            'por_vencer' => $porVencer->limit(5)->get()->map(fn (Cotizacion $c) => [
+                'id' => $c->id,
+                'codigo' => $c->codigo,
+                'token' => $c->token,
+                'cliente' => $c->cliente?->only(['nombre', 'telefono']),
+                'total' => $c->total,
+                'valida_hasta' => $c->valida_hasta->toDateString(),
+                'vistas' => (int) $c->vistas,
+            ])->all(),
+            'mes' => [
+                'emitidas' => $emitidas,
+                'convertidas' => $convertidas,
+                'monto' => round($porVendedor->sum('monto'), 2),
+                'tasa' => (int) round(100 * $convertidas / max(1, $emitidas)),
+            ],
+            'por_vendedor' => $porVendedor->values()->all(),
         ];
     }
 

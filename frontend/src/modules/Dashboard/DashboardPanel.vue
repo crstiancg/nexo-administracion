@@ -344,6 +344,130 @@
         </AppCard>
       </div>
 
+      <!-- ── Cotizaciones: conversión del mes + por vencer ── -->
+      <div
+        v-if="datos.cotizaciones"
+        class="dash__fila"
+      >
+        <AppCard class="dash__card">
+          <div class="dash__cardCabecera">
+            <div>
+              <h2 class="dash__titulo">
+                Cotizaciones de {{ mesActual }}
+              </h2>
+              <p class="dash__muted">
+                <template v-if="datos.cotizaciones.mes.emitidas">
+                  {{ datos.cotizaciones.mes.tasa }}% se convirtió en venta u orden de servicio
+                </template>
+                <template v-else>
+                  Todavía no hay cotizaciones este mes
+                </template>
+              </p>
+            </div>
+            <router-link
+              to="/cotizaciones"
+              class="dash__link"
+            >
+              Ver cotizaciones
+            </router-link>
+          </div>
+          <dl class="dash__datos">
+            <dt>Emitidas</dt>
+            <dd class="text-mono">
+              {{ datos.cotizaciones.mes.emitidas }}
+            </dd>
+            <dt>Convertidas</dt>
+            <dd class="text-mono">
+              {{ datos.cotizaciones.mes.convertidas }} · {{ formatearPrecio(datos.cotizaciones.mes.monto) }}
+            </dd>
+          </dl>
+          <div v-if="datos.cotizaciones.por_vendedor.length">
+            <h3 class="dash__subtitulo">
+              Conversión por vendedor
+            </h3>
+            <ul class="dash__canales">
+              <li
+                v-for="v in datos.cotizaciones.por_vendedor"
+                :key="v.vendedor"
+              >
+                <span class="dash__canalNombre">
+                  <q-icon
+                    name="person"
+                    size="16px"
+                  />
+                  {{ v.vendedor }}
+                </span>
+                <span class="dash__canalPct text-mono">{{ v.tasa }}%</span>
+                <span class="dash__canalBarra">
+                  <span :style="{ width: `${v.tasa}%` }" />
+                </span>
+                <span class="dash__muted dash__canalDetalle">
+                  {{ v.convertidas }} de {{ v.emitidas }} · {{ formatearPrecio(v.monto) }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </AppCard>
+
+        <AppCard class="dash__card">
+          <div class="dash__cardCabecera">
+            <div>
+              <h2 class="dash__titulo">
+                Por vencer
+              </h2>
+              <p class="dash__muted">
+                Vencen hoy o en los próximos días: llama o escribe al cliente a tiempo
+              </p>
+            </div>
+            <router-link
+              v-if="datos.cotizaciones.por_vencer_total"
+              to="/cotizaciones?estado=por_vencer"
+              class="dash__link"
+            >
+              Ver las {{ datos.cotizaciones.por_vencer_total }}
+            </router-link>
+          </div>
+          <p
+            v-if="!datos.cotizaciones.por_vencer.length"
+            class="dash__muted"
+          >
+            Ninguna cotización vence en estos días.
+          </p>
+          <div
+            v-for="c in datos.cotizaciones.por_vencer"
+            :key="c.id"
+            class="dash__cotizacion"
+          >
+            <router-link
+              :to="`/cotizaciones?ver=${c.id}`"
+              class="dash__venta"
+            >
+              <span>
+                <strong>{{ c.codigo }}</strong>
+                <span class="dash__muted">
+                  {{ c.cliente?.nombre ?? 'Sin cliente' }} · vence {{ venceTexto(c.valida_hasta) }}
+                  <template v-if="c.vistas"> · <q-icon name="visibility" /> {{ c.vistas }}</template>
+                </span>
+              </span>
+              <span class="text-mono">{{ formatearPrecio(c.total) }}</span>
+            </router-link>
+            <q-btn
+              v-if="numeroWhatsapp(c.cliente?.telefono)"
+              flat
+              dense
+              round
+              icon="mdi-whatsapp"
+              size="sm"
+              color="positive"
+              :href="enlaceWhatsapp(c)"
+              target="_blank"
+              rel="noopener"
+              :aria-label="`Escribir por WhatsApp a ${c.cliente.nombre} por ${c.codigo}`"
+            />
+          </div>
+        </AppCard>
+      </div>
+
       <!-- ── Top del mes + últimas ventas ── -->
       <div class="dash__fila">
         <AppCard
@@ -431,12 +555,20 @@ import AppCard from '@/components/AppCard.vue'
 import AppChip from '@/components/AppChip.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppStatTile from '@/components/AppStatTile.vue'
+import { enlaceWhatsapp, hoyLocal, numeroWhatsapp } from '@/modules/Cotizaciones/constantes'
 import PanelService from '@/services/PanelService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearFechaHora } from '@/utils/fechas'
 import { ETIQUETA_IGV } from '@/utils/igv'
 import { formatearPrecio } from '@/utils/moneda'
 import VentasPorDia from './VentasPorDia.vue'
+
+/** "hoy", "mañana" o "el 12/11". */
+function venceTexto (iso) {
+  if (iso === hoyLocal()) return 'hoy'
+  if (iso === hoyLocal(1)) return 'mañana'
+  return `el ${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+}
 
 /**
  * Inicio: cómo va el día en la sede del usuario. Cada bloque llega sólo si
@@ -562,6 +694,17 @@ const atajos = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+.dash__cotizacion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .dash__venta {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .dash__cargando {
   display: flex;
   justify-content: center;

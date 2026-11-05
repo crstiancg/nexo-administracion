@@ -502,7 +502,8 @@ const columns = [
 // ── Filtros ──
 const search = ref('')
 const busqueda = ref('')
-const estadoFilter = ref(null)
+// ?estado=por_vencer (desde el dashboard): abre filtrada.
+const estadoFilter = ref([...Object.keys(ESTADOS), 'por_vencer'].includes(route.query.estado) ? route.query.estado : null)
 const tipoFilter = ref(null)
 const convertidaFilter = ref(null)
 const vistaFilter = ref(null)
