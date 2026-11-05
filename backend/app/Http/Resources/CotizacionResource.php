@@ -22,6 +22,9 @@ class CotizacionResource extends JsonResource
             'codigo' => $this->codigo,
             // Enlace público de la proforma: {frontend}/proforma/{token}.
             'token' => $this->token,
+            // Veces que el cliente abrió la proforma pública y la última.
+            'vistas' => (int) $this->vistas,
+            'vista_at' => $this->vista_at?->toIso8601String(),
             // normal | pc (PC armada por componentes).
             'tipo' => $this->tipo,
             'mostrar_precios' => $this->mostrar_precios,

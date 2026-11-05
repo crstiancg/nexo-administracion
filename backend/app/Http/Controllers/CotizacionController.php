@@ -28,7 +28,8 @@ class CotizacionController extends Controller
     /**
      * Filtros: búsqueda, estado (más "por_vencer": pendientes que vencen en
      * POR_VENCER_DIAS días o menos), en qué se convirtió (`convertida_en`:
-     * pedido | os), tipo (normal | pc), sede, quién la hizo (`user_id`) y
+     * pedido | os), si el cliente abrió la proforma (`vista`: si | no), tipo
+     * (normal | pc), sede, quién la hizo (`user_id`) y
      * rango de fechas (días locales: `desde` / `hasta`).
      */
     public function index(Request $request): JsonResponse
@@ -37,6 +38,7 @@ class CotizacionController extends Controller
             'desde' => ['nullable', 'date'],
             'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
             'convertida_en' => ['nullable', 'in:pedido,os'],
+            'vista' => ['nullable', 'in:si,no'],
         ]);
 
         $query = Cotizacion::query()
@@ -70,6 +72,13 @@ class CotizacionController extends Controller
             $query->whereNotNull('cotizaciones.pedido_id');
         } elseif ($request->input('convertida_en') === 'os') {
             $query->whereNotNull('cotizaciones.orden_servicio_id');
+        }
+
+        // ¿El cliente abrió la proforma pública?
+        if ($request->input('vista') === 'si') {
+            $query->where('cotizaciones.vistas', '>', 0);
+        } elseif ($request->input('vista') === 'no') {
+            $query->where('cotizaciones.vistas', 0);
         }
 
         if ($request->filled('desde')) {

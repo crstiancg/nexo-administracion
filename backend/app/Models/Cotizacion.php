@@ -53,6 +53,7 @@ class Cotizacion extends Model
     {
         return [
             'valida_hasta' => 'date',
+            'vista_at' => 'datetime',
             'mostrar_precios' => 'boolean',
             'equipos' => 'integer',
             'subtotal' => 'decimal:2',

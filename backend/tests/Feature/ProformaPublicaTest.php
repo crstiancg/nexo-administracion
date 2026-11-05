@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\ProformaController;
 use App\Models\Categoria;
 use App\Models\Cotizacion;
 use App\Models\Marca;
@@ -86,6 +87,32 @@ class ProformaPublicaTest extends TestCase
         $this->assertStringNotContainsString('costo_promedio', $json);
         $this->assertStringNotContainsString('stock', $json);
         $this->assertStringNotContainsString('token', $json);
+    }
+
+    public function test_cuenta_las_visitas_del_cliente_sin_las_recargas_ni_las_del_personal(): void
+    {
+        $cotizacion = $this->crear();
+
+        // El vendedor la mira con su sesión: no cuenta.
+        $this->getJson("/api/proforma/{$cotizacion->token}")->assertOk();
+        $this->assertSame(0, $cotizacion->fresh()->vistas);
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson("/api/proforma/{$cotizacion->token}")->assertOk();
+        $this->assertSame(1, $cotizacion->fresh()->vistas);
+
+        // Recarga enseguida: misma visita.
+        $this->getJson("/api/proforma/{$cotizacion->token}")->assertOk();
+        $this->assertSame(1, $cotizacion->fresh()->vistas);
+
+        $this->travel(ProformaController::MINUTOS_ENTRE_VISTAS + 1)->minutes();
+        $this->getJson("/api/proforma/{$cotizacion->token}")->assertOk();
+        $this->assertSame(2, $cotizacion->fresh()->vistas);
+        $this->assertNotNull($cotizacion->fresh()->vista_at);
+
+        $this->actuarCon('cotizaciones.index');
+        $this->getJson('/api/cotizaciones?vista=si')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.vistas', 2);
+        $this->getJson('/api/cotizaciones?vista=no')->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_un_token_que_no_existe_da_404(): void

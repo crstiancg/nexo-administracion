@@ -39,6 +39,11 @@
         :options="tipoOptions"
       />
       <AppFilterPill
+        v-model="vistaFilter"
+        label="Vista por el cliente"
+        :options="vistaOptions"
+      />
+      <AppFilterPill
         v-if="sedes.length > 1"
         v-model="sedeFilter"
         label="Sede"
@@ -86,6 +91,17 @@
             <template v-if="props.row.tipo === 'pc'">
               · <q-icon name="computer" /> PC armada
             </template>
+            <!-- El cliente abrió la proforma: a quién llamar primero. -->
+            <span
+              v-if="props.row.vistas"
+              class="cot-vista"
+            >
+              · <q-icon name="visibility" /> {{ props.row.vistas }}
+              <q-tooltip>
+                El cliente abrió la proforma {{ props.row.vistas === 1 ? '1 vez' : `${props.row.vistas} veces` }}
+                · última: {{ formatearFechaHora(props.row.vista_at) }}
+              </q-tooltip>
+            </span>
           </div>
         </q-td>
       </template>
@@ -451,6 +467,7 @@ import CotizacionService from '@/services/CotizacionService'
 import SedeService from '@/services/SedeService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearCantidad } from '@/utils/cantidad'
+import { formatearFechaHora } from '@/utils/fechas'
 import { descargarArchivo } from '@/utils/descargar'
 import { formatearPrecio } from '@/utils/moneda'
 import CotizacionDetalle from './CotizacionDetalle.vue'
@@ -479,6 +496,7 @@ const busqueda = ref('')
 const estadoFilter = ref(null)
 const tipoFilter = ref(null)
 const convertidaFilter = ref(null)
+const vistaFilter = ref(null)
 const sedeFilter = ref(null)
 const usuarioFilter = ref(null)
 const mesFilter = ref(null)
@@ -487,6 +505,13 @@ const convertidaOptions = [
   { label: 'Todas', value: null },
   { label: 'Pedido', value: 'pedido' },
   { label: 'Orden de servicio', value: 'os' }
+]
+
+// ¿El cliente abrió la proforma que se le mandó?
+const vistaOptions = [
+  { label: 'Todas', value: null },
+  { label: 'Sí, la abrió', value: 'si' },
+  { label: 'No la abrió', value: 'no' }
 ]
 
 const tipoOptions = [
@@ -528,7 +553,7 @@ const estadoOptions = [
   { label: 'Por vencer (2 días)', value: 'por_vencer' }
 ]
 
-const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value || tipoFilter.value || convertidaFilter.value ||
+const hayFiltros = computed(() => Boolean(search.value || estadoFilter.value || tipoFilter.value || convertidaFilter.value || vistaFilter.value ||
   sedeFilter.value || usuarioFilter.value || mesFilter.value))
 
 function limpiarFiltros () {
@@ -536,6 +561,7 @@ function limpiarFiltros () {
   estadoFilter.value = null
   tipoFilter.value = null
   convertidaFilter.value = null
+  vistaFilter.value = null
   sedeFilter.value = null
   usuarioFilter.value = null
   mesFilter.value = null
@@ -546,6 +572,7 @@ const filtroTabla = computed(() => JSON.stringify({
   estado: estadoFilter.value,
   tipo: tipoFilter.value,
   convertida: convertidaFilter.value,
+  vista: vistaFilter.value,
   sede: sedeFilter.value,
   usuario: usuarioFilter.value,
   mes: mesFilter.value
@@ -567,6 +594,7 @@ async function onRequest ({ pagination: requested }) {
     if (estadoFilter.value) params.estado = estadoFilter.value
     if (tipoFilter.value) params.tipo = tipoFilter.value
     if (convertidaFilter.value) params.convertida_en = convertidaFilter.value
+    if (vistaFilter.value) params.vista = vistaFilter.value
     if (sedeFilter.value) params.sede_id = sedeFilter.value
     if (usuarioFilter.value) params.user_id = usuarioFilter.value
     Object.assign(params, rangoDelMes())
@@ -866,5 +894,11 @@ async function ejecutar (accion) {
 .cot-meta {
   font-size: 12px;
   color: var(--app-ink-2);
+}
+
+.cot-vista {
+  font-weight: 600;
+  color: var(--q-positive);
+  cursor: default;
 }
 </style>

@@ -8,6 +8,7 @@ use App\Support\Empresa;
 use App\Support\NumeroALetras;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * La proforma pública: el cliente abre el enlace que le llegó por WhatsApp y
@@ -16,6 +17,9 @@ use Illuminate\Http\Request;
  */
 class ProformaController extends Controller
 {
+    /** Abrirla de nuevo antes de esto es la misma visita (recargas). */
+    public const MINUTOS_ENTRE_VISTAS = 5;
+
     public function show(Request $request, string $token): JsonResponse
     {
         $cotizacion = Cotizacion::query()
@@ -32,6 +36,8 @@ class ProformaController extends Controller
                 'items.archivos',
             ])
             ->firstOrFail();
+
+        $this->registrarVista($cotizacion);
 
         $empresa = Empresa::datos();
         unset($empresa['whatsapp']);
@@ -79,6 +85,26 @@ class ProformaController extends Controller
                     ] : null,
                 ]),
             ],
+        ]);
+    }
+
+    /**
+     * Cuenta la visita del cliente. No cuenta la del personal ("Ver como la
+     * ve el cliente" va con su sesión) ni las recargas seguidas.
+     */
+    private function registrarVista(Cotizacion $cotizacion): void
+    {
+        if (auth('api')->check()) {
+            return;
+        }
+        if ($cotizacion->vista_at && $cotizacion->vista_at->gt(now()->subMinutes(self::MINUTOS_ENTRE_VISTAS))) {
+            return;
+        }
+
+        // toBase(): sin tocar updated_at (la cotización no cambió).
+        Cotizacion::query()->whereKey($cotizacion->id)->toBase()->update([
+            'vistas' => DB::raw('vistas + 1'),
+            'vista_at' => now(),
         ]);
     }
 }

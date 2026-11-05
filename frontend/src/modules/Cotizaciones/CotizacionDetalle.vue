@@ -37,6 +37,15 @@
       se sigue desde Órdenes de servicio.
     </p>
 
+    <p
+      v-if="cotizacion.vistas"
+      class="cot-detalle__aviso"
+    >
+      <q-icon name="visibility" />
+      El cliente abrió la proforma {{ cotizacion.vistas === 1 ? '1 vez' : `${cotizacion.vistas} veces` }};
+      la última, el {{ formatearFechaHora(cotizacion.vista_at) }}.
+    </p>
+
     <!-- La misma vista que se imprime. -->
     <div class="cot-detalle__papel">
       <CotizacionDocumento :cotizacion="cotizacion" />
@@ -62,6 +71,7 @@
 import { onMounted, ref } from 'vue'
 import AppChip from '@/components/AppChip.vue'
 import CotizacionService from '@/services/CotizacionService'
+import { formatearFechaHora } from '@/utils/fechas'
 import CotizacionDocumento from './CotizacionDocumento.vue'
 import { ESTADOS, fechaCorta } from './constantes'
 
