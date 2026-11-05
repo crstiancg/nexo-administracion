@@ -34,20 +34,29 @@
     >
       <template #body-cell-nombre="props">
         <q-td :props="props">
-          <div class="cliente-nombre">
-            {{ props.row.nombre }}
-            <AppChip
-              v-if="props.row.mayorista"
-              status="info"
-              label="Mayorista"
-              class="q-ml-xs"
+          <div class="cliente-celda">
+            <!-- Una empresa (RUC 20…) lleva el edificio; una persona, sus iniciales. -->
+            <AppAvatar
+              :nombre="props.row.nombre"
+              :icono="esEmpresa(props.row) ? 'business' : null"
             />
-          </div>
-          <div
-            v-if="props.row.email"
-            class="cliente-detalle"
-          >
-            {{ props.row.email }}
+            <div class="cliente-celda__texto">
+              <div class="cliente-nombre">
+                {{ props.row.nombre }}
+                <AppChip
+                  v-if="props.row.mayorista"
+                  status="info"
+                  label="Mayorista"
+                  class="q-ml-xs"
+                />
+              </div>
+              <div
+                v-if="props.row.email"
+                class="cliente-detalle"
+              >
+                {{ props.row.email }}
+              </div>
+            </div>
           </div>
         </q-td>
       </template>
@@ -161,6 +170,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
+import AppAvatar from '@/components/AppAvatar.vue'
 import AppButton from '@/components/AppButton.vue'
 import AppChip from '@/components/AppChip.vue'
 import AppDialog from '@/components/AppDialog.vue'
@@ -173,6 +183,10 @@ import ClientesForm from './ClientesForm.vue'
 
 const $q = useQuasar()
 const userStore = useUserStore()
+
+function esEmpresa (cliente) {
+  return cliente.tipo_documento === 'RUC' && String(cliente.numero_documento ?? '').startsWith('20')
+}
 
 const columns = [
   { name: 'nombre', label: 'Cliente', field: 'nombre', align: 'left', sortable: true },
@@ -283,6 +297,16 @@ async function confirmarEliminar () {
 </script>
 
 <style lang="scss" scoped>
+.cliente-celda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cliente-celda__texto {
+  min-width: 0;
+}
+
 .cliente-nombre {
   font-weight: 600;
   color: var(--app-ink);

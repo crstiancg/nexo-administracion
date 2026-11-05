@@ -8,9 +8,10 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="viewport" content="width=device-width, initial-scale=1<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover<% } %>">
+    <!-- img-src data: por los íconos Lucide (máscaras CSS en data: URI, ver src/css/lucide.scss). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';<% if (ctx.dev) { %> connect-src 'self' ws://localhost:* http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; img-src 'self' blob: http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; worker-src 'self' blob:;<% } else { %> connect-src 'self' <%= apiOrigin %>; img-src 'self' blob: <%= apiOrigin %>;<% } %>"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';<% if (ctx.dev) { %> connect-src 'self' ws://localhost:* http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; img-src 'self' blob: data: http://localhost:* http://127.0.0.1:* <%= apiOrigin %>; worker-src 'self' blob:;<% } else { %> connect-src 'self' <%= apiOrigin %>; img-src 'self' blob: data: <%= apiOrigin %>;<% } %>"
     />
 
     <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">

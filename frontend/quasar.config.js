@@ -42,7 +42,7 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['tema', 'axios', 'authGuard'],
+    boot: ['tema', 'iconos', 'axios', 'authGuard'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     // Fuentes auto-hosteadas y no desde Google Fonts: sin request a un
@@ -57,17 +57,16 @@ export default defineConfig((/* ctx */) => {
       '~@fontsource-variable/antonio/wght.css',
       '~@fontsource/ibm-plex-mono/latin-400.css',
       '~@fontsource/ibm-plex-mono/latin-500.css',
-      'app.scss'
+      'app.scss',
+      // Íconos Lucide (generado: npm run iconos).
+      'lucide.scss'
     ],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
+    // Los íconos son Lucide (src/config/iconos.js). Material queda para lo
+    // que no está en el mapa y MDI para las marcas (WhatsApp).
     extras: [
-      'ionicons-v4',
       'mdi-v7',
-      'fontawesome-v7',
-      'eva-icons',
-      'themify',
-      'line-awesome',
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
 
       // Roboto sale: el sistema usa Manrope y dejarlo era bajar ~10 archivos
@@ -139,7 +138,7 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Cookies', 'Notify']
+      plugins: ['Cookies', 'Notify', 'Dialog']
     },
 
     // animations: 'all', // --- includes all animations

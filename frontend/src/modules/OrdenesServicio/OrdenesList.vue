@@ -35,7 +35,7 @@
           :name="tab.icon"
           size="16px"
         />
-        <span>{{ tab.label }}</span>
+        <span class="os-estados__label">{{ tab.label }}</span>
         <span class="os-estados__total text-mono">{{ tab.total }}</span>
       </button>
     </div>
@@ -770,23 +770,22 @@ async function pagoGuardado () {
 </script>
 
 <style lang="scss" scoped>
+// En filas (sin scroll horizontal): columnas parejas que bajan de línea.
 .os-estados {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 8px;
   margin-bottom: 16px;
-  overflow-x: auto;
-  padding-bottom: 2px;
 }
 
 .os-estados__tab {
-  display: inline-flex;
-  flex-shrink: 0;
+  display: flex;
+  min-width: 0;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 12px;
+  padding: 10px;
   border: 1px solid var(--app-border-control);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--app-surface);
   font-size: 12.5px;
   font-weight: 600;
@@ -809,7 +808,15 @@ async function pagoGuardado () {
   color: var(--app-brand-soft-ink);
 }
 
+.os-estados__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// El contador al borde derecho: se lee en columna.
 .os-estados__total {
+  margin-left: auto;
   min-width: 22px;
   padding: 0 6px;
   border-radius: 4px;

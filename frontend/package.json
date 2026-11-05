@@ -11,6 +11,7 @@
     "build": "quasar build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "iconos": "node scripts/iconos-lucide.js",
     "postinstall": "quasar prepare --silent"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "@vue/test-utils": "^2.5.0",
     "autoprefixer": "^10.4.27",
     "happy-dom": "^20.14.3",
+    "lucide-static": "^1.69.0",
     "postcss": "^8.5.8",
     "vitest": "^5.0.0"
   },

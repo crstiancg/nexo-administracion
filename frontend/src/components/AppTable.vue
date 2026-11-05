@@ -405,9 +405,17 @@ defineExpose({ requestServerInteraction, actualizar })
 
 // ── Tarjetas (celular) ──
 .app-table__table--tarjetas {
+  // Dos tarjetas por fila (una sola en pantallas muy angostas). Las de una
+  // fila quedan del mismo alto, con el pie abajo.
   :deep(.q-table__grid-content) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     padding: 12px;
+
+    @media (max-width: 359px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 
@@ -416,8 +424,10 @@ defineExpose({ requestServerInteraction, actualizar })
   flex-direction: column;
   gap: 0;
   width: 100%;
+  height: 100%;
   padding: 14px 14px 14px;
   overflow: hidden;
+  container: tarjeta / inline-size;
   border: 1px solid var(--app-border-subtle);
   border-radius: 12px;
   background: var(--app-surface);
@@ -502,7 +512,7 @@ defineExpose({ requestServerInteraction, actualizar })
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 -14px -14px;
+  margin: auto -14px -14px;
   padding: 10px 14px;
   border-top: 1px solid var(--app-border-subtle);
   border-radius: 0 0 12px 12px;
@@ -540,6 +550,33 @@ defineExpose({ requestServerInteraction, actualizar })
   :deep(.q-btn) {
     min-width: 36px;
     min-height: 36px;
+  }
+}
+
+// Tarjeta angosta (dos por fila en el celular): todo en una columna.
+@container tarjeta (max-width: 299px) {
+  .app-table__tarjetaCabecera {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .app-table__tarjetaTitulo {
+    flex-basis: 100%;
+    font-size: 14px;
+  }
+
+  .app-table__tarjetaDatos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .app-table__tarjetaPie {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .app-table__montoValor {
+    font-size: 15px;
   }
 }
 

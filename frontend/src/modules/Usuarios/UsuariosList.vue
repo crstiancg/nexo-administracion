@@ -43,15 +43,20 @@
 
       <template #body-cell-name="props">
         <q-td :props="props">
-          <div class="usuario-cell__name">
-            {{ props.row.name }}
-            <span
-              v-if="esYo(props.row)"
-              class="usuario-cell__me"
-            >Tú</span>
-          </div>
-          <div class="usuario-cell__username text-mono">
-            @{{ props.row.username }}
+          <div class="usuario-cell">
+            <AppAvatar :nombre="props.row.name" />
+            <div class="usuario-cell__texto">
+              <div class="usuario-cell__name">
+                {{ props.row.name }}
+                <span
+                  v-if="esYo(props.row)"
+                  class="usuario-cell__me"
+                >Tú</span>
+              </div>
+              <div class="usuario-cell__username text-mono">
+                @{{ props.row.username }}
+              </div>
+            </div>
           </div>
         </q-td>
       </template>
@@ -198,6 +203,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import AppAvatar from '@/components/AppAvatar.vue'
 import AppButton from '@/components/AppButton.vue'
 import AppChip from '@/components/AppChip.vue'
 import AppDialog from '@/components/AppDialog.vue'
@@ -358,6 +364,16 @@ function eliminar (row) {
 </script>
 
 <style lang="scss" scoped>
+.usuario-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.usuario-cell__texto {
+  min-width: 0;
+}
+
 .usuario-cell__name {
   display: flex;
   align-items: center;

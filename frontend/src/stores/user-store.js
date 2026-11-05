@@ -20,7 +20,7 @@ export class AuthError extends Error {
   }
 }
 
-function initialsOf (name) {
+export function initialsOf (name) {
   return (name ?? '')
     .split(/\s+/)
     .filter(Boolean)
