@@ -23,6 +23,8 @@ class CotizacionResource extends JsonResource
             // normal | pc (PC armada por componentes).
             'tipo' => $this->tipo,
             'mostrar_precios' => $this->mostrar_precios,
+            // PC armada: los ítems son de UN equipo y el total es por todos.
+            'equipos' => $this->multiplicador(),
             // pendiente | vencida | convertida | rechazada
             'estado' => $this->estadoVisible(),
             'editable' => $this->editable(),

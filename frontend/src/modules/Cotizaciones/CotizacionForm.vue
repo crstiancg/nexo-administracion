@@ -18,12 +18,99 @@
         class="cotizacion-form__toggle"
         @update:model-value="cambiarTipo"
       />
-      <q-toggle
-        v-if="form.cotizacion.tipo === 'pc'"
-        v-model="form.cotizacion.mostrar_precios"
-        label="Mostrar el precio de cada componente en la proforma"
-        dense
-      />
+      <template v-if="form.cotizacion.tipo === 'pc'">
+        <!-- Varias PCs iguales: los componentes son los de UNA. -->
+        <q-input
+          v-model="form.cotizacion.equipos"
+          type="number"
+          min="1"
+          :max="MAX_EQUIPOS"
+          step="1"
+          label="N° de equipos"
+          dense
+          outlined
+          hide-bottom-space
+          no-error-icon
+          :error="Boolean(form.errors[`${PATH}.equipos`])"
+          :error-message="form.errors[`${PATH}.equipos`]"
+          class="cotizacion-form__control cotizacion-form__equipos"
+          @change="form.validate(`${PATH}.equipos`)"
+        />
+        <q-btn-dropdown
+          flat
+          no-caps
+          icon="bookmarks"
+          label="Plantillas"
+          color="primary"
+          @before-show="cargarPlantillas"
+        >
+          <q-list
+            dense
+            class="cotizacion-form__plantillas"
+          >
+            <q-item-label header>
+              Cargar una PC guardada
+            </q-item-label>
+            <q-item v-if="cargandoPlantillas">
+              <q-item-section class="text-grey-7">
+                Cargando…
+              </q-item-section>
+            </q-item>
+            <q-item v-else-if="!plantillas.length">
+              <q-item-section class="text-grey-7">
+                Todavía no hay plantillas.
+              </q-item-section>
+            </q-item>
+            <q-item
+              v-for="plantilla in plantillas"
+              :key="plantilla.id"
+              v-close-popup
+              clickable
+              @click="usarPlantilla(plantilla)"
+            >
+              <q-item-section>
+                <q-item-label>{{ plantilla.nombre }}</q-item-label>
+                <q-item-label caption>
+                  {{ plantilla.items.length }} componentes<template v-if="plantilla.garantia">
+                    · {{ plantilla.garantia }}
+                  </template>
+                </q-item-label>
+              </q-item-section>
+              <q-item-section
+                v-if="userStore.hasPermission('cotizaciones.store')"
+                side
+              >
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="delete_outline"
+                  :aria-label="`Borrar la plantilla ${plantilla.nombre}`"
+                  @click.stop="borrarPlantilla(plantilla)"
+                />
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item
+              v-close-popup
+              clickable
+              :disable="!componentesLlenos.length"
+              @click="abrirGuardarPlantilla"
+            >
+              <q-item-section avatar>
+                <q-icon name="bookmark_add" />
+              </q-item-section>
+              <q-item-section>Guardar esta PC como plantilla</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <q-toggle
+          v-model="form.cotizacion.mostrar_precios"
+          label="Mostrar el precio de cada componente en la proforma"
+          dense
+        />
+      </template>
     </div>
 
     <!-- ── Cliente y validez ── -->
@@ -452,6 +539,17 @@
       </div>
 
       <dl class="cotizacion-form__totales">
+        <!-- PC para varios equipos: los ítems de arriba son de uno. -->
+        <template v-if="equipos > 1">
+          <dt>Precio por equipo</dt>
+          <dd class="text-mono">
+            {{ formatearPrecio(subtotalEquipo) }}
+          </dd>
+          <dt>N° de equipos</dt>
+          <dd class="text-mono">
+            × {{ equipos }}
+          </dd>
+        </template>
         <dt>Subtotal</dt>
         <dd class="text-mono">
           {{ formatearPrecio(subtotal) }}
@@ -503,6 +601,48 @@
       hidden
     />
 
+    <!-- Guardar los componentes como plantilla de PC. -->
+    <AppDialog
+      v-model="plantillaDialog"
+      title="Guardar como plantilla"
+    >
+      <AppTextField
+        v-model="nombrePlantilla"
+        label="Nombre de la plantilla"
+        maxlength="100"
+        placeholder="PC Oficina Core i5"
+        autofocus
+        :error="errorPlantilla"
+        @keydown.enter.prevent="guardarPlantilla"
+      />
+      <p class="cotizacion-form__opcional">
+        Se guardan {{ componentesLlenos.length }} componentes<template v-if="form.cotizacion.garantia">
+          y la garantía
+        </template>. Los productos del catálogo se cargan siempre con el precio del día.
+      </p>
+      <p
+        v-if="reemplazaPlantilla"
+        class="cotizacion-form__aviso"
+      >
+        Ya hay una plantilla con ese nombre: se reemplaza.
+      </p>
+
+      <template #actions>
+        <AppButton
+          variant="tertiary"
+          label="Cancelar"
+          @click="plantillaDialog = false"
+        />
+        <AppButton
+          variant="primary"
+          label="Guardar plantilla"
+          :loading="guardandoPlantilla"
+          :disable="!nombrePlantilla.trim()"
+          @click="guardarPlantilla"
+        />
+      </template>
+    </AppDialog>
+
     <!-- Alta rápida sin salir de la cotización. -->
     <AppDialog
       v-model="clienteDialog"
@@ -550,7 +690,7 @@ import { desglosarIgv, ETIQUETA_IGV } from '@/utils/igv'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem, reprecio } from '@/modules/Pedidos/FormPedido'
 import formCotizacion, {
-  casilleroVacio, COMPONENTES_PC, conUid, DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO, GARANTIAS, nuevoItemLibre
+  casilleroVacio, COMPONENTES_PC, conUid, DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO, GARANTIAS, MAX_EQUIPOS, nuevoItemLibre
 } from './FormCotizacion'
 import { fechaCorta, hoyLocal } from './constantes'
 
@@ -631,9 +771,120 @@ function cambiarTipo (tipo) {
   if (tipo === 'pc') {
     completarCasilleros()
   } else {
-    // Ítems sueltos: los casilleros vacíos sobran.
+    // Ítems sueltos: los casilleros vacíos sobran y es un solo "equipo".
     form.cotizacion.items = form.cotizacion.items.filter((item) => !casilleroVacio(item))
+    form.cotizacion.equipos = 1
   }
+}
+
+// ── Plantillas de PC ──
+const plantillas = ref([])
+const cargandoPlantillas = ref(false)
+const componentesLlenos = computed(() => form.cotizacion.items.filter((item) => !casilleroVacio(item)))
+
+async function cargarPlantillas () {
+  cargandoPlantillas.value = !plantillas.value.length
+  try {
+    plantillas.value = await CotizacionService.plantillas()
+  } finally {
+    cargandoPlantillas.value = false
+  }
+}
+
+/** Del catálogo, con el precio de hoy (y el de mayorista si toca); libres, como se guardaron. */
+function itemDePlantilla (item) {
+  if (item.variante) {
+    return conUid({ ...nuevoItem(item.variante, cliente.value), componente: item.componente, cantidad: String(item.cantidad) })
+  }
+  return {
+    ...nuevoItemLibre(item.componente),
+    descripcion: item.descripcion ?? '',
+    unidad: item.unidad || 'und',
+    cantidad: String(item.cantidad),
+    precio_unitario: item.precio_unitario === null ? '' : String(item.precio_unitario)
+  }
+}
+
+function usarPlantilla (plantilla) {
+  const cargar = () => {
+    form.cotizacion.items = plantilla.items.map(itemDePlantilla)
+    if (plantilla.garantia) form.cotizacion.garantia = plantilla.garantia
+    const faltan = plantilla.items.filter((item) => item.no_disponible).length
+    if (faltan) {
+      $q.notify({
+        message: faltan === 1
+          ? 'Un componente de la plantilla ya no se vende en tu sede: quedó vacío para elegir otro.'
+          : `${faltan} componentes de la plantilla ya no se venden en tu sede: quedaron vacíos para elegir otros.`,
+        icon: 'info',
+        color: 'warning',
+        textColor: 'dark'
+      })
+    }
+  }
+  if (!componentesLlenos.value.length) return cargar()
+
+  $q.dialog({
+    title: 'Cargar plantilla',
+    message: `Los componentes actuales se reemplazan por los de “${plantilla.nombre}”.`,
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    ok: { label: 'Cargar', noCaps: true, unelevated: true },
+    persistent: true
+  }).onOk(cargar)
+}
+
+const plantillaDialog = ref(false)
+const nombrePlantilla = ref('')
+const errorPlantilla = ref('')
+const guardandoPlantilla = ref(false)
+const reemplazaPlantilla = computed(() => {
+  const nombre = nombrePlantilla.value.trim().toLowerCase()
+  return Boolean(nombre) && plantillas.value.some((p) => p.nombre.toLowerCase() === nombre)
+})
+
+function abrirGuardarPlantilla () {
+  nombrePlantilla.value = ''
+  errorPlantilla.value = ''
+  plantillaDialog.value = true
+}
+
+async function guardarPlantilla () {
+  if (guardandoPlantilla.value || !nombrePlantilla.value.trim()) return
+  guardandoPlantilla.value = true
+  errorPlantilla.value = ''
+  try {
+    const { nombre } = await CotizacionService.guardarPlantilla({
+      nombre: nombrePlantilla.value,
+      garantia: form.cotizacion.garantia || null,
+      items: componentesLlenos.value.map((item) => ({
+        componente: item.componente,
+        variante_id: item.variante_id ?? null,
+        descripcion: item.variante ? null : item.descripcion,
+        unidad: item.variante ? null : item.unidad,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario === '' ? null : item.precio_unitario
+      }))
+    })
+    plantillaDialog.value = false
+    $q.notify({ message: `Plantilla “${nombre}” guardada`, icon: 'bookmark_added', color: 'positive' })
+  } catch (error) {
+    const { data } = error.response ?? {}
+    errorPlantilla.value = Object.values(data?.errors ?? {})[0]?.[0] ?? data?.message ?? 'No se pudo guardar la plantilla.'
+  } finally {
+    guardandoPlantilla.value = false
+  }
+}
+
+function borrarPlantilla (plantilla) {
+  $q.dialog({
+    title: 'Borrar plantilla',
+    message: `¿Borrar la plantilla “${plantilla.nombre}”? Las cotizaciones hechas con ella no cambian.`,
+    cancel: { label: 'Cancelar', flat: true, noCaps: true },
+    ok: { label: 'Borrar', color: 'negative', noCaps: true, unelevated: true },
+    persistent: true
+  }).onOk(async () => {
+    await CotizacionService.borrarPlantilla(plantilla.id)
+    plantillas.value = plantillas.value.filter((p) => p.id !== plantilla.id)
+  })
 }
 
 /** El casillero se llena con un producto del catálogo (mantiene el componente y la cantidad). */
@@ -665,7 +916,9 @@ function faltaStock (item) {
 }
 
 // Vista previa: el total que vale es el que calcula el backend.
-const subtotal = computed(() => form.cotizacion.items.reduce((suma, item) => suma + subtotalDe(item), 0))
+const equipos = computed(() => (form.cotizacion.tipo === 'pc' ? Math.max(1, Math.trunc(numero(form.cotizacion.equipos))) : 1))
+const subtotalEquipo = computed(() => form.cotizacion.items.reduce((suma, item) => suma + subtotalDe(item), 0))
+const subtotal = computed(() => Math.round(subtotalEquipo.value * equipos.value * 100) / 100)
 const total = computed(() => Math.max(0, subtotal.value - numero(form.cotizacion.descuento)))
 
 // ── Carga ──
@@ -679,6 +932,7 @@ onMounted(async () => {
     [PATH]: {
       tipo: cotizacion.tipo ?? 'normal',
       mostrar_precios: cotizacion.mostrar_precios ?? true,
+      equipos: cotizacion.equipos ?? 1,
       cliente_id: cotizacion.cliente_id,
       // Una vencida se edita para renovarla: la validez queda vacía (y si
       // no se pone otra, vale DIAS_VALIDEZ días desde hoy).
@@ -834,6 +1088,14 @@ defineExpose({ form, submit })
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 20px;
+}
+
+.cotizacion-form__equipos {
+  width: 130px;
+}
+
+.cotizacion-form__plantillas {
+  min-width: 280px;
 }
 
 .cotizacion-form__toggle {

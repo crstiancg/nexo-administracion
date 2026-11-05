@@ -48,6 +48,17 @@ describe('CotizacionDocumento', () => {
     expect(wrapper.find('.cot-doc__totales').text()).toContain('1,100.00')
   })
 
+  it('PC para varios equipos: precio por equipo, cuántos y el total de todos', () => {
+    const wrapper = montar({ tipo: 'pc', equipos: 10, subtotal: '11000.00', total: '11000.00' })
+
+    const totales = wrapper.find('.cot-doc__totales').text()
+    expect(totales).toContain('Precio por equipo')
+    expect(totales).toContain('1,100.00')
+    expect(totales).toContain('× 10')
+    expect(totales).toContain('11,000.00')
+    expect(wrapper.find('.cot-doc__franja').text()).toContain('10 equipos')
+  })
+
   it('normal: sin casilleros ni franja, con precios', () => {
     const wrapper = montar()
 

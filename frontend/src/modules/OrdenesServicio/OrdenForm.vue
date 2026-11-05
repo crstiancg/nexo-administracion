@@ -670,14 +670,16 @@ async function desdeCotizacion (id) {
   cotizacion.value = datos
   if (datos.cliente) cliente.value = datos.cliente
 
+  // PC para varios equipos: el detalle es de uno.
+  const equipos = datos.equipos ?? 1
   const libres = datos.items.filter((item) => !item.variante)
-  const manoObra = libres.reduce((suma, item) => suma + Number(item.subtotal), 0)
+  const manoObra = libres.reduce((suma, item) => suma + Number(item.subtotal), 0) * equipos
 
   form.orden.cotizacion_id = datos.id
   form.orden.repuestos = datos.items.filter((item) => item.variante).map((item) => ({
     variante_id: item.variante_id,
     variante: item.variante,
-    cantidad: String(item.cantidad),
+    cantidad: String(Number(item.cantidad) * equipos),
     precio_unitario: item.precio_unitario
   }))
   form.orden.mano_obra = manoObra ? manoObra.toFixed(2) : ''

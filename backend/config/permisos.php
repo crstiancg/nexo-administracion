@@ -95,6 +95,10 @@ return [
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
         // El filtro "Atendido por" de la lista.
         'cotizaciones.usuarios' => ['cotizaciones.index'],
+        // Quien arma cotizaciones carga y guarda plantillas de PC; borrarlas, quien crea.
+        'cotizaciones.plantillas' => ['cotizaciones.store', 'cotizaciones.update'],
+        'cotizaciones.plantillas.store' => ['cotizaciones.store', 'cotizaciones.update'],
+        'cotizaciones.plantillas.destroy' => ['cotizaciones.store'],
         'productos.exportar' => ['productos.index'],
         'pedidos.exportar' => ['pedidos.index'],
         // El form de cotizaciones busca clientes y presentaciones.

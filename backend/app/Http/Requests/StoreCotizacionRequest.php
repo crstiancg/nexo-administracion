@@ -56,6 +56,10 @@ class StoreCotizacionRequest extends FormRequest
             $cotizacion['valida_hasta'] = Fechas::hoy()->addDays(self::DIAS_VALIDEZ)->toDateString();
         }
         $cotizacion['tipo'] ??= 'normal';
+        // Sólo una PC armada se cotiza por N equipos.
+        if ($cotizacion['tipo'] !== 'pc' || in_array($cotizacion['equipos'] ?? null, [null, ''], true)) {
+            $cotizacion['equipos'] = 1;
+        }
         $cotizacion['mostrar_precios'] ??= true;
         // En multipart un booleano llega como texto.
         if (in_array($cotizacion['mostrar_precios'], ['true', 'false'], true)) {
@@ -91,6 +95,7 @@ class StoreCotizacionRequest extends FormRequest
             'cotizacion.observacion' => ['nullable', 'string', 'max:500'],
             'cotizacion.tipo' => ['required', Rule::in(Cotizacion::TIPOS)],
             'cotizacion.mostrar_precios' => ['boolean'],
+            'cotizacion.equipos' => ['integer', 'min:1', 'max:'.Cotizacion::MAX_EQUIPOS],
             'cotizacion.descuento' => ['numeric', 'min:0', 'max:99999999.99', 'decimal:0,2', $this->descuentoNoMayorAlSubtotal()],
             'cotizacion.items' => ['required', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
         ];
@@ -176,8 +181,9 @@ class StoreCotizacionRequest extends FormRequest
         return function (string $attribute, mixed $value, Closure $fail) {
             $subtotal = collect((array) $this->input('cotizacion.items', []))
                 ->sum(fn ($i) => round((float) ($i['cantidad'] ?? 0) * (float) ($i['precio_unitario'] ?? 0), 2));
+            $equipos = max(1, (int) $this->input('cotizacion.equipos', 1));
 
-            if ((float) $value > round($subtotal, 2)) {
+            if ((float) $value > round($subtotal * $equipos, 2)) {
                 $fail('El descuento no puede ser mayor que el subtotal.');
             }
         };
@@ -214,6 +220,7 @@ class StoreCotizacionRequest extends FormRequest
             'cotizacion.descuento' => 'descuento',
             'cotizacion.tipo' => 'tipo',
             'cotizacion.mostrar_precios' => 'mostrar precios',
+            'cotizacion.equipos' => 'N° de equipos',
             'cotizacion.items.*.componente' => 'componente',
             'cotizacion.items.*.variante_id' => 'presentación',
             'cotizacion.items.*.descripcion' => 'descripción',

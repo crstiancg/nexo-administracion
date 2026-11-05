@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * `valida_hasta` pasada se muestra como vencida. Los cambios de estado pasan
  * por App\Services\Cotizaciones.
  */
-#[Fillable(['tipo', 'mostrar_precios', 'cliente_id', 'valida_hasta', 'forma_pago', 'entrega', 'garantia', 'condiciones', 'observacion', 'descuento'])]
+#[Fillable(['tipo', 'mostrar_precios', 'equipos', 'cliente_id', 'valida_hasta', 'forma_pago', 'entrega', 'garantia', 'condiciones', 'observacion', 'descuento'])]
 class Cotizacion extends Model
 {
     public const PENDIENTE = 'pendiente';
@@ -25,6 +25,9 @@ class Cotizacion extends Model
 
     /** normal: ítems sueltos. pc: los componentes de una computadora armada. */
     public const TIPOS = ['normal', 'pc'];
+
+    /** Tope de "N° de equipos" de una PC armada. */
+    public const MAX_EQUIPOS = 999;
 
     /** Días de validez por defecto. */
     public const VALIDEZ_DIAS = 15;
@@ -51,12 +54,22 @@ class Cotizacion extends Model
         return [
             'valida_hasta' => 'date',
             'mostrar_precios' => 'boolean',
+            'equipos' => 'integer',
             'subtotal' => 'decimal:2',
             'descuento' => 'decimal:2',
             'total' => 'decimal:2',
             'op_gravada' => 'decimal:2',
             'igv' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Cuántas veces se multiplica cada ítem: en una PC armada los ítems son
+     * los de UN equipo; en una normal, siempre 1.
+     */
+    public function multiplicador(): int
+    {
+        return $this->tipo === 'pc' ? max(1, (int) $this->equipos) : 1;
     }
 
     public function vencida(): bool

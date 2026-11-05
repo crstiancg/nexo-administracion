@@ -79,6 +79,8 @@ class Cotizaciones
                 $this->archivos->eliminarDe($viejo);
             }
 
+            // PC armada por N equipos: los ítems son los de uno.
+            $subtotal = round($subtotal, 2) * $cotizacion->multiplicador();
             $cotizacion->forceFill([
                 'subtotal' => round($subtotal, 2),
                 'total' => round($subtotal - (float) ($datos['descuento'] ?? 0), 2),
@@ -94,6 +96,9 @@ class Cotizaciones
      *
      * Los ítems libres (lo que la tienda no tiene) no pasan: no hay qué
      * descontar del stock; se consiguen y cobran aparte.
+     *
+     * En una PC por N equipos, cada ítem pasa N veces (la cantidad cotizada
+     * es la de los N).
      *
      * `$elegidos` ([{variante_id, cantidad}]): lo que de verdad pide, si no
      * es todo. Sólo ítems de la cotización y sin pasar la cantidad cotizada;
@@ -142,7 +147,8 @@ class Cotizaciones
     private function itemsElegidos(Cotizacion $cotizacion, ?array $elegidos): array
     {
         $cotizados = $cotizacion->items()->whereNotNull('variante_id')
-            ->with('variante.unidad:id,fraccionable')->orderBy('id')->get()->keyBy('variante_id');
+            ->with('variante.unidad:id,fraccionable')->orderBy('id')->get()->keyBy('variante_id')
+            ->each(fn ($item) => $item->cantidad = round((float) $item->cantidad * $cotizacion->multiplicador(), 3));
 
         if ($elegidos === null) {
             if ($cotizados->isEmpty()) {

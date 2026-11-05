@@ -173,6 +173,9 @@
       v-if="esPc"
       class="cot-doc__franja"
     >
+      <template v-if="equipos > 1">
+        {{ equipos }} equipos ·
+      </template>
       <template v-if="cotizacion.garantia">
         Garantía {{ cotizacion.garantia }} ·
       </template>
@@ -185,9 +188,18 @@
         {{ cotizacion.total_letras }}
       </p>
       <dl class="cot-doc__totales">
-        <template v-if="Number(cotizacion.descuento)">
+        <!-- PC para varios equipos: el detalle es de uno. -->
+        <template v-if="equipos > 1">
+          <dt>Precio por equipo</dt>
+          <dd>{{ formatearPrecio(Number(cotizacion.subtotal) / equipos) }}</dd>
+          <dt>N° de equipos</dt>
+          <dd>× {{ equipos }}</dd>
+        </template>
+        <template v-if="Number(cotizacion.descuento) || equipos > 1">
           <dt>Subtotal</dt>
           <dd>{{ formatearPrecio(cotizacion.subtotal) }}</dd>
+        </template>
+        <template v-if="Number(cotizacion.descuento)">
           <dt>Descuento</dt>
           <dd>−{{ formatearPrecio(cotizacion.descuento) }}</dd>
         </template>
@@ -300,6 +312,7 @@ function descripcion (item) {
 const esPc = computed(() => props.cotizacion.tipo === 'pc')
 // Una PC armada puede salir sólo con el total.
 const conPrecios = computed(() => !esPc.value || props.cotizacion.mostrar_precios !== false)
+const equipos = computed(() => (esPc.value ? Number(props.cotizacion.equipos) || 1 : 1))
 
 /** "7 días (hasta el 10/04/2026), sujeto a variación de precios sin previo aviso." */
 const validez = computed(() => {

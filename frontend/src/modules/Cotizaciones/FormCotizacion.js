@@ -27,6 +27,9 @@ export const COMPONENTES_PC = [
   'Estabilizador'
 ]
 
+// Tope de "N° de equipos" (igual que Cotizacion::MAX_EQUIPOS).
+export const MAX_EQUIPOS = 999
+
 export const GARANTIAS = [
   '1 año',
   '6 meses',
@@ -58,6 +61,8 @@ export default function formCotizacion (editando = false) {
       tipo: 'normal',
       // En la PC armada se puede imprimir sólo el total (como el Excel de Nexo).
       mostrar_precios: true,
+      // PC armada para varios equipos iguales: los ítems son los de UNO.
+      equipos: 1,
       cliente_id: null,
       // Vacía: si no se pone, el backend la deja en DIAS_VALIDEZ días.
       valida_hasta: '',

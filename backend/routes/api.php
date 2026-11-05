@@ -24,6 +24,7 @@ use App\Http\Controllers\OrdenCompraController;
 use App\Http\Controllers\OrdenServicioArchivoController;
 use App\Http\Controllers\OrdenServicioController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\PlantillaPcController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
@@ -148,6 +149,10 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
 
         // Va antes del resource: si no, {cotizacion} captura "usuarios".
         Route::get('cotizaciones/usuarios', [CotizacionController::class, 'usuarios'])->name('cotizaciones.usuarios');
+        // PCs armadas que se cotizan seguido.
+        Route::get('cotizaciones/plantillas', [PlantillaPcController::class, 'index'])->name('cotizaciones.plantillas');
+        Route::post('cotizaciones/plantillas', [PlantillaPcController::class, 'store'])->name('cotizaciones.plantillas.store');
+        Route::delete('cotizaciones/plantillas/{plantilla}', [PlantillaPcController::class, 'destroy'])->name('cotizaciones.plantillas.destroy');
 
         // Sin destroy: se rechaza o se convierte en pedido.
         Route::apiResource('cotizaciones', CotizacionController::class)

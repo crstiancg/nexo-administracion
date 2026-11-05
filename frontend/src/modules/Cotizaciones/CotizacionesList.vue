@@ -598,8 +598,8 @@ function abrirConvertir () {
   lineas.value = detalle.value.items.filter((item) => item.variante).map((item) => ({
     variante_id: item.variante_id,
     variante: item.variante,
-    cotizada: Number(item.cantidad),
-    cantidad: String(Number(item.cantidad)),
+    cotizada: Number(item.cantidad) * (detalle.value.equipos ?? 1),
+    cantidad: String(Number(item.cantidad) * (detalle.value.equipos ?? 1)),
     precio_unitario: item.precio_unitario,
     lleva: true
   }))

@@ -14,6 +14,20 @@ class CotizacionService {
     return (await api.get('api/cotizaciones/usuarios')).data
   }
 
+  // Plantillas de PC armada: cada ítem del catálogo viene con su variante de hoy.
+  static async plantillas () {
+    return (await api.get('api/cotizaciones/plantillas')).data.data
+  }
+
+  // Mismo nombre que una existente = la reemplaza.
+  static async guardarPlantilla (plantilla) {
+    return (await api.post('api/cotizaciones/plantillas', plantilla)).data
+  }
+
+  static async borrarPlantilla (id) {
+    await api.delete(`api/cotizaciones/plantillas/${id}`)
+  }
+
   static async get (id) {
     return (await api.get(`api/cotizaciones/${id}`)).data
   }

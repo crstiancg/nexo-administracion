@@ -96,8 +96,12 @@ class Exportaciones
 
         // ── Totales ──
         $fila++;
+        // PC por N equipos: los ítems son de uno; se muestra el precio de uno y por cuántos.
+        $equipos = $cotizacion->multiplicador();
         $totales = array_filter([
-            'Subtotal' => (float) $cotizacion->descuento ? (float) $cotizacion->subtotal : null,
+            'Precio por equipo' => $equipos > 1 ? round((float) $cotizacion->subtotal / $equipos, 2) : null,
+            'N° de equipos' => $equipos > 1 ? $equipos : null,
+            'Subtotal' => (float) $cotizacion->descuento || $equipos > 1 ? (float) $cotizacion->subtotal : null,
             'Descuento' => (float) $cotizacion->descuento ? -(float) $cotizacion->descuento : null,
             'Op. gravada' => (float) $cotizacion->op_gravada,
             'IGV ('.round((float) config('app.igv', 0.18) * 100).'%)' => (float) $cotizacion->igv,
@@ -107,7 +111,7 @@ class Exportaciones
             $fila++;
             $hoja->setCellValue("F{$fila}", $etiqueta);
             $hoja->setCellValue("G{$fila}", $monto);
-            $hoja->getStyle("G{$fila}")->getNumberFormat()->setFormatCode(self::SOLES);
+            $hoja->getStyle("G{$fila}")->getNumberFormat()->setFormatCode($etiqueta === 'N° de equipos' ? '0' : self::SOLES);
             if ($etiqueta === 'TOTAL') {
                 $hoja->getStyle("F{$fila}:G{$fila}")->getFont()->setBold(true)->setSize(12);
             }
