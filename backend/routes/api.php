@@ -18,6 +18,7 @@ use App\Http\Controllers\EtiquetaController;
 use App\Http\Controllers\GananciaController;
 use App\Http\Controllers\MovimientoFinancieroController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\KardexController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\OfertaController;
 use App\Http\Controllers\PagoController;
@@ -230,6 +231,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('reportes/productos', [ReporteController::class, 'productos'])->name('reportes.productos');
     Route::get('reportes/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');
+    // Kardex valorizado de una presentación (costo promedio ponderado).
+    Route::get('reportes/kardex', [KardexController::class, 'show'])->name('reportes.kardex');
+    Route::get('reportes/kardex/excel', [KardexController::class, 'excel'])->name('reportes.kardex-excel');
 
     // Cambiar de estado (entregar confirma el cobro y descuenta repuestos).
     Route::post('ordenes-servicio/{orden}/estado', [OrdenServicioController::class, 'estado'])->name('ordenes-servicio.estado');

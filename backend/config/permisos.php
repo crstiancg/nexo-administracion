@@ -84,6 +84,9 @@ return [
         'clientes.show' => ['clientes.update'],
         // Quien ve la lista de clientes abre su ficha.
         'clientes.ficha' => ['clientes.index', 'clientes.show'],
+        // El kardex muestra costos: quien ve el valor del inventario.
+        'reportes.kardex' => ['reportes.inventario'],
+        'reportes.kardex-excel' => ['reportes.inventario', 'reportes.kardex'],
         'proveedores.show' => ['proveedores.update'],
         // El form de compras elige el proveedor.
         'proveedores.index' => ['compras.store', 'compras.index', 'ordenes-compra.store', 'ordenes-compra.update', 'ordenes-compra.index'],

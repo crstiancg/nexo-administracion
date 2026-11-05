@@ -13,6 +13,11 @@ class ReporteService {
     return (await api.get('api/reportes/productos', { params })).data
   }
 
+  // Kardex valorizado de una presentación (variante_id, sede_id, desde, hasta).
+  static async kardex (params) {
+    return (await api.get('api/reportes/kardex', { params })).data
+  }
+
   static async inventario (params) {
     return (await api.get('api/reportes/inventario', { params })).data
   }

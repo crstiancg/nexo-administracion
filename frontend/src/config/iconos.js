@@ -185,6 +185,7 @@ export const LUCIDE = {
   support_agent: 'headset',
   swap_horiz: 'arrow-left-right',
   swap_vert: 'arrow-up-down',
+  table_chart: 'sheet',
   sync: 'refresh-cw',
   sync_alt: 'arrow-right-left',
   tag: 'hash',

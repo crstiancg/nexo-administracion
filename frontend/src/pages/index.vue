@@ -323,6 +323,7 @@ const MENU = [
     items: [
       { to: '/productos', icon: 'inventory_2', label: 'Productos', permiso: 'productos.index' },
       { to: '/inventario', icon: 'swap_vert', label: 'Movimientos', permiso: 'inventario.index' },
+      { to: '/kardex', icon: 'table_chart', label: 'Kardex valorizado', permiso: 'reportes.inventario' },
       { to: '/reponer', icon: 'production_quantity_limits', label: 'Por reponer', permiso: 'inventario.index' },
       { to: '/vencimientos', icon: 'event_busy', label: 'Vencimientos', permiso: 'inventario.lotes', badge: 'lotes' },
       { to: '/etiquetas', icon: 'mdi-barcode', label: 'Etiquetas', permiso: 'etiquetas.imprimir' }

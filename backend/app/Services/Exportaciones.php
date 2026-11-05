@@ -6,6 +6,7 @@ use App\Models\Cotizacion;
 use App\Models\Pedido;
 use App\Models\Variante;
 use App\Support\Fechas;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -262,6 +263,69 @@ class Exportaciones
         }
 
         $hoja->setAutoFilter("A4:{$ultima}{$fila}");
+        $hoja->freezePane('A5');
+        foreach (range(1, count($columnas)) as $i) {
+            $hoja->getColumnDimensionByColumn($i)->setAutoSize(true);
+        }
+
+        return $libro;
+    }
+
+    /**
+     * Kardex valorizado: saldo inicial, cada movimiento (entrada / salida /
+     * saldo en cantidad y en soles) y los totales del período.
+     *
+     * @param  array{saldo_inicial: array<string, mixed>, filas: list<array<string, mixed>>, totales: array<string, float>, saldo_final: array<string, mixed>}  $kardex
+     */
+    public function kardex(Variante $variante, ?string $sede, ?string $desde, ?string $hasta, array $kardex): Spreadsheet
+    {
+        $libro = new Spreadsheet;
+        $hoja = $libro->getActiveSheet()->setTitle('Kardex');
+
+        $hoja->setCellValue('A1', 'Kardex valorizado — '.$variante->producto->nombre.' '.$variante->presentacion)
+            ->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $periodo = $desde || $hasta
+            ? 'Del '.($desde ? Carbon::parse($desde)->format('d/m/Y') : 'inicio').' al '.($hasta ? Carbon::parse($hasta)->format('d/m/Y') : 'hoy')
+            : 'Todo el historial';
+        $hoja->setCellValue('A2', "SKU {$variante->sku} · ".($sede ?? 'toda la empresa')." · {$periodo} · Método: costo promedio ponderado");
+
+        $columnas = ['Fecha', 'Detalle', 'Sede', 'Usuario', 'Entrada', 'Salida', 'Costo unit.', 'Importe', 'Saldo', 'Costo prom.', 'Saldo valorizado'];
+        $fila = 4;
+        $this->cabecera($hoja, $fila, $columnas);
+
+        $inicial = $kardex['saldo_inicial'];
+        $fila++;
+        $hoja->fromArray(['', 'Saldo inicial', '', '', null, null, null, null, $inicial['cantidad'], $inicial['costo'], $inicial['valor']], null, "A{$fila}");
+        $hoja->getStyle("A{$fila}:K{$fila}")->getFont()->setItalic(true);
+
+        foreach ($kardex['filas'] as $f) {
+            $fila++;
+            $hoja->fromArray([
+                Carbon::parse($f['fecha'])->setTimezone(Fechas::zona())->format('d/m/Y H:i'),
+                $f['detalle'],
+                $f['sede'],
+                $f['usuario'],
+                $f['entrada'],
+                $f['salida'],
+                $f['costo_unitario'],
+                $f['importe'],
+                $f['saldo'],
+                $f['costo_promedio'],
+                $f['saldo_valor'],
+            ], null, "A{$fila}");
+        }
+
+        $fila++;
+        $t = $kardex['totales'];
+        $hoja->fromArray(['', 'Totales del período', '', '', $t['entradas'], $t['salidas'], null, null, $kardex['saldo_final']['cantidad'], $kardex['saldo_final']['costo'], $kardex['saldo_final']['valor']], null, "A{$fila}");
+        $hoja->getStyle("A{$fila}:K{$fila}")->getFont()->setBold(true);
+
+        $this->bordes($hoja, "A4:K{$fila}");
+        $hoja->getStyle("E5:F{$fila}")->getNumberFormat()->setFormatCode(self::CANTIDAD);
+        $hoja->getStyle("I5:I{$fila}")->getNumberFormat()->setFormatCode(self::CANTIDAD);
+        foreach (['G', 'H', 'J', 'K'] as $col) {
+            $hoja->getStyle("{$col}5:{$col}{$fila}")->getNumberFormat()->setFormatCode(self::SOLES);
+        }
         $hoja->freezePane('A5');
         foreach (range(1, count($columnas)) as $i) {
             $hoja->getColumnDimensionByColumn($i)->setAutoSize(true);
