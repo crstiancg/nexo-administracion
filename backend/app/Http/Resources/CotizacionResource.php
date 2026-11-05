@@ -20,6 +20,8 @@ class CotizacionResource extends JsonResource
         return [
             'id' => $this->id,
             'codigo' => $this->codigo,
+            // Enlace público de la proforma: {frontend}/proforma/{token}.
+            'token' => $this->token,
             // normal | pc (PC armada por componentes).
             'tipo' => $this->tipo,
             'mostrar_precios' => $this->mostrar_precios,

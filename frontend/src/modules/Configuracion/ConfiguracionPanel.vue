@@ -150,12 +150,12 @@
           <q-icon name="mdi-whatsapp" /> Mensajes de WhatsApp
         </h2>
         <p class="conf-ayuda">
-          El mensaje que se arma al avisarle al cliente según el estado de su orden. Toca una variable
-          para agregarla; un mensaje vacío usa el de por defecto.
+          El mensaje que se arma al avisarle al cliente según el estado de su orden, y el que manda la
+          proforma de una cotización. Toca una variable para agregarla; un mensaje vacío usa el de por defecto.
         </p>
         <div class="conf-variables">
           <button
-            v-for="v in VARIABLES_WHATSAPP"
+            v-for="v in variables"
             :key="v.clave"
             type="button"
             class="conf-variable"
@@ -171,15 +171,15 @@
             role="tablist"
           >
             <button
-              v-for="(e, clave) in ESTADOS"
+              v-for="{ clave, label } in MENSAJES"
               :key="clave"
               type="button"
               role="tab"
               :aria-selected="String(estado === clave)"
-              :class="['conf-estado', { 'conf-estado--activo': estado === clave }]"
+              :class="['conf-estado', { 'conf-estado--activo': estado === clave, 'conf-estado--aparte': clave === 'cotizacion' }]"
               @click="estado = clave"
             >
-              {{ e.label }}
+              {{ label }}
               <span
                 v-if="whatsapp[clave]"
                 class="conf-estado__marca"
@@ -195,7 +195,7 @@
               type="textarea"
               outlined
               autogrow
-              :placeholder="PLANTILLAS_WHATSAPP[estado]"
+              :placeholder="porDefecto(estado)"
               :error="Boolean(error(`whatsapp.${estado}`))"
               :error-message="error(`whatsapp.${estado}`)"
               class="conf-textarea"
@@ -206,7 +206,7 @@
                 variant="tertiary"
                 label="Partir del mensaje por defecto"
                 icon="edit_note"
-                @click="whatsapp[estado] = PLANTILLAS_WHATSAPP[estado]"
+                @click="whatsapp[estado] = porDefecto(estado)"
               />
               <AppButton
                 v-else
@@ -241,6 +241,7 @@ import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import { aplicarConfiguracion, TIENDA } from '@/config/tienda'
 import { ESTADOS, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, valoresWhatsapp } from '@/modules/OrdenesServicio/constantes'
+import * as Cotizacion from '@/modules/Cotizaciones/constantes'
 import ConfiguracionService from '@/services/ConfiguracionService'
 
 const $q = useQuasar()
@@ -248,7 +249,12 @@ const $q = useQuasar()
 const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden']
 
 const empresa = reactive(Object.fromEntries(CAMPOS.map((c) => [c, ''])))
-const whatsapp = reactive(Object.fromEntries(Object.keys(ESTADOS).map((e) => [e, ''])))
+// Un mensaje por estado de la orden y el de la proforma de una cotización.
+const MENSAJES = [
+  ...Object.entries(ESTADOS).map(([clave, { label }]) => ({ clave, label })),
+  { clave: 'cotizacion', label: 'Cotización' }
+]
+const whatsapp = reactive(Object.fromEntries(MENSAJES.map(({ clave }) => [clave, ''])))
 const cargado = ref(false)
 
 onMounted(async () => {
@@ -310,9 +316,16 @@ async function quitarLogo () {
 const estado = ref('reparado')
 const editorRef = ref()
 
+const esCotizacion = computed(() => estado.value === 'cotizacion')
+const variables = computed(() => (esCotizacion.value ? Cotizacion.VARIABLES_WHATSAPP : VARIABLES_WHATSAPP))
+
+function porDefecto (clave) {
+  return clave === 'cotizacion' ? Cotizacion.PLANTILLA_WHATSAPP : PLANTILLAS_WHATSAPP[clave]
+}
+
 // Agrega {variable} donde está el cursor (o al final).
 async function insertar (clave) {
-  const texto = whatsapp[estado.value] || PLANTILLAS_WHATSAPP[estado.value]
+  const texto = whatsapp[estado.value] || porDefecto(estado.value)
   const campo = editorRef.value?.getNativeElement?.()
   const pos = campo && whatsapp[estado.value] ? campo.selectionStart : texto.length
   whatsapp[estado.value] = `${texto.slice(0, pos)}{${clave}}${texto.slice(pos)}`
@@ -331,9 +344,19 @@ const EJEMPLO = {
   cliente: { nombre: 'Ana Quispe' }
 }
 
+const EJEMPLO_COTIZACION = {
+  codigo: 'COT-000010',
+  total: '1250.00',
+  valida_hasta: '2026-11-12',
+  token: 'a'.repeat(32),
+  cliente: { nombre: 'Ana Quispe' }
+}
+
 const vistaPrevia = computed(() => rellenarPlantilla(
-  whatsapp[estado.value] || PLANTILLAS_WHATSAPP[estado.value],
-  valoresWhatsapp({ ...EJEMPLO, estado: estado.value })
+  whatsapp[estado.value] || porDefecto(estado.value),
+  esCotizacion.value
+    ? Cotizacion.valoresWhatsapp(EJEMPLO_COTIZACION)
+    : valoresWhatsapp({ ...EJEMPLO, estado: estado.value })
 ))
 </script>
 
@@ -454,7 +477,24 @@ const vistaPrevia = computed(() => rellenarPlantilla(
   }
 }
 
+// El de la cotización no es un estado de la orden: va separado.
+.conf-estado--aparte {
+  margin-top: 8px;
+
+  @media (min-width: 701px) {
+    &::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--app-border-subtle);
+    }
+  }
+}
+
 .conf-estado {
+  position: relative;
   display: flex;
   flex-shrink: 0;
   align-items: center;

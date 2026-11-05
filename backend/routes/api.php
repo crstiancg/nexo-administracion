@@ -27,6 +27,7 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PlantillaPcController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
@@ -49,6 +50,13 @@ Route::get('seguimiento/{token}', [SeguimientoController::class, 'show'])
     ->middleware('throttle:30,1')
     ->where('token', '[A-Za-z0-9]{32}')
     ->name('seguimiento.show');
+
+// La proforma que se le manda al cliente por WhatsApp: sin sesión, por el
+// token de la cotización.
+Route::get('proforma/{token}', [ProformaController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->where('token', '[A-Za-z0-9]{32}')
+    ->name('proforma.show');
 
 // {usuario}: el usuario reservado (config permisos.usuario_oculto) sólo
 // existe para él mismo; para cualquier otro, 404 (ver, editar, borrar…).

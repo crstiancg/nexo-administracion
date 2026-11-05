@@ -8,6 +8,7 @@ use App\Models\Pedido;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -36,6 +37,8 @@ class Cotizaciones
                     'estado' => Cotizacion::PENDIENTE,
                     'sede_id' => $usuario->sedeOperativa(),
                     'user_id' => $usuario->id,
+                    // Para el enlace público de la proforma (WhatsApp).
+                    'token' => Str::random(32),
                     'subtotal' => 0,
                     'total' => 0,
                 ]);

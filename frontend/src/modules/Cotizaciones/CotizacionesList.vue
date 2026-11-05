@@ -140,6 +140,20 @@
             :aria-label="`Ver ${props.row.codigo}`"
             @click="ver(props.row)"
           />
+          <!-- La proforma al WhatsApp del cliente (las vigentes, si tiene celular). -->
+          <q-btn
+            v-if="props.row.estado === 'pendiente' && numeroWhatsapp(props.row.cliente?.telefono)"
+            flat
+            dense
+            round
+            icon="mdi-whatsapp"
+            size="sm"
+            color="positive"
+            :href="enlaceWhatsapp(props.row)"
+            target="_blank"
+            rel="noopener"
+            :aria-label="`Enviar ${props.row.codigo} por WhatsApp a ${props.row.cliente?.nombre}`"
+          />
           <q-btn
             v-if="props.row.editable && userStore.hasPermission('cotizaciones.update')"
             flat
@@ -205,6 +219,65 @@
           icon="print"
           @click="impresionRef.imprimir(detalle)"
         />
+        <!-- La proforma pública: por WhatsApp, copiando el enlace o para verla. -->
+        <AppButton
+          v-if="detalle?.token"
+          variant="tertiary"
+          label="Compartir"
+          icon="send"
+        >
+          <q-menu>
+            <q-list
+              dense
+              class="cot-compartir"
+            >
+              <q-item
+                v-close-popup
+                clickable
+                tag="a"
+                :href="enlaceWhatsapp(detalle)"
+                target="_blank"
+                rel="noopener"
+              >
+                <q-item-section avatar>
+                  <q-icon
+                    name="mdi-whatsapp"
+                    color="positive"
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Enviar por WhatsApp</q-item-label>
+                  <q-item-label caption>
+                    {{ numeroWhatsapp(detalle.cliente?.telefono) ? `Al ${detalle.cliente.telefono}` : 'El cliente no tiene celular: eliges el contacto' }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
+                @click="copiarEnlace(detalle)"
+              >
+                <q-item-section avatar>
+                  <q-icon name="link" />
+                </q-item-section>
+                <q-item-section>Copiar enlace de la proforma</q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
+                tag="a"
+                :href="enlaceProforma(detalle.token)"
+                target="_blank"
+                rel="noopener"
+              >
+                <q-item-section avatar>
+                  <q-icon name="open_in_new" />
+                </q-item-section>
+                <q-item-section>Ver como la ve el cliente</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </AppButton>
         <AppButton
           v-if="detalle"
           variant="tertiary"
@@ -365,7 +438,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useQuasar } from 'quasar'
+import { copyToClipboard, useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/AppButton.vue'
 import AppChip from '@/components/AppChip.vue'
@@ -383,7 +456,7 @@ import { formatearPrecio } from '@/utils/moneda'
 import CotizacionDetalle from './CotizacionDetalle.vue'
 import CotizacionForm from './CotizacionForm.vue'
 import ImpresionCotizacion from './ImpresionCotizacion.vue'
-import { ESTADOS, fechaCorta } from './constantes'
+import { enlaceProforma, enlaceWhatsapp, ESTADOS, fechaCorta, numeroWhatsapp } from './constantes'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -589,6 +662,15 @@ const erroresConvertir = ref({})
 // Lo que no hay en tienda (ítems libres): se cotizó, pero no pasa al pedido.
 const libres = computed(() => (detalle.value?.items ?? []).filter((item) => !item.variante))
 
+async function copiarEnlace (cotizacion) {
+  try {
+    await copyToClipboard(enlaceProforma(cotizacion.token))
+    $q.notify({ type: 'positive', message: 'Enlace de la proforma copiado.', position: 'top-right', timeout: 1500 })
+  } catch {
+    $q.notify({ type: 'negative', message: 'No se pudo copiar el enlace.', position: 'top-right' })
+  }
+}
+
 function convertirEnOrden () {
   router.push({ path: '/ordenes-servicio', query: { desde_cotizacion: detalle.value.id } })
 }
@@ -683,6 +765,10 @@ async function ejecutar (accion) {
 </script>
 
 <style lang="scss" scoped>
+.cot-compartir {
+  min-width: 270px;
+}
+
 .cot-codigo {
   padding: 0;
   border: 0;

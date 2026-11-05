@@ -16,8 +16,11 @@ final class Empresa
     /** Los textos que se editan en Configuración › Empresa y documentos. */
     public const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden'];
 
-    /** Estados de una orden con mensaje de WhatsApp propio. */
-    public const ESTADOS_WHATSAPP = ['recibido', 'diagnostico', 'esperando_repuesto', 'en_reparacion', 'reparado', 'sin_reparacion', 'entregado', 'abandonado'];
+    /**
+     * Mensajes de WhatsApp que se pueden cambiar: uno por estado de una orden
+     * y el que manda la proforma de una cotización.
+     */
+    public const ESTADOS_WHATSAPP = ['recibido', 'diagnostico', 'esperando_repuesto', 'en_reparacion', 'reparado', 'sin_reparacion', 'entregado', 'abandonado', 'cotizacion'];
 
     private const CACHE = 'empresa.configuracion';
 

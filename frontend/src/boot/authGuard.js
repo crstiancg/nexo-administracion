@@ -11,9 +11,9 @@ import { useUserStore } from '@/stores/user-store'
  */
 const PUBLIC_PATHS = ['/login']
 
-// Abiertas a cualquiera, con o sin sesión (el seguimiento que abre el QR del
-// ticket de una orden de servicio).
-const ABIERTAS = ['/seguimiento/']
+// Abiertas a cualquiera, con o sin sesión: el seguimiento que abre el QR del
+// ticket de una orden de servicio y la proforma que se manda por WhatsApp.
+const ABIERTAS = ['/seguimiento/', '/proforma/']
 
 export async function authGuard (to) {
   if (ABIERTAS.some((prefijo) => to.path.startsWith(prefijo))) return

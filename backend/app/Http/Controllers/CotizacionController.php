@@ -40,7 +40,7 @@ class CotizacionController extends Controller
         ]);
 
         $query = Cotizacion::query()
-            ->with(['cliente:id,nombre,tipo_documento,numero_documento', 'sede:id,nombre', 'pedido:id,codigo', 'ordenServicio:id,codigo'])
+            ->with(['cliente:id,nombre,tipo_documento,numero_documento,telefono', 'sede:id,nombre', 'pedido:id,codigo', 'ordenServicio:id,codigo'])
             ->withCount('items');
 
         if ($request->filled('search')) {

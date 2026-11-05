@@ -28,6 +28,11 @@ class CotizacionService {
     await api.delete(`api/cotizaciones/plantillas/${id}`)
   }
 
+  // Pública (sin sesión): { empresa, cotizacion } para la página /proforma/:token.
+  static async proforma (token) {
+    return (await api.get(`api/proforma/${token}`)).data
+  }
+
   static async get (id) {
     return (await api.get(`api/cotizaciones/${id}`)).data
   }
