@@ -11,10 +11,11 @@ export const METODOS = [
 // (igual que CobrarPedidoRequest::CON_OPERACION).
 export const CON_OPERACION = ['yape', 'plin', 'transferencia']
 
-// Por si la caja no trae su hora (config app.hora_aviso_cierre del backend):
-// desde esta hora el punto de venta avisa que hay que cerrarla. A medianoche
-// el backend la cierra sola, sin arqueo.
-export const HORA_AVISO_CIERRE = 23
+// Por si la caja no trae su horario (Configuración > Caja): desde `desde` el
+// punto de venta avisa que hay que cerrarla y desde `hasta` es urgente. A
+// medianoche el backend la cierra sola, sin arqueo.
+export const CIERRE_DESDE = '19:00'
+export const CIERRE_HASTA = '22:00'
 
 // Notificación tras el cierre: el arqueo dice si cuadró.
 export function avisoCierre (resultado, formatearPrecio) {

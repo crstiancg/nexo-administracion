@@ -53,6 +53,25 @@ final class Empresa
             'logo_url' => $logo ? Storage::disk('public')->url($logo) : null,
             // Sólo los que se cambiaron; el front tiene los de por defecto.
             'whatsapp' => (object) array_filter((array) ($guardado['whatsapp'] ?? []), fn ($v) => is_string($v) && trim($v) !== ''),
+            'caja' => self::horarioCierre($guardado),
+        ];
+    }
+
+    /**
+     * Cierre de caja: desde qué hora se avisa y hasta qué hora es obligatorio
+     * cerrarla ("19:00", "22:00", en la zona del negocio).
+     *
+     * @param  array<string, mixed>|null  $guardado
+     * @return array{cierre_desde: string, cierre_hasta: string}
+     */
+    public static function horarioCierre(?array $guardado = null): array
+    {
+        $guardado ??= Cache::rememberForever(self::CACHE, fn () => Configuracion::query()->pluck('valor', 'clave')->all());
+        $caja = (array) ($guardado['caja'] ?? []);
+
+        return [
+            'cierre_desde' => $caja['cierre_desde'] ?? config('empresa.caja_cierre_desde'),
+            'cierre_hasta' => $caja['cierre_hasta'] ?? config('empresa.caja_cierre_hasta'),
         ];
     }
 

@@ -583,7 +583,7 @@ import SeriesSelect from '@/components/SeriesSelect.vue'
 import ResumenVenta from './ResumenVenta.vue'
 import AbrirCajaForm from '@/modules/Caja/AbrirCajaForm.vue'
 import CerrarCajaForm from '@/modules/Caja/CerrarCajaForm.vue'
-import { avisoCierre, CON_OPERACION, HORA_AVISO_CIERRE, METODOS } from '@/modules/Caja/constantes'
+import { avisoCierre, CIERRE_DESDE, CIERRE_HASTA, CON_OPERACION, METODOS } from '@/modules/Caja/constantes'
 import { motivoNoPermitido } from '@/modules/Comprobantes/constantes'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import InventarioService from '@/services/InventarioService'
@@ -632,8 +632,8 @@ const clienteRef = ref()
 
 // ── Caja ──
 // Es diaria: al entrar sin caja se pide abrirla; la de un día anterior no
-// cobra (el backend la rechaza) hasta cerrarla; y desde HORA_AVISO_CIERRE se
-// avisa que hay que cerrarla antes de terminar el día.
+// cobra (el backend la rechaza) hasta cerrarla; y en el horario de cierre
+// (Configuración > Caja) se avisa que hay que cerrarla.
 const caja = ref(null)
 const cargandoCaja = ref(true)
 const abrirCajaDialog = ref(false)
@@ -689,8 +689,14 @@ const estadoCaja = computed(() => {
   if (caja.value.vencida) {
     return { tono: 'error', icono: 'warning', texto: `La caja del ${diaDe(caja.value.abierta_at)} sigue abierta` }
   }
-  if (ahora.value.getHours() >= (caja.value.hora_aviso_cierre ?? HORA_AVISO_CIERRE)) {
-    return { tono: 'aviso', icono: 'schedule', texto: 'Fin del día: cierra la caja (a medianoche se cierra sola, sin arqueo)' }
+  // "HH:MM" se compara como texto: "21:05" >= "19:00".
+  const hora = `${String(ahora.value.getHours()).padStart(2, '0')}:${String(ahora.value.getMinutes()).padStart(2, '0')}`
+  const hasta = caja.value.cierre_hasta ?? CIERRE_HASTA
+  if (hora >= hasta) {
+    return { tono: 'error', icono: 'alarm', texto: `La caja debió cerrarse a las ${hasta}: ciérrala ahora` }
+  }
+  if (hora >= (caja.value.cierre_desde ?? CIERRE_DESDE)) {
+    return { tono: 'aviso', icono: 'schedule', texto: `Hora de cerrar la caja: obligatorio antes de las ${hasta}` }
   }
   return { tono: 'ok', icono: 'lock_open', texto: `Caja abierta · ${horaDe(caja.value.abierta_at)}` }
 })

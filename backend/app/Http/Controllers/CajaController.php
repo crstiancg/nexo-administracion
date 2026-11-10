@@ -39,13 +39,40 @@ class CajaController extends Controller
 
     /**
      * La caja abierta de la sede del usuario con sus totales, o
-     * `{ caja: null }` si no hay.
+     * `{ caja: null }` si no hay. Sin caja, `anterior`: la última si se cerró
+     * sola sin arqueo (el form de abrir propone su efectivo como apertura).
      */
     public function actual(Request $request): JsonResponse
     {
-        $caja = $this->cajas->actual($request->user()->sedeOperativa());
+        $sedeId = $request->user()->sedeOperativa();
+        $caja = $this->cajas->actual($sedeId);
+        $anterior = $caja ? null : $this->cajas->anteriorSinArqueo($sedeId);
 
-        return response()->json(['caja' => $caja ? $this->conDetalle($caja) : null]);
+        return response()->json([
+            'caja' => $caja ? $this->conDetalle($caja) : null,
+            'anterior' => $anterior ? [
+                'id' => $anterior->id,
+                'abierta_at' => $anterior->abierta_at?->toIso8601String(),
+                'monto_esperado' => $anterior->monto_esperado,
+            ] : null,
+        ]);
+    }
+
+    /**
+     * Al iniciar sesión: ¿hay que pedirle que abra la caja? Sólo a quien
+     * tiene el permiso cajas.abrir-al-ingresar (esta ruta), tiene sede y
+     * puede abrirla, y si en su sede no hay una abierta.
+     */
+    public function alIngresar(Request $request): JsonResponse
+    {
+        $usuario = $request->user();
+        $sede = $usuario->sede;
+
+        $abrir = $sede !== null
+            && Permisos::puede($usuario, 'cajas.abrir')
+            && $this->cajas->actual($sede->id) === null;
+
+        return response()->json(['abrir' => $abrir, 'sede' => $sede?->nombre]);
     }
 
     public function show(Caja $caja): JsonResponse

@@ -33,7 +33,12 @@ class ConfiguracionController extends Controller
             'empresa.terminos_orden' => ['nullable', 'string', 'max:1000'],
             'whatsapp' => ['nullable', 'array'],
             'whatsapp.*' => ['nullable', 'string', 'max:1000'],
-        ], [], [
+            'caja' => ['nullable', 'array'],
+            'caja.cierre_desde' => ['required_with:caja', 'date_format:H:i'],
+            'caja.cierre_hasta' => ['required_with:caja', 'date_format:H:i', 'after:caja.cierre_desde'],
+        ], [
+            'caja.cierre_hasta.after' => 'La hora límite tiene que ser después de la hora de aviso.',
+        ], [
             'empresa.nombre' => 'razón social',
             'empresa.ruc' => 'RUC',
             'empresa.direccion' => 'dirección',
@@ -42,6 +47,8 @@ class ConfiguracionController extends Controller
             'empresa.garantia' => 'nota de garantía',
             'empresa.pie_ticket' => 'pie del ticket',
             'empresa.terminos_orden' => 'términos de la orden',
+            'caja.cierre_desde' => 'aviso de cierre',
+            'caja.cierre_hasta' => 'hora límite de cierre',
         ]);
 
         // Sólo los estados que existen (una clave inventada no se guarda).
@@ -49,6 +56,9 @@ class ConfiguracionController extends Controller
 
         Empresa::guardar('empresa', array_intersect_key($datos['empresa'], array_flip(Empresa::CAMPOS)));
         Empresa::guardar('whatsapp', array_map(fn ($t) => is_string($t) ? trim($t) : null, $whatsapp));
+        if (isset($datos['caja'])) {
+            Empresa::guardar('caja', array_intersect_key($datos['caja'], array_flip(['cierre_desde', 'cierre_hasta'])));
+        }
 
         return response()->json($this->respuesta());
     }

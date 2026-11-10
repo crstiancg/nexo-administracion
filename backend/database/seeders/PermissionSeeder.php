@@ -19,7 +19,7 @@ class PermissionSeeder extends Seeder
         // Punto de venta
         'ventas.store', 'ventas.catalogo', 'ventas.ficha',
         // Caja diaria (se abre y se cierra en el POS)
-        'cajas.actual', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos',
+        'cajas.actual', 'cajas.abrir', 'cajas.cerrar', 'cajas.movimientos', 'cajas.abrir-al-ingresar',
         // Clientes (alta rápida desde el POS, consulta RENIEC/SUNAT)
         'clientes.index', 'clientes.show', 'clientes.store', 'clientes.update', 'clientes.consultar-documento',
         // Pedidos: tomar, cobrar, confirmar y entregar (no cancelar ni devolver)

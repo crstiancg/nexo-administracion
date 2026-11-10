@@ -33,7 +33,10 @@
         <AppTema />
         <SwitchDarkMode />
 
-        <AppAlertas />
+        <AppAlertas
+          ref="alertasRef"
+          @cargadas="alertas = $event"
+        />
 
         <div class="app-toolbar__sep" />
 
@@ -214,13 +217,19 @@
     </q-footer>
 
     <q-page-container>
+      <!-- Horario de cierre de caja (Configuración > Caja): fija arriba de
+           todas las pantallas hasta que se cierre. -->
+      <AvisoCierreCaja :alerta="alertaCierre" />
       <router-view />
     </q-page-container>
+
+    <!-- Recién iniciada la sesión: pide abrir la caja (con permiso). -->
+    <AbrirCajaAlIngresar />
   </q-layout>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user-store'
@@ -233,6 +242,8 @@ import AppAlertas from '@/components/AppAlertas.vue'
 import AppBusquedaGlobal from '@/components/AppBusquedaGlobal.vue'
 import AppTema from '@/components/AppTema.vue'
 import SwitchDarkMode from '@/components/SwitchDarkMode.vue'
+import AbrirCajaAlIngresar from '@/modules/Caja/AbrirCajaAlIngresar.vue'
+import AvisoCierreCaja from '@/modules/Caja/AvisoCierreCaja.vue'
 import InventarioService from '@/services/InventarioService'
 import { clavesDeTipo } from '@/modules/OrdenesServicio/constantes'
 import OrdenServicioService from '@/services/OrdenServicioService'
@@ -471,6 +482,14 @@ function cerrarAlClicFuera (e) {
 }
 onMounted(() => document.addEventListener('pointerdown', cerrarAlClicFuera))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', cerrarAlClicFuera))
+
+// ── Alertas (la campana) ──
+// La de cierre de caja también va como barra arriba de la pantalla. Quien
+// cierra la caja llama a refrescarAlertas para que la barra se vaya al toque.
+const alertasRef = ref()
+const alertas = ref([])
+const alertaCierre = computed(() => alertas.value.find((a) => a.clave === 'caja_cierre') ?? null)
+provide('refrescarAlertas', () => alertasRef.value?.cargar())
 
 function toggleDrawer () {
   drawerOpen.value = !drawerOpen.value

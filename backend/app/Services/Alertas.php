@@ -9,6 +9,7 @@ use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\Stock;
 use App\Models\User;
+use App\Support\Empresa;
 use App\Support\Fechas;
 use App\Support\Permisos;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,9 +46,18 @@ class Alertas
                 $dia = $caja->abierta_at->copy()->setTimezone(Fechas::zona())->format('d/m');
                 $alertas[] = $this->alerta('caja_vencida', 'critical', "La caja del {$dia} sigue abierta",
                     'No se puede cobrar hasta cerrarla (arqueo) desde el punto de venta.', 1, '/pos');
-            } elseif ($caja && now(Fechas::zona())->hour >= (int) config('app.hora_aviso_cierre')) {
-                $alertas[] = $this->alerta('caja_cierre', 'warning', 'Fin del día: cierra la caja',
-                    'A medianoche se cierra sola, pero sin arqueo: haz el cierre contando el efectivo.', 1, '/pos');
+            } elseif ($caja && $puede('cajas.cerrar')) {
+                // Horario de cierre (Configuración > Caja): desde la hora de
+                // aviso hay que cerrarla; pasada la hora límite, es urgente.
+                ['cierre_desde' => $desde, 'cierre_hasta' => $hasta] = Empresa::horarioCierre();
+                $ahora = now(Fechas::zona())->format('H:i');
+                if ($ahora >= $hasta) {
+                    $alertas[] = $this->alerta('caja_cierre', 'critical', "La caja debió cerrarse a las {$hasta}",
+                        'Ciérrala ahora contando el efectivo. A medianoche se cierra sola, pero sin arqueo.', 1, '/pos');
+                } elseif ($ahora >= $desde) {
+                    $alertas[] = $this->alerta('caja_cierre', 'warning', 'Hora de cerrar la caja',
+                        "Es obligatorio cerrarla antes de las {$hasta}, contando el efectivo (arqueo).", 1, '/pos');
+                }
             }
         }
 

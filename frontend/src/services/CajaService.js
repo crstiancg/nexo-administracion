@@ -10,6 +10,17 @@ class CajaService {
     return (await api.get('api/cajas/actual')).data.caja
   }
 
+  // Sin caja abierta: la anterior si se cerró sola sin arqueo
+  // ({ id, abierta_at, monto_esperado }) o null.
+  static async anteriorSinArqueo () {
+    return (await api.get('api/cajas/actual')).data.anterior ?? null
+  }
+
+  // Al iniciar sesión: { abrir, sede } (sólo con cajas.abrir-al-ingresar).
+  static async alIngresar () {
+    return (await api.get('api/cajas/al-ingresar')).data
+  }
+
   // Historial de cajas.
   static async getData (config) {
     return (await api.get('api/cajas', config)).data

@@ -196,6 +196,7 @@ return [
         'store' => 'Crear',
         'update' => 'Editar',
         'ordenar' => 'Ordenar',
+        'abrir-al-ingresar' => 'Pedir abrir caja al iniciar sesión',
         'destroy' => 'Eliminar',
         'toggle-active' => 'Dar de baja / activar',
         'sesiones' => 'Ver sesiones',

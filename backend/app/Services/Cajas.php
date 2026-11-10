@@ -74,21 +74,57 @@ class Cajas
         });
     }
 
+    /**
+     * Abre la caja del día. Si la anterior de la sede se cerró sola a
+     * medianoche (sin arqueo), lo que se cuenta al abrir es lo que quedó en el
+     * cajón: completa el arqueo de esa caja (contado y diferencia).
+     */
     public function abrir(int $sedeId, float $montoApertura, ?User $usuario): Caja
     {
+        // Una de un día anterior que nadie cerró se cierra sola antes.
+        $this->actual($sedeId);
+
         try {
-            return DB::transaction(fn () => Caja::query()->forceCreate([
-                'sede_id' => $sedeId,
-                'estado' => Caja::ABIERTA,
-                'abierta' => true,
-                'monto_apertura' => $montoApertura,
-                'abierta_por' => $usuario?->id,
-                'abierta_at' => now(),
-            ]));
+            return DB::transaction(function () use ($sedeId, $montoApertura, $usuario) {
+                $anterior = $this->anteriorSinArqueo($sedeId);
+                if ($anterior) {
+                    $anterior->forceFill([
+                        'monto_contado' => $montoApertura,
+                        'diferencia' => round($montoApertura - (float) $anterior->monto_esperado, 2),
+                        'observacion_cierre' => trim($anterior->observacion_cierre.' Arqueo al abrir la caja siguiente: contado S/ '
+                            .number_format($montoApertura, 2).'.'),
+                    ])->save();
+                }
+
+                return Caja::query()->forceCreate([
+                    'sede_id' => $sedeId,
+                    'estado' => Caja::ABIERTA,
+                    'abierta' => true,
+                    'monto_apertura' => $montoApertura,
+                    'abierta_por' => $usuario?->id,
+                    'abierta_at' => now(),
+                ]);
+            });
         } catch (UniqueConstraintViolationException) {
             // El unique de `abierta` ganó la carrera: ya hay una abierta.
             throw $this->conflicto('caja', 'Ya hay una caja abierta en esta sede.');
         }
+    }
+
+    /**
+     * La última caja de la sede, si se cerró sola a medianoche y todavía no
+     * tiene arqueo: su efectivo esperado es lo que debería seguir en el cajón.
+     */
+    public function anteriorSinArqueo(int $sedeId): ?Caja
+    {
+        $ultima = Caja::query()
+            ->where('sede_id', $sedeId)
+            ->where('estado', Caja::CERRADA)
+            ->orderByDesc('cerrada_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return $ultima && $ultima->cerrada_por === null && $ultima->monto_contado === null ? $ultima : null;
     }
 
     /**
@@ -263,7 +299,7 @@ class Cajas
      * mismo método con que se pagó, desde la caja abierta de hoy. Se llama
      * dentro de la transacción de Pedidos::anular().
      *
-     * @return array<int, Pago>  las devoluciones registradas
+     * @return array<int, Pago> las devoluciones registradas
      */
     public function devolverTodo(Pedido $pedido, string $motivo, ?User $usuario): array
     {

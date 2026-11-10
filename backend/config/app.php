@@ -74,10 +74,6 @@ return [
     // IGV, incluido en todos los precios (App\Support\Igv).
     'igv' => (float) env('APP_IGV', 0.18),
 
-    // Desde esta hora (de la zona del negocio) se avisa que hay que cerrar la
-    // caja; a medianoche se cierra sola. El front la recibe con la caja.
-    'hora_aviso_cierre' => (int) env('APP_HORA_AVISO_CIERRE', 23),
-
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

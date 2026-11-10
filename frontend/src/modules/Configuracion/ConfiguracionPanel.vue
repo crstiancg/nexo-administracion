@@ -2,7 +2,7 @@
   <div class="app-list-page">
     <AppPageHeader
       title="Configuración"
-      subtitle="Datos de la empresa, textos de los documentos, logo y mensajes de WhatsApp"
+      subtitle="Datos de la empresa, textos de los documentos, logo, cierre de caja y mensajes de WhatsApp"
     >
       <template #actions>
         <AppButton
@@ -144,6 +144,31 @@
         />
       </AppCard>
 
+      <!-- ── Caja ── -->
+      <AppCard class="conf-card">
+        <h2 class="conf-titulo">
+          <q-icon name="point_of_sale" /> Cierre de caja
+        </h2>
+        <p class="conf-ayuda">
+          Desde la hora de aviso, quien puede cerrar la caja ve una barra ámbar arriba de todas las pantallas;
+          pasada la hora límite, la barra se pone roja hasta que la cierre. A medianoche se cierra sola, sin arqueo.
+        </p>
+        <div class="conf-grid">
+          <AppTextField
+            v-model="caja.cierre_desde"
+            label="Avisar desde"
+            type="time"
+            :error="error('caja.cierre_desde')"
+          />
+          <AppTextField
+            v-model="caja.cierre_hasta"
+            label="Obligatorio cerrar antes de"
+            type="time"
+            :error="error('caja.cierre_hasta')"
+          />
+        </div>
+      </AppCard>
+
       <!-- ── WhatsApp ── -->
       <AppCard class="conf-card">
         <h2 class="conf-titulo">
@@ -255,6 +280,8 @@ const userStore = useUserStore()
 const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden']
 
 const empresa = reactive(Object.fromEntries(CAMPOS.map((c) => [c, ''])))
+// Horario de cierre de caja ("HH:MM", zona del negocio).
+const caja = reactive({ cierre_desde: '19:00', cierre_hasta: '22:00' })
 const EJEMPLO = {
   codigo: 'OS-000012',
   estado: 'reparado',
@@ -327,6 +354,7 @@ const cargado = ref(false)
 onMounted(async () => {
   const datos = await ConfiguracionService.get()
   CAMPOS.forEach((c) => { empresa[c] = datos[c] ?? '' })
+  Object.assign(caja, datos.caja ?? {})
   aplicarConfiguracion(datos)
   MENSAJES.value.forEach(({ clave }) => { whatsapp[clave] = datos.whatsapp?.[clave] ?? '' })
   cargado.value = true
@@ -344,7 +372,7 @@ async function guardar () {
   guardando.value = true
   errores.value = {}
   try {
-    const datos = await ConfiguracionService.guardar({ empresa: { ...empresa }, whatsapp: { ...whatsapp } })
+    const datos = await ConfiguracionService.guardar({ empresa: { ...empresa }, whatsapp: { ...whatsapp }, caja: { ...caja } })
     aplicarConfiguracion(datos)
     $q.notify({ type: 'positive', message: 'Configuración guardada.', position: 'top-right', timeout: 1500 })
   } catch (e) {

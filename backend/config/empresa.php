@@ -33,6 +33,13 @@ return [
     // orden apunta a {frontend_url}/seguimiento/{token}.
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:9000'),
 
+    // Cierre de caja (hora de la zona del negocio; se cambia en Configuración):
+    // desde `desde` se avisa que hay que cerrarla y desde `hasta` el aviso es
+    // urgente. A medianoche se cierra sola, sin arqueo.
+    'caja_cierre_desde' => '19:00',
+
+    'caja_cierre_hasta' => '22:00',
+
     // Minutos que vale el enlace firmado para abrir un documento impreso.
     'impresion_minutos' => 10,
 

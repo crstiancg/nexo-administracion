@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useForm } from 'laravel-precognition-vue'
 import AppTextField from '@/components/AppTextField.vue'
 import { formatearPrecio } from '@/utils/moneda'
@@ -93,6 +93,9 @@ const claseDiferencia = computed(() => {
 // historial y alguien va a preguntar.
 const errorObservacion = ref('')
 
+// La barra de "cierra la caja" del layout (pages/index.vue).
+const refrescarAlertas = inject('refrescarAlertas', null)
+
 async function submit () {
   errorObservacion.value = ''
   if (diferencia.value && !form.caja.observacion?.trim()) {
@@ -103,6 +106,7 @@ async function submit () {
   try {
     const respuesta = await form.submit()
     emit('save', respuesta?.data)
+    refrescarAlertas?.()
   } catch {
     // 422/409: los errores quedan en form.errors.
   }

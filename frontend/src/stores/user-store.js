@@ -38,7 +38,10 @@ export const useUserStore = defineStore('user', {
     roles: null,
     permisos: null,
     // { id, nombre, direccion, telefono }: donde opera (POS, caja, stock).
-    sede: null
+    sede: null,
+    // true sólo justo después de login(): lo que se pide "al iniciar sesión"
+    // (abrir la caja) no vuelve a salir al recargar la página.
+    recienIngreso: false
   }),
 
   getters: {
@@ -93,6 +96,7 @@ export const useUserStore = defineStore('user', {
         Cookies.remove('token', { path: '/' })
         throw error
       }
+      this.recienIngreso = true
     },
 
     async getUser () {

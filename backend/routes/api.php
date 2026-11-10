@@ -215,6 +215,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
 
     // "actual" va antes de {caja}: si no, la captura como id.
     Route::get('cajas/actual', [CajaController::class, 'actual'])->name('cajas.actual');
+    // Al iniciar sesión pide abrir la caja (sólo a quien tiene este permiso).
+    Route::get('cajas/al-ingresar', [CajaController::class, 'alIngresar'])->name('cajas.abrir-al-ingresar');
     Route::get('cajas', [CajaController::class, 'index'])->name('cajas.index');
     Route::get('cajas/{caja}', [CajaController::class, 'show'])->name('cajas.show');
 

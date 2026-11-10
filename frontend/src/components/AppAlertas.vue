@@ -84,6 +84,8 @@ const NIVELES = {
   info: { icono: 'info', label: 'Pendiente' }
 }
 
+const emit = defineEmits(['cargadas'])
+
 const route = useRoute()
 const userStore = useUserStore()
 const alertas = ref([])
@@ -93,6 +95,7 @@ const urgentes = computed(() => alertas.value.filter((a) => a.nivel !== 'info').
 async function cargar () {
   try {
     alertas.value = await PanelService.alertas()
+    emit('cargadas', alertas.value)
   } catch {
     // Una campana no vale un error en pantalla.
   }
