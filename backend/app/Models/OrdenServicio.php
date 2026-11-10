@@ -12,10 +12,9 @@ use Illuminate\Support\Carbon;
 /**
  * Un equipo que entra al taller.
  *
- * recibido → diagnostico → esperando_repuesto → en_reparacion → reparado → entregado
- *                                          ↘ sin_reparacion ↗
- * Cualquiera sin entregar puede pasar a `abandonado` (y volver, si aparece el
- * cliente). Entregado es final.
+ * Los estados se configuran en Catálogos > Estados de orden (App\Models\EstadoOrden):
+ * la orden guarda la clave y el tipo del estado decide qué se puede hacer
+ * (desde dónde se entrega, qué cuenta como "en el taller"…). Entregado es final.
  *
  * El cobro vive en `pedido` (repuestos + mano de obra): los abonos son pagos
  * del pedido y la boleta o factura se emite sobre él. Los cambios de estado
@@ -28,6 +27,8 @@ use Illuminate\Support\Carbon;
 ])]
 class OrdenServicio extends Model
 {
+    // Claves de los estados de fábrica (migración create_estados_orden). Los
+    // usan los seeders y los tests; la lógica pregunta por el tipo.
     public const RECIBIDO = 'recibido';
 
     public const DIAGNOSTICO = 'diagnostico';
@@ -44,27 +45,10 @@ class OrdenServicio extends Model
 
     public const ABANDONADO = 'abandonado';
 
-    public const ESTADOS = [
-        self::RECIBIDO => 'Recibido',
-        self::DIAGNOSTICO => 'En diagnóstico',
-        self::ESPERANDO_REPUESTO => 'Esperando repuesto',
-        self::EN_REPARACION => 'En reparación',
-        self::REPARADO => 'Reparado',
-        self::SIN_REPARACION => 'Sin reparación',
-        self::ENTREGADO => 'Entregado',
-        self::ABANDONADO => 'Abandonado',
-    ];
-
     /** Avisos del taller: listo y sin recoger / demasiado tiempo adentro. */
     public const DIAS_SIN_RECOGER = 3;
 
     public const DIAS_ATRASO = 7;
-
-    /** En el taller, sin terminar. */
-    public const ACTIVOS = [self::RECIBIDO, self::DIAGNOSTICO, self::ESPERANDO_REPUESTO, self::EN_REPARACION];
-
-    /** Desde acá se puede entregar (con o sin reparar). */
-    public const LISTOS = [self::REPARADO, self::SIN_REPARACION, self::ABANDONADO];
 
     public const SEGURIDAD = [
         'ninguno' => 'Sin bloqueo',
@@ -148,7 +132,7 @@ class OrdenServicio extends Model
 
     public function editable(): bool
     {
-        return $this->estado !== self::ENTREGADO;
+        return $this->estado !== EstadoOrden::entregado();
     }
 
     /** Hasta cuándo cubre la garantía del trabajo (desde la entrega). */

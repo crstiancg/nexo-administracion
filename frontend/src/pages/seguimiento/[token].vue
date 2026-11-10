@@ -37,7 +37,7 @@
             </div>
           </div>
           <AppChip
-            :status="ESTADOS[orden.estado]?.status ?? 'info'"
+            :status="orden.estado_color ?? 'info'"
             :label="orden.estado_label"
           />
         </div>
@@ -93,72 +93,52 @@ import { useRoute } from 'vue-router'
 import AppLogo from '@/components/AppLogo.vue'
 import AppChip from '@/components/AppChip.vue'
 import AppTimeline from '@/components/AppTimeline.vue'
-import { ESTADOS, fechaCorta } from '@/modules/OrdenesServicio/constantes'
+import { fechaCorta } from '@/modules/OrdenesServicio/constantes'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import { formatearFechaHora } from '@/utils/fechas'
 import { formatearPrecio } from '@/utils/moneda'
 
 // Página pública (la abre el QR del ticket): sin sesión ni menú.
 
+// Los pasos que ve el cliente salen del TIPO del estado (los estados se
+// configuran en Catálogos): así un estado nuevo cae solo en su paso.
 const PASOS = [
-  { estado: 'recibido', label: 'Recibido' },
-  { estado: 'diagnostico', label: 'Diagnóstico' },
-  { estado: 'en_reparacion', label: 'En reparación' },
-  { estado: 'reparado', label: 'Listo para recoger' },
-  { estado: 'entregado', label: 'Entregado' }
+  { tipo: 'inicial', label: 'Recibido', icon: 'move_to_inbox' },
+  { tipo: 'en_proceso', label: 'En el taller', icon: 'build' },
+  { tipo: 'listo', label: 'Listo para recoger', icon: 'task_alt' },
+  { tipo: 'entregado', label: 'Entregado', icon: 'handshake' }
 ]
 
-// En qué paso cae cada estado (los que no son del camino feliz, en el más cercano).
-const PASO_DE = {
-  recibido: 0,
-  diagnostico: 1,
-  esperando_repuesto: 2,
-  en_reparacion: 2,
-  reparado: 3,
-  sin_reparacion: 3,
-  abandonado: 3,
-  entregado: 4
-}
-
-const MENSAJES = {
-  recibido: 'Recibimos su equipo. Pronto empezaremos a revisarlo.',
-  diagnostico: 'Un técnico está revisando su equipo.',
-  esperando_repuesto: 'Estamos esperando un repuesto para continuar con la reparación.',
-  en_reparacion: 'Su equipo se está reparando.',
-  reparado: '¡Su equipo está listo! Puede pasar a recogerlo.',
-  sin_reparacion: 'No fue posible reparar su equipo. Puede pasar a recogerlo.',
-  abandonado: 'Su equipo sigue en el taller. Comuníquese con nosotros para coordinar el retiro.',
-  entregado: 'Su equipo fue entregado. ¡Gracias por su confianza!'
-}
+// En qué paso cae cada tipo (cerrado = abandonado: se queda en "listo").
+const PASO_DE = { inicial: 0, en_proceso: 1, listo: 2, cerrado: 2, entregado: 3 }
 
 const route = useRoute()
 const orden = ref(null)
 const cargando = ref(true)
 
-const pasoActual = computed(() => PASO_DE[orden.value?.estado] ?? 0)
-const mensaje = computed(() => MENSAJES[orden.value?.estado] ?? '')
+const pasoActual = computed(() => PASO_DE[orden.value?.estado_tipo] ?? 0)
+const mensaje = computed(() => orden.value?.mensaje ?? '')
 
 // Fecha en que la orden llegó a cada paso (el último movimiento que cae ahí).
 function fechaDelPaso (i) {
-  const mov = [...(orden.value?.movimientos ?? [])].reverse().find((m) => PASO_DE[m.estado] === i)
+  const mov = [...(orden.value?.movimientos ?? [])].reverse().find((m) => PASO_DE[m.tipo] === i)
   return mov ? formatearFechaHora(mov.fecha) : ''
 }
 
 const pasos = computed(() => {
   if (!orden.value) return []
-  const estado = orden.value.estado
-  const terminado = estado === 'entregado'
-  const status = ESTADOS[estado]?.status
+  const terminado = orden.value.estado_tipo === 'entregado'
+  const status = orden.value.estado_color
   return PASOS.map((paso, i) => {
     const actual = i === pasoActual.value && !terminado
     const hecho = i < pasoActual.value || terminado
     return {
-      key: paso.estado,
+      key: paso.tipo,
       // En el paso actual va el estado real ("Esperando repuesto", "Sin reparación").
       titulo: actual ? orden.value.estado_label : paso.label,
       fecha: hecho || actual ? fechaDelPaso(i) : '',
       descripcion: actual || (terminado && i === PASOS.length - 1) ? mensaje.value : '',
-      icon: hecho ? 'check' : ESTADOS[actual ? estado : paso.estado].icon,
+      icon: hecho ? 'check' : (actual && orden.value.estado_icono) || paso.icon,
       color: actual && status === 'negative' ? 'negative' : terminado && i === PASOS.length - 1 ? 'positive' : 'primary',
       estado: hecho ? 'hecho' : actual ? 'actual' : 'pendiente'
     }

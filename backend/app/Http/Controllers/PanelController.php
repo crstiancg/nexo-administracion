@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\EstadoOrden;
 use App\Models\Lote;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
@@ -96,7 +97,7 @@ class PanelController extends Controller
                 ->map(fn (OrdenServicio $o) => [
                     'id' => $o->id,
                     'titulo' => $o->codigo,
-                    'detalle' => $o->cliente?->nombre.' · '.$o->equipo().' · '.(OrdenServicio::ESTADOS[$o->estado] ?? $o->estado),
+                    'detalle' => $o->cliente?->nombre.' · '.$o->equipo().' · '.EstadoOrden::nombreDe($o->estado),
                     'to' => "/ordenes-servicio?ver={$o->id}",
                 ]);
         }
@@ -308,12 +309,12 @@ class PanelController extends Controller
     private function taller(int $sedeId): array
     {
         $ordenes = fn () => OrdenServicio::query()->where('sede_id', $sedeId);
-        $activas = [OrdenServicio::RECIBIDO, OrdenServicio::DIAGNOSTICO, OrdenServicio::ESPERANDO_REPUESTO, OrdenServicio::EN_REPARACION];
+        $activas = EstadoOrden::enTaller();
         $hoy = Fechas::hoy();
 
         // Días promedio de recibido a entregado (últimos 30 días).
         $entregadas = $ordenes()
-            ->where('estado', OrdenServicio::ENTREGADO)
+            ->where('estado', EstadoOrden::entregado())
             ->where('entregado_at', '>=', Fechas::inicioDelDia($hoy->copy()->subDays(29)))
             ->get(['recibido_at', 'entregado_at']);
         $promedio = $entregadas->isEmpty()
@@ -322,11 +323,11 @@ class PanelController extends Controller
 
         return [
             'en_taller' => $ordenes()->whereIn('estado', $activas)->count(),
-            'listas' => $ordenes()->whereIn('estado', [OrdenServicio::REPARADO, OrdenServicio::SIN_REPARACION])->count(),
+            'listas' => $ordenes()->whereIn('estado', EstadoOrden::clavesDe(EstadoOrden::LISTO))->count(),
             'atrasadas' => $ordenes()->whereIn('estado', $activas)
                 ->where('recibido_at', '<', Fechas::inicioDelDia($hoy->copy()->subDays(7)))->count(),
             'recibidas_hoy' => $ordenes()->where('recibido_at', '>=', Fechas::inicioDelDia())->count(),
-            'entregadas_mes' => $ordenes()->where('estado', OrdenServicio::ENTREGADO)
+            'entregadas_mes' => $ordenes()->where('estado', EstadoOrden::entregado())
                 ->where('entregado_at', '>=', Fechas::inicioDelDia($hoy->copy()->startOfMonth()))->count(),
             'promedio_dias' => $promedio,
             // Carga por técnico: lo que cada uno tiene abierto.

@@ -22,8 +22,8 @@
           label="Por garantía"
         />
         <AppChip
-          :status="ESTADOS[orden.estado].status"
-          :label="ESTADOS[orden.estado].label"
+          :status="estadoDe(orden.estado).status"
+          :label="estadoDe(orden.estado).label"
         />
       </div>
     </header>
@@ -298,7 +298,7 @@ import OrdenServicioService from '@/services/OrdenServicioService'
 import { formatearCantidad } from '@/utils/cantidad'
 import { formatearFechaHora } from '@/utils/fechas'
 import { formatearPrecio } from '@/utils/moneda'
-import { ESTADOS, fechaCorta } from './constantes'
+import { claveEntregado, estadoDe, fechaCorta } from './constantes'
 
 const props = defineProps({
   id: {
@@ -414,9 +414,9 @@ const historial = computed(() => {
     titulo: mov.estado_label,
     fecha: formatearFechaHora(mov.fecha) + (mov.usuario ? ` · ${mov.usuario.name}` : ''),
     descripcion: mov.nota,
-    icon: ESTADOS[mov.estado]?.icon,
-    color: ESTADOS[mov.estado]?.status ?? 'info',
-    estado: i === movs.length - 1 && mov.estado !== 'entregado' ? 'actual' : 'hecho'
+    icon: estadoDe(mov.estado).icon,
+    color: estadoDe(mov.estado).status,
+    estado: i === movs.length - 1 && mov.estado !== claveEntregado() ? 'actual' : 'hecho'
   }))
 })
 </script>

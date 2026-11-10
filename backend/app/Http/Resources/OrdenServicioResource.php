@@ -2,11 +2,12 @@
 
 namespace App\Http\Resources;
 
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Support\Permisos;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Sirve para el listado y para el detalle: cada bloque aparece sólo si se
@@ -28,7 +29,7 @@ class OrdenServicioResource extends JsonResource
             'id' => $this->id,
             'codigo' => $this->codigo,
             'estado' => $this->estado,
-            'estado_label' => OrdenServicio::ESTADOS[$this->estado] ?? $this->estado,
+            'estado_label' => EstadoOrden::nombreDe($this->estado),
             'editable' => $this->editable(),
             'token' => $this->token,
             'sede' => $this->whenLoaded('sede', fn () => $this->sede?->only(['id', 'nombre', 'direccion', 'telefono'])),
@@ -87,7 +88,7 @@ class OrdenServicioResource extends JsonResource
             'movimientos' => $this->whenLoaded('movimientos', fn () => $this->movimientos->map(fn ($m) => [
                 'id' => $m->id,
                 'estado' => $m->estado,
-                'estado_label' => OrdenServicio::ESTADOS[$m->estado] ?? $m->estado,
+                'estado_label' => EstadoOrden::nombreDe($m->estado),
                 'nota' => $m->nota,
                 'usuario' => $m->usuario?->only(['id', 'name']),
                 'fecha' => $m->created_at?->toIso8601String(),

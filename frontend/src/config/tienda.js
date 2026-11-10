@@ -25,12 +25,16 @@ export const TIENDA = reactive({
   logo_url: null,
   // Mensajes de WhatsApp cambiados por estado ({ reparado: '…' }); los que
   // no están usan los de por defecto (modules/OrdenesServicio/constantes.js).
-  whatsapp: {}
+  whatsapp: {},
+  // Estados de la orden de servicio (Catálogos > Estados de orden). Vacío =
+  // los de fábrica (modules/OrdenesServicio/constantes.js).
+  estados_orden: []
 })
 
 /** Vuelca lo que devuelve la API (GET/PUT api/configuracion) en TIENDA. */
 export function aplicarConfiguracion (datos) {
   if (!datos) return
-  const { pie_ticket: pie, whatsapp, ...resto } = datos
+  const { pie_ticket: pie, whatsapp, estados_orden: estados, ...resto } = datos
   Object.assign(TIENDA, resto, { pie: pie || TIENDA.pie, whatsapp: whatsapp ?? {} })
+  if (estados) TIENDA.estados_orden = estados
 }

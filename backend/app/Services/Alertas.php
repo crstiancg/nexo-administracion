@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cotizacion;
+use App\Models\EstadoOrden;
 use App\Models\Lote;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
@@ -56,17 +57,17 @@ class Alertas
 
             // Listos hace días: el cliente no vino (o no se le avisó).
             $sinRecoger = $ordenes()
-                ->whereIn('estado', [OrdenServicio::REPARADO, OrdenServicio::SIN_REPARACION])
+                ->whereIn('estado', EstadoOrden::clavesDe(EstadoOrden::LISTO))
                 ->where('updated_at', '<', now()->subDays(OrdenServicio::DIAS_SIN_RECOGER))
                 ->count();
             if ($sinRecoger) {
                 $alertas[] = $this->alerta('taller_sin_recoger', 'warning',
                     $this->plural($sinRecoger, 'equipo listo sin recoger', 'equipos listos sin recoger'),
-                    'Hace más de '.OrdenServicio::DIAS_SIN_RECOGER.' días: vuelve a avisar al cliente por WhatsApp.', $sinRecoger, '/ordenes-servicio?estado=reparado');
+                    'Hace más de '.OrdenServicio::DIAS_SIN_RECOGER.' días: vuelve a avisar al cliente por WhatsApp.', $sinRecoger, '/ordenes-servicio?estado=listas');
             }
 
             $atrasados = $ordenes()
-                ->whereIn('estado', OrdenServicio::ACTIVOS)
+                ->whereIn('estado', EstadoOrden::enTaller())
                 ->where('recibido_at', '<', Fechas::inicioDelDia(Fechas::hoy()->subDays(OrdenServicio::DIAS_ATRASO)))
                 ->count();
             if ($atrasados) {
@@ -75,7 +76,7 @@ class Alertas
                     'Todavía sin terminar: revisa si esperan un repuesto o una respuesta del cliente.', $atrasados, '/ordenes-servicio?estado=activas');
             }
 
-            $sinTecnico = $ordenes()->whereIn('estado', OrdenServicio::ACTIVOS)->whereNull('tecnico_id')->count();
+            $sinTecnico = $ordenes()->whereIn('estado', EstadoOrden::enTaller())->whereNull('tecnico_id')->count();
             if ($sinTecnico) {
                 $alertas[] = $this->alerta('taller_sin_tecnico', 'info',
                     $this->plural($sinTecnico, 'equipo sin técnico asignado', 'equipos sin técnico asignado'),

@@ -6,6 +6,7 @@ use App\Http\Resources\ClienteResource;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\Credito;
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Support\Permisos;
@@ -86,7 +87,7 @@ class ClienteFichaController extends Controller
                 'id' => $o->id,
                 'codigo' => $o->codigo,
                 'estado' => $o->estado,
-                'estado_label' => OrdenServicio::ESTADOS[$o->estado] ?? $o->estado,
+                'estado_label' => EstadoOrden::nombreDe($o->estado),
                 'equipo' => $o->equipo(),
                 'falla' => $o->falla,
                 'fecha' => $o->recibido_at?->toIso8601String(),

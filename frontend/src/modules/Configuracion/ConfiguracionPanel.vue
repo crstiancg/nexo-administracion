@@ -242,7 +242,7 @@ import AppLogo from '@/components/AppLogo.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import { aplicarConfiguracion, TIENDA } from '@/config/tienda'
-import { ESTADOS, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, valoresWhatsapp } from '@/modules/OrdenesServicio/constantes'
+import { ESTADOS, PLANTILLA_WHATSAPP_GENERICA, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, valoresWhatsapp } from '@/modules/OrdenesServicio/constantes'
 import * as Cotizacion from '@/modules/Cotizaciones/constantes'
 import * as Credito from '@/modules/Creditos/constantes'
 import ConfiguracionService from '@/services/ConfiguracionService'
@@ -287,11 +287,13 @@ const EJEMPLO_CREDITO = {
  * defecto, sus variables y datos de ejemplo para la vista previa. `aparte`:
  * empieza otro grupo en la lista.
  */
-const MENSAJES = [
-  ...Object.entries(ESTADOS).map(([clave, { label }]) => ({
+// Computed: los estados de la orden se configuran en Catálogos y pueden
+// llegar después de montar (o cambiar mientras está abierta).
+const MENSAJES = computed(() => [
+  ...Object.entries(ESTADOS).filter(([, { activo }]) => activo).map(([clave, { label }]) => ({
     clave,
     label,
-    plantilla: PLANTILLAS_WHATSAPP[clave],
+    plantilla: PLANTILLAS_WHATSAPP[clave] ?? PLANTILLA_WHATSAPP_GENERICA,
     variables: VARIABLES_WHATSAPP,
     ejemplo: () => valoresWhatsapp({ ...EJEMPLO, estado: clave })
   })),
@@ -318,15 +320,15 @@ const MENSAJES = [
     variables: Credito.VARIABLES_WHATSAPP,
     ejemplo: () => Credito.valoresWhatsapp(EJEMPLO_CREDITO)
   }
-]
-const whatsapp = reactive(Object.fromEntries(MENSAJES.map(({ clave }) => [clave, ''])))
+])
+const whatsapp = reactive({})
 const cargado = ref(false)
 
 onMounted(async () => {
   const datos = await ConfiguracionService.get()
   CAMPOS.forEach((c) => { empresa[c] = datos[c] ?? '' })
-  Object.keys(whatsapp).forEach((e) => { whatsapp[e] = datos.whatsapp?.[e] ?? '' })
   aplicarConfiguracion(datos)
+  MENSAJES.value.forEach(({ clave }) => { whatsapp[clave] = datos.whatsapp?.[clave] ?? '' })
   cargado.value = true
 })
 
@@ -381,11 +383,11 @@ async function quitarLogo () {
 const estado = ref('reparado')
 const editorRef = ref()
 
-const mensaje = computed(() => MENSAJES.find((m) => m.clave === estado.value))
+const mensaje = computed(() => MENSAJES.value.find((m) => m.clave === estado.value))
 const variables = computed(() => mensaje.value.variables)
 
 function porDefecto (clave) {
-  return MENSAJES.find((m) => m.clave === clave).plantilla
+  return MENSAJES.value.find((m) => m.clave === clave)?.plantilla ?? ''
 }
 
 // Agrega {variable} donde está el cursor (o al final).

@@ -234,6 +234,7 @@ import AppBusquedaGlobal from '@/components/AppBusquedaGlobal.vue'
 import AppTema from '@/components/AppTema.vue'
 import SwitchDarkMode from '@/components/SwitchDarkMode.vue'
 import InventarioService from '@/services/InventarioService'
+import { clavesDeTipo } from '@/modules/OrdenesServicio/constantes'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import PedidoService from '@/services/PedidoService'
 
@@ -347,6 +348,7 @@ const MENU = [
     items: [
       { to: '/categorias', icon: 'category', label: 'Categorías', permiso: 'categorias.index' },
       { to: '/tipos-equipo', icon: 'devices', label: 'Tipos de equipo', permiso: 'tipos-equipo.index' },
+      { to: '/estados-orden', icon: 'linear_scale', label: 'Estados de orden', permiso: 'estados-orden.index' },
       { to: '/marcas', icon: 'verified', label: 'Marcas', permiso: 'marcas.index' },
       { to: '/unidades', icon: 'straighten', label: 'Unidades de medida', permiso: 'unidades.index' },
       { to: '/colores', icon: 'palette', label: 'Colores', permiso: 'colores.index' }
@@ -385,14 +387,14 @@ const secciones = computed(() => MENU
   .map((seccion) => ({ ...seccion, items: seccion.items.filter((item) => userStore.hasPermission(item.permiso)) }))
   .filter((seccion) => seccion.items.length))
 
-// Equipos listos para entregar (reparados o sin reparación): el badge del taller.
+// Equipos listos para entregar (estados de tipo "listo"): el badge del taller.
 const listosEntrega = ref(0)
 async function contarListos () {
   if (!userStore.hasPermission('ordenes-servicio.index')) return
   try {
     const resumen = await OrdenServicioService.resumen()
     listosEntrega.value = resumen
-      .filter((r) => ['reparado', 'sin_reparacion'].includes(r.estado))
+      .filter((r) => clavesDeTipo('listo').includes(r.estado))
       .reduce((suma, r) => suma + r.total, 0)
   } catch {
     // Un badge no vale un error en pantalla.

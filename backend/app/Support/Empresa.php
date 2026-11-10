@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Configuracion;
+use App\Models\EstadoOrden;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,11 +17,20 @@ final class Empresa
     /** Los textos que se editan en Configuración › Empresa y documentos. */
     public const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'pie_ticket', 'terminos_orden'];
 
+    /** Mensajes de WhatsApp que no son de un estado de la orden. */
+    public const OTROS_WHATSAPP = ['cotizacion', 'cuota_por_vencer', 'cuota_vencida'];
+
     /**
-     * Mensajes de WhatsApp que se pueden cambiar: uno por estado de una orden,
-     * el que manda la proforma de una cotización y los recordatorios de cuotas.
+     * Mensajes de WhatsApp que se pueden cambiar: uno por estado de la orden
+     * (los de Catálogos > Estados de orden), el que manda la proforma de una
+     * cotización y los recordatorios de cuotas.
+     *
+     * @return list<string>
      */
-    public const ESTADOS_WHATSAPP = ['recibido', 'diagnostico', 'esperando_repuesto', 'en_reparacion', 'reparado', 'sin_reparacion', 'entregado', 'abandonado', 'cotizacion', 'cuota_por_vencer', 'cuota_vencida'];
+    public static function clavesWhatsapp(): array
+    {
+        return [...EstadoOrden::todos()->pluck('clave')->all(), ...self::OTROS_WHATSAPP];
+    }
 
     private const CACHE = 'empresa.configuracion';
 

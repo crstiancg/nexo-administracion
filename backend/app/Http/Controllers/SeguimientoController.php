@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Support\Empresa;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +28,7 @@ class SeguimientoController extends Controller
             ])
             ->firstOrFail();
 
+        $estado = EstadoOrden::deClave($orden->estado);
         $total = (float) ($orden->pedido?->total ?? 0);
         $pagado = round((float) ($orden->pedido?->pagos_sum_monto ?? 0), 2);
 
@@ -36,7 +38,12 @@ class SeguimientoController extends Controller
             'telefono_empresa' => Empresa::datos()['telefono'],
             'codigo' => $orden->codigo,
             'estado' => $orden->estado,
-            'estado_label' => OrdenServicio::ESTADOS[$orden->estado] ?? $orden->estado,
+            'estado_label' => EstadoOrden::nombreDe($orden->estado),
+            // Para armar los pasos sin sesión (no hay Configuración cargada).
+            'estado_tipo' => $estado?->tipo,
+            'estado_icono' => $estado?->icono,
+            'estado_color' => $estado?->color,
+            'mensaje' => $estado?->mensaje_cliente,
             'equipo' => $orden->equipo(),
             'falla' => $orden->falla,
             'sede' => $orden->sede?->only(['nombre', 'direccion', 'telefono']),
@@ -47,7 +54,8 @@ class SeguimientoController extends Controller
             'saldo' => number_format($total - $pagado, 2, '.', ''),
             'movimientos' => $orden->movimientos->map(fn ($m) => [
                 'estado' => $m->estado,
-                'estado_label' => OrdenServicio::ESTADOS[$m->estado] ?? $m->estado,
+                'estado_label' => EstadoOrden::nombreDe($m->estado),
+                'tipo' => EstadoOrden::deClave($m->estado)?->tipo,
                 'fecha' => $m->created_at?->toIso8601String(),
             ]),
         ]);

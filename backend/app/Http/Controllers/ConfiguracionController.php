@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EstadoOrden;
 use App\Support\Empresa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class ConfiguracionController extends Controller
 {
     public function show(): JsonResponse
     {
-        return response()->json(Empresa::datos());
+        return response()->json($this->respuesta());
     }
 
     public function update(Request $request): JsonResponse
@@ -44,12 +45,12 @@ class ConfiguracionController extends Controller
         ]);
 
         // Sólo los estados que existen (una clave inventada no se guarda).
-        $whatsapp = array_intersect_key((array) ($datos['whatsapp'] ?? []), array_flip(Empresa::ESTADOS_WHATSAPP));
+        $whatsapp = array_intersect_key((array) ($datos['whatsapp'] ?? []), array_flip(Empresa::clavesWhatsapp()));
 
         Empresa::guardar('empresa', array_intersect_key($datos['empresa'], array_flip(Empresa::CAMPOS)));
         Empresa::guardar('whatsapp', array_map(fn ($t) => is_string($t) ? trim($t) : null, $whatsapp));
 
-        return response()->json(Empresa::datos());
+        return response()->json($this->respuesta());
     }
 
     public function logo(Request $request): JsonResponse
@@ -65,7 +66,7 @@ class ConfiguracionController extends Controller
             Storage::disk('public')->delete($anterior);
         }
 
-        return response()->json(Empresa::datos());
+        return response()->json($this->respuesta());
     }
 
     public function quitarLogo(): JsonResponse
@@ -75,6 +76,17 @@ class ConfiguracionController extends Controller
         }
         Empresa::guardar('logo', null);
 
-        return response()->json(Empresa::datos());
+        return response()->json($this->respuesta());
+    }
+
+    /**
+     * Lo de la empresa más los estados de la orden: el front los carga juntos
+     * al iniciar sesión (nombres, íconos y colores de los chips).
+     *
+     * @return array<string, mixed>
+     */
+    private function respuesta(): array
+    {
+        return [...Empresa::datos(), 'estados_orden' => EstadoOrden::paraFront()];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ConceptoFinanciero;
+use App\Models\EstadoOrden;
 use App\Models\MovimientoCaja;
 use App\Models\MovimientoFinanciero;
 use App\Models\OrdenServicio;
@@ -151,7 +152,7 @@ class Finanzas
 
         return OrdenServicio::query()
             ->from('ordenes_servicio')
-            ->where('ordenes_servicio.estado', OrdenServicio::ENTREGADO)
+            ->where('ordenes_servicio.estado', EstadoOrden::entregado())
             ->whereBetween('ordenes_servicio.entregado_at', [$desde, $hasta])
             ->when($sedeId, fn ($q) => $q->where('ordenes_servicio.sede_id', $sedeId))
             ->join('pedidos', 'pedidos.id', '=', 'ordenes_servicio.pedido_id')

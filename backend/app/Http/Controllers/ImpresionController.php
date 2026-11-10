@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Support\Empresa;
 use App\Support\QrCode;
@@ -46,7 +47,7 @@ class ImpresionController extends Controller
             'total' => $total,
             'pagado' => $pagado,
             'saldo' => round($total - $pagado, 2),
-            'estado' => OrdenServicio::ESTADOS[$orden->estado] ?? $orden->estado,
+            'estado' => EstadoOrden::nombreDe($orden->estado),
             'seguridad' => OrdenServicio::SEGURIDAD[$orden->seguridad_tipo] ?? $orden->seguridad_tipo,
         ]);
     }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\EstadoOrden;
 use App\Models\Marca;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
@@ -235,6 +236,51 @@ class OrdenServicioTest extends TestCase
         $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'reparado'])->assertStatus(409);
     }
 
+    public function test_un_estado_nuevo_se_comporta_segun_su_tipo(): void
+    {
+        $laboratorio = (new EstadoOrden(['nombre' => 'En laboratorio', 'tipo' => EstadoOrden::EN_PROCESO, 'icono' => 'science', 'color' => 'info']))->forceFill(['clave' => 'laboratorio']);
+        $laboratorio->save();
+        $probado = (new EstadoOrden(['nombre' => 'Probado', 'tipo' => EstadoOrden::LISTO, 'icono' => 'verified', 'color' => 'positive']))->forceFill(['clave' => 'probado']);
+        $probado->save();
+
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.estado', 'ordenes-servicio.index', 'pedidos.pagos');
+        $this->abrirCaja($user);
+        $orden = $this->postJson('/api/ordenes-servicio', $this->payload())->json();
+
+        // En proceso: sigue entre las activas y todavía no se entrega.
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'laboratorio'])
+            ->assertOk()
+            ->assertJsonPath('estado_label', 'En laboratorio');
+        $this->getJson('/api/ordenes-servicio?estado=activas')->assertJsonPath('total', 1);
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'entregado'])->assertStatus(409);
+
+        // Listo: aparece entre las listas para recoger y desde ahí se entrega.
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'probado'])->assertOk();
+        $this->getJson('/api/ordenes-servicio?estado=listas')->assertJsonPath('total', 1);
+        $this->postJson("/api/pedidos/{$orden['pedido_id']}/pagos", [
+            'pago' => ['metodo' => 'efectivo', 'monto' => 230],
+        ])->assertCreated();
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'entregado'])
+            ->assertOk()
+            ->assertJsonPath('editable', false);
+    }
+
+    public function test_no_pasa_a_un_estado_desactivado_y_renombrar_no_cambia_la_orden(): void
+    {
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.estado', 'ordenes-servicio.show');
+        $orden = $this->postJson('/api/ordenes-servicio', $this->payload())->json();
+
+        EstadoOrden::query()->where('clave', 'diagnostico')->firstOrFail()->update(['activo' => false]);
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'diagnostico'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('estado');
+
+        EstadoOrden::query()->where('clave', 'recibido')->firstOrFail()->update(['nombre' => 'Ingresado']);
+        $this->getJson("/api/ordenes-servicio/{$orden['id']}")
+            ->assertJsonPath('estado', 'recibido')
+            ->assertJsonPath('estado_label', 'Ingresado');
+    }
+
     public function test_solo_se_entrega_un_equipo_listo(): void
     {
         $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.estado');
@@ -455,6 +501,7 @@ class OrdenServicioTest extends TestCase
         $this->getJson('/api/panel/buscar?q=PF3XYZ')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
         $this->getJson('/api/panel/buscar?q=987654321')->assertOk()->assertJsonPath('data.ordenes.0.titulo', $codigo);
     }
+
     private function cotizacion(array $cambios = []): Cotizacion
     {
         $cotizacion = (new Cotizacion)->forceFill(array_merge([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrdenServicioRequest;
 use App\Http\Resources\OrdenServicioResource;
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\User;
 use App\Services\OrdenesServicio;
@@ -14,8 +15,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 /**
- * Las órdenes no se borran: un equipo que nunca se retiró pasa a
- * "abandonado". El cobro (abonos, comprobante) va por el pedido de la orden.
+ * Las órdenes no se borran: un equipo que nunca se retiró pasa a un estado
+ * "cerrado" (Abandonado). El cobro (abonos, comprobante) va por el pedido de la orden.
  */
 class OrdenServicioController extends Controller
 {
@@ -45,9 +46,15 @@ class OrdenServicioController extends Controller
                     ->orWhere('telefono', 'like', $term)));
         }
 
-        // "activas" = todo lo que sigue en el taller.
-        if ($request->input('estado') === 'activas') {
-            $query->whereNotIn('estado', [OrdenServicio::ENTREGADO, OrdenServicio::ABANDONADO]);
+        // "activas" = todo lo que sigue en el taller (sin entregar ni cerrar);
+        // "listas" = terminadas, esperando que las recojan.
+        $grupos = [
+            'activas' => [EstadoOrden::INICIAL, EstadoOrden::EN_PROCESO, EstadoOrden::LISTO],
+            'listas' => [EstadoOrden::LISTO],
+        ];
+        $grupo = $grupos[$request->input('estado')] ?? null;
+        if ($grupo) {
+            $query->whereIn('estado', EstadoOrden::clavesDe(...$grupo));
             $request->request->remove('estado');
             $request->query->remove('estado');
         }
@@ -75,8 +82,10 @@ class OrdenServicioController extends Controller
             ->groupBy('estado')
             ->pluck('total', 'estado');
 
-        return response()->json(collect(OrdenServicio::ESTADOS)
-            ->map(fn ($label, $estado) => ['estado' => $estado, 'label' => $label, 'total' => (int) ($conteos[$estado] ?? 0)])
+        // Los activos, y los ocultos sólo si todavía tienen órdenes.
+        return response()->json(EstadoOrden::todos()
+            ->filter(fn (EstadoOrden $e) => $e->activo || ($conteos[$e->clave] ?? 0) > 0)
+            ->map(fn (EstadoOrden $e) => ['estado' => $e->clave, 'label' => $e->nombre, 'total' => (int) ($conteos[$e->clave] ?? 0)])
             ->values());
     }
 
@@ -132,7 +141,7 @@ class OrdenServicioController extends Controller
     public function estado(Request $request, OrdenServicio $orden): JsonResponse
     {
         $datos = $request->validate([
-            'estado' => ['required', Rule::in(array_keys(OrdenServicio::ESTADOS))],
+            'estado' => ['required', Rule::in(EstadoOrden::todos()->where('activo', true)->pluck('clave')->all())],
             'nota' => ['nullable', 'string', 'max:500'],
         ], [], ['estado' => 'estado', 'nota' => 'nota']);
 

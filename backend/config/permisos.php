@@ -147,6 +147,8 @@ return [
         'ordenes-servicio.asignar-tecnico' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
         'tipos-equipo.index' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
         'tipos-equipo.show' => ['tipos-equipo.update'],
+        'estados-orden.show' => ['estados-orden.update'],
+        'estados-orden.ordenar' => ['estados-orden.update'],
     ],
 
     // Para la descripción que genera permisos:sync: "Roles · Crear".
@@ -177,6 +179,7 @@ return [
         'etiquetas' => 'Etiquetas',
         'ordenes-servicio' => 'Órdenes de servicio',
         'tipos-equipo' => 'Tipos de equipo',
+        'estados-orden' => 'Estados de orden',
         'seguimiento' => 'Seguimiento público',
         'conceptos-financieros' => 'Conceptos de ingresos y gastos',
         'movimientos-financieros' => 'Ingresos y gastos',
@@ -192,6 +195,7 @@ return [
         'show' => 'Ver detalle',
         'store' => 'Crear',
         'update' => 'Editar',
+        'ordenar' => 'Ordenar',
         'destroy' => 'Eliminar',
         'toggle-active' => 'Dar de baja / activar',
         'sesiones' => 'Ver sesiones',

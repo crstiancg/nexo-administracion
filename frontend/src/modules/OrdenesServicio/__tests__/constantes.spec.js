@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { TIENDA } from '@/config/tienda'
 import { formatearPrecio } from '@/utils/moneda'
-import { enlaceSeguimiento, enlaceWhatsapp, mensajeWhatsapp, rellenarPlantilla } from '@/modules/OrdenesServicio/constantes'
+import { nextTick } from 'vue'
+import { claveEntregado, clavesDeTipo, enlaceSeguimiento, enlaceWhatsapp, enlaceWhatsappCon, ESTADOS, estadoDe, mensajeWhatsapp, puedeEntregarse, rellenarPlantilla } from '@/modules/OrdenesServicio/constantes'
 import { checklistPara } from '@/modules/OrdenesServicio/FormOrden'
 
 const ORDEN = {
@@ -21,6 +22,11 @@ describe('WhatsApp de órdenes de servicio', () => {
   it('respeta un número que ya viene con código de país', () => {
     expect(enlaceWhatsapp({ ...ORDEN, cliente: { ...ORDEN.cliente, telefono: '+593 98 394 9624' } }))
       .toMatch(/^https:\/\/wa\.me\/593983949624\?/)
+  })
+
+  it('con un texto editado arma el enlace con ese texto', () => {
+    expect(enlaceWhatsappCon(ORDEN, 'Hola Ana, ya está.')).toBe('https://wa.me/51987654321?text=Hola%20Ana%2C%20ya%20est%C3%A1.')
+    expect(enlaceWhatsappCon({ ...ORDEN, cliente: { nombre: 'Ana' } }, 'x')).toBeNull()
   })
 
   it('sin teléfono no hay enlace', () => {
@@ -68,5 +74,40 @@ describe('checklistPara', () => {
 
   it('sin tipo, lista vacía', () => {
     expect(checklistPara(null)).toEqual({})
+  })
+})
+
+describe('estados configurables', () => {
+  it('sin configuración usa los de fábrica', () => {
+    expect(ESTADOS.reparado).toMatchObject({ label: 'Reparado', tipo: 'listo', status: 'positive' })
+    expect(puedeEntregarse('abandonado')).toBe(true)
+    expect(puedeEntregarse('diagnostico')).toBe(false)
+    // Avisar por defecto: cuando el cliente tiene que enterarse.
+    expect(ESTADOS.reparado.notificar).toBe(true)
+    expect(ESTADOS.diagnostico.notificar).toBe(false)
+  })
+
+  it('toma los de Configuración: nombres, tipos y estados nuevos', async () => {
+    TIENDA.estados_orden = [
+      { clave: 'recibido', nombre: 'Ingresado', tipo: 'inicial', color: 'warning', icono: 'login', activo: true },
+      { clave: 'laboratorio', nombre: 'En laboratorio', tipo: 'en_proceso', color: 'info', icono: 'science', activo: true },
+      { clave: 'probado', nombre: 'Probado', tipo: 'listo', color: 'positive', icono: 'verified', activo: true },
+      { clave: 'entregado', nombre: 'Entregado', tipo: 'entregado', color: 'positive', icono: 'handshake', activo: true }
+    ]
+    try {
+      await nextTick()
+      expect(Object.keys(ESTADOS)).toEqual(['recibido', 'laboratorio', 'probado', 'entregado'])
+      expect(estadoDe('recibido').label).toBe('Ingresado')
+      expect(clavesDeTipo('en_proceso')).toEqual(['laboratorio'])
+      expect(puedeEntregarse('probado')).toBe(true)
+      expect(claveEntregado()).toBe('entregado')
+      // Un estado nuevo sin mensaje propio usa el genérico, con su nombre.
+      expect(mensajeWhatsapp({ ...ORDEN, estado: 'laboratorio' })).toContain('está: En laboratorio.')
+      // Uno que ya no existe se muestra con su clave, sin romper.
+      expect(estadoDe('reparado')).toMatchObject({ label: 'reparado', activo: false })
+    } finally {
+      TIENDA.estados_orden = []
+      await nextTick()
+    }
   })
 })

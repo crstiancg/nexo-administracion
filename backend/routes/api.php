@@ -14,6 +14,7 @@ use App\Http\Controllers\CotizacionController;
 use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\ConceptoFinancieroController;
 use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\EstadoOrdenController;
 use App\Http\Controllers\EtiquetaController;
 use App\Http\Controllers\GananciaController;
 use App\Http\Controllers\MovimientoFinancieroController;
@@ -142,6 +143,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
         // Servicio técnico. resumen y tecnicos van antes del resource: si no,
         // {orden} los captura. Sin destroy: una orden se entrega o se abandona.
         Route::apiResource('tipos-equipo', TipoEquipoController::class);
+        // Estados de la orden (configurables). ordenar va antes del resource.
+        Route::put('estados-orden/ordenar', [EstadoOrdenController::class, 'ordenar'])->name('estados-orden.ordenar');
+        Route::apiResource('estados-orden', EstadoOrdenController::class)->parameters(['estados-orden' => 'estado']);
         Route::get('ordenes-servicio/resumen', [OrdenServicioController::class, 'resumen'])->name('ordenes-servicio.resumen');
         Route::get('ordenes-servicio/tecnicos', [OrdenServicioController::class, 'tecnicos'])->name('ordenes-servicio.asignar-tecnico');
         Route::apiResource('ordenes-servicio', OrdenServicioController::class)

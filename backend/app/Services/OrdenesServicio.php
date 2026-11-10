@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cotizacion;
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\User;
@@ -60,7 +61,7 @@ class OrdenesServicio
             $orden->fill($datos);
             if ($nueva) {
                 $orden->forceFill([
-                    'estado' => OrdenServicio::RECIBIDO,
+                    'estado' => EstadoOrden::inicial(),
                     'sede_id' => $usuario->sedeOperativa(),
                     'user_id' => $usuario->id,
                     'token' => Str::random(32),
@@ -72,7 +73,7 @@ class OrdenesServicio
             if ($nueva) {
                 $orden->forceFill(['codigo' => 'OS-'.str_pad((string) $orden->id, 6, '0', STR_PAD_LEFT)])->save();
                 $orden->movimientos()->create([
-                    'estado' => OrdenServicio::RECIBIDO,
+                    'estado' => $orden->estado,
                     'nota' => 'Equipo recibido.',
                     'user_id' => $usuario->id,
                 ]);
@@ -122,7 +123,7 @@ class OrdenesServicio
             // Bloqueada: dos clics en "Entregar" no confirman dos veces.
             $orden = OrdenServicio::query()->whereKey($orden->id)->lockForUpdate()->firstOrFail();
 
-            if ($orden->estado === OrdenServicio::ENTREGADO) {
+            if ($orden->estado === EstadoOrden::entregado()) {
                 throw ValidationException::withMessages([
                     'estado' => 'La orden ya fue entregada.',
                 ])->status(409);
@@ -132,8 +133,13 @@ class OrdenesServicio
                     'estado' => 'La orden ya está en ese estado.',
                 ]);
             }
+            if (! EstadoOrden::deClave($estado)?->activo) {
+                throw ValidationException::withMessages([
+                    'estado' => 'Ese estado no existe o está desactivado.',
+                ]);
+            }
 
-            if ($estado === OrdenServicio::ENTREGADO) {
+            if ($estado === EstadoOrden::entregado()) {
                 $this->entregar($orden, $usuario);
             }
 
@@ -150,9 +156,10 @@ class OrdenesServicio
 
     private function entregar(OrdenServicio $orden, User $usuario): void
     {
-        if (! in_array($orden->estado, OrdenServicio::LISTOS, true)) {
+        if (! in_array($orden->estado, EstadoOrden::entregables(), true)) {
+            $listos = EstadoOrden::todos()->whereIn('clave', EstadoOrden::entregables())->where('activo', true)->pluck('nombre');
             throw ValidationException::withMessages([
-                'estado' => 'Sólo se entrega un equipo reparado, sin reparación o abandonado.',
+                'estado' => 'Sólo se entrega desde: '.$listos->implode(', ').'.',
             ])->status(409);
         }
 

@@ -49,7 +49,7 @@ class AlertasTallerTest extends TestCase
         $alertas = collect($this->getJson('/api/panel/alertas')->assertOk()->json('data'))->keyBy('clave');
 
         $this->assertSame(1, $alertas['taller_sin_recoger']['cantidad']);
-        $this->assertSame('/ordenes-servicio?estado=reparado', $alertas['taller_sin_recoger']['to']);
+        $this->assertSame('/ordenes-servicio?estado=listas', $alertas['taller_sin_recoger']['to']);
         $this->assertSame(1, $alertas['taller_atrasados']['cantidad']);
         $this->assertSame(1, $alertas['taller_sin_tecnico']['cantidad']);
     }

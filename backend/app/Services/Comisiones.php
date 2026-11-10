@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ComisionPago;
 use App\Models\ConceptoFinanciero;
+use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\User;
@@ -32,7 +33,7 @@ class Comisiones
         $fin = Fechas::finDelDia(Carbon::parse($hasta));
 
         $reparaciones = OrdenServicio::query()
-            ->where('estado', OrdenServicio::ENTREGADO)
+            ->where('estado', EstadoOrden::entregado())
             ->whereBetween('entregado_at', [$inicio, $fin])
             ->whereNotNull('tecnico_id')
             ->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))

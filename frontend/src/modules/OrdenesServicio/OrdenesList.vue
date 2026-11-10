@@ -106,8 +106,8 @@
       <template #body-cell-estado="props">
         <q-td :props="props">
           <AppChip
-            :status="ESTADOS[props.row.estado].status"
-            :label="ESTADOS[props.row.estado].label"
+            :status="estadoDe(props.row.estado).status"
+            :label="estadoDe(props.row.estado).label"
           />
           <div
             v-if="props.row.es_garantia"
@@ -368,7 +368,7 @@
           </button>
         </div>
         <p
-          v-if="nuevoEstado === 'entregado'"
+          v-if="nuevoEstado === claveEntregado()"
           class="os-cambio__ayuda"
         >
           Al entregar se descuentan los repuestos del inventario<template v-if="detalle?.credito_id">;
@@ -384,6 +384,58 @@
           autogrow
           maxlength="500"
         />
+
+        <!-- Avisar al cliente: se abre WhatsApp con el mensaje escrito y
+             quien atiende le da a enviar (wa.me, sin costo ni API). -->
+        <div
+          v-if="nuevoEstado"
+          class="os-cambio__aviso"
+        >
+          <q-checkbox
+            v-model="avisar"
+            :disable="!telefonoCliente"
+            color="primary"
+            dense
+            class="os-cambio__avisar"
+          >
+            <q-icon
+              name="chat"
+              size="18px"
+              class="os-cambio__wa"
+            />
+            <template v-if="telefonoCliente">
+              Avisar a <strong>{{ nombreCliente }}</strong> por WhatsApp
+              <span class="os-cambio__telefono text-mono">{{ telefonoCliente }}</span>
+            </template>
+            <template v-else>
+              Sin teléfono: no se le puede avisar por WhatsApp
+            </template>
+          </q-checkbox>
+          <template v-if="avisar">
+            <q-input
+              v-model="mensajeAviso"
+              type="textarea"
+              autogrow
+              maxlength="1000"
+              aria-label="Mensaje de WhatsApp para el cliente"
+              dense
+              outlined
+              class="os-cambio__mensaje"
+            />
+            <p class="os-cambio__ayuda">
+              Al guardar se abre WhatsApp con este mensaje: revísalo y dale a enviar.
+              <button
+                v-if="mensajeEditado !== null"
+                type="button"
+                class="os-cambio__restaurar"
+                @click="mensajeEditado = null"
+              >
+                Volver al mensaje del estado
+              </button>
+            </p>
+          </template>
+        </div>
+
         <p
           v-if="errorEstado"
           class="os-cambio__error"
@@ -489,7 +541,7 @@ import { useUserStore } from '@/stores/user-store'
 import { formatearPrecio } from '@/utils/moneda'
 import OrdenDetalle from './OrdenDetalle.vue'
 import OrdenForm from './OrdenForm.vue'
-import { enlaceSeguimiento, enlaceWhatsapp, ESTADOS, fechaCorta, LISTOS } from './constantes'
+import { claveEntregado, clavesDeTipo, enlaceSeguimiento, enlaceWhatsapp, enlaceWhatsappCon, ESTADOS, estadoDe, fechaCorta, mensajeWhatsapp, puedeEntregarse } from './constantes'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -518,18 +570,24 @@ async function cargarResumen () {
 
 const tabs = computed(() => {
   const total = (estados) => resumen.value.filter((r) => estados.includes(r.estado)).reduce((s, r) => s + r.total, 0)
-  const activos = Object.keys(ESTADOS).filter((e) => !['entregado', 'abandonado'].includes(e))
+  // Mismos grupos que el backend (OrdenServicioController@index).
+  const enTaller = clavesDeTipo('inicial', 'en_proceso', 'listo')
   return [
-    { value: 'activas', label: 'En el taller', icon: 'build_circle', total: total(activos) },
-    ...Object.entries(ESTADOS).map(([value, { label, icon }]) => ({ value, label, icon, total: total([value]) })),
+    { value: 'activas', label: 'En el taller', icon: 'build_circle', total: total(enTaller) },
+    { value: 'listas', label: 'Por recoger', icon: 'inventory_2', total: total(clavesDeTipo('listo')) },
+    // Un estado oculto sólo aparece si todavía tiene órdenes.
+    ...Object.entries(ESTADOS)
+      .map(([value, { label, icon, activo }]) => ({ value, label, icon, activo, total: total([value]) }))
+      .filter((tab) => tab.activo || tab.total > 0)
+      .map(({ activo, ...tab }) => tab),
     { value: null, label: 'Todas', total: total(Object.keys(ESTADOS)) }
   ]
 })
 
 const search = ref('')
 const busqueda = ref('')
-// ?estado=reparado (desde la campana o un enlace): abre en ese estado.
-const estadoFilter = ref(['activas', ...Object.keys(ESTADOS)].includes(route.query.estado) ? route.query.estado : 'activas')
+// ?estado=reparado o ?estado=listas (desde la campana o un enlace): abre ahí.
+const estadoFilter = ref(['activas', 'listas', ...Object.keys(ESTADOS)].includes(route.query.estado) ? route.query.estado : 'activas')
 const tecnicoFilter = ref(null)
 const tecnicoOptions = ref([{ label: 'Todos', value: null }])
 
@@ -700,23 +758,48 @@ const notaEstado = ref('')
 const errorEstado = ref('')
 const cambiandoEstado = ref(false)
 
+// Los activos (Catálogos > Estados de orden), menos el actual. Entregar sólo
+// desde un estado listo o cerrado.
 const opcionesEstado = computed(() => Object.entries(ESTADOS)
-  .filter(([value]) => value !== detalle.value?.estado)
+  .filter(([value, { activo }]) => activo && value !== detalle.value?.estado)
   .map(([value, { label, icon }]) => ({
     value,
     label,
     icon,
-    disable: value === 'entregado' && !LISTOS.includes(detalle.value?.estado)
+    disable: value === claveEntregado() && !puedeEntregarse(detalle.value?.estado)
   })))
+
+// Avisar por WhatsApp: viene marcado si el estado lo pide (Catálogos >
+// Estados de orden) y el cliente tiene teléfono. El mensaje es la plantilla
+// del estado; si se edita, va el texto editado.
+const avisar = ref(false)
+const mensajeEditado = ref(null)
+const telefonoCliente = computed(() => detalle.value?.cliente?.telefono || null)
+const nombreCliente = computed(() => detalle.value?.cliente?.nombre?.split(' ')[0] ?? 'al cliente')
+const mensajeAviso = computed({
+  get: () => mensajeEditado.value ?? (nuevoEstado.value ? mensajeWhatsapp({ ...detalle.value, estado: nuevoEstado.value }) : ''),
+  set: (texto) => { mensajeEditado.value = texto }
+})
+
+// Otro estado = su plantilla y su "avisar por defecto".
+watch(nuevoEstado, (estado) => {
+  avisar.value = Boolean(estado && telefonoCliente.value && ESTADOS[estado]?.notificar)
+  mensajeEditado.value = null
+})
 
 function abrirEstado () {
   nuevoEstado.value = null
   notaEstado.value = ''
   errorEstado.value = ''
+  avisar.value = false
+  mensajeEditado.value = null
   estadoDialog.value = true
 }
 
 async function guardarEstado () {
+  // La pestaña de WhatsApp se abre YA, dentro del clic: abierta después de
+  // esperar al servidor, el navegador la bloquea como ventana emergente.
+  const ventana = avisar.value && telefonoCliente.value ? window.open('', '_blank') : null
   cambiandoEstado.value = true
   errorEstado.value = ''
   try {
@@ -724,15 +807,30 @@ async function guardarEstado () {
     detalleRef.value.actualizar(orden)
     estadoDialog.value = false
     refrescar()
-    const wa = enlaceWhatsapp(orden)
+
+    // Sin editar, el mensaje se arma con la orden ya guardada (saldo y
+    // garantía al día, que cambian al entregar).
+    const enlaceAviso = ventana ? enlaceWhatsappCon(orden, mensajeEditado.value ?? mensajeWhatsapp(orden)) : null
+    if (ventana && enlaceAviso) {
+      ventana.opener = null
+      ventana.location.href = enlaceAviso
+    } else {
+      ventana?.close()
+    }
+
+    // Si no se avisó, queda el botón por si se arrepiente.
+    const wa = enlaceAviso ? null : enlaceWhatsapp(orden)
     $q.notify({
       type: 'positive',
-      message: `${orden.codigo}: ${ESTADOS[orden.estado].label}.`,
+      message: enlaceAviso
+        ? `${orden.codigo}: ${estadoDe(orden.estado).label}. Se abrió WhatsApp para avisar a ${nombreCliente.value}.`
+        : `${orden.codigo}: ${estadoDe(orden.estado).label}.`,
       position: 'top-right',
-      timeout: wa ? 8000 : 2000,
+      timeout: wa ? 8000 : 3000,
       actions: wa ? [{ label: 'Avisar por WhatsApp', color: 'white', handler: () => window.open(wa, '_blank', 'noopener') }] : []
     })
   } catch (error) {
+    ventana?.close()
     const errores = error.response?.data?.errors ?? {}
     errorEstado.value = Object.values(errores).flat()[0] ?? error.response?.data?.message ?? 'No se pudo cambiar el estado.'
   } finally {
@@ -907,6 +1005,54 @@ async function pagoGuardado () {
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--app-ink-2);
+}
+
+.os-cambio__aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 12px;
+  background: var(--app-page);
+}
+
+.os-cambio__avisar {
+  font-size: 13.5px;
+  color: var(--app-ink);
+
+  :deep(.q-checkbox__label) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+  }
+}
+
+// Verde WhatsApp sólo en el ícono: la marca no tiñe el resto.
+.os-cambio__wa {
+  color: #25D366;
+}
+
+.os-cambio__telefono {
+  font-size: 12.5px;
+  color: var(--app-ink-2);
+}
+
+.os-cambio__mensaje :deep(.q-field__control) {
+  border-radius: 10px;
+  background: var(--app-surface);
+}
+
+.os-cambio__restaurar {
+  padding: 0;
+  margin-left: 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--app-primary-hover);
+  cursor: pointer;
 }
 
 .os-cambio__error {
