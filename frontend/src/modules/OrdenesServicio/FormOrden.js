@@ -29,8 +29,9 @@ export default function formOrden () {
       repuestos: [],
       // Sólo al crear: la cotización aceptada de la que nace (queda convertida).
       cotizacion_id: null,
-      // Sólo al crear: entra a la caja abierta.
-      anticipo: { metodo: 'efectivo', monto: '', referencia: '' }
+      // Sólo al crear: entra a la caja abierta. Sin método = sin adelanto;
+      // al elegir uno se piden el monto (y el n° de operación si va).
+      anticipo: { metodo: null, monto: '', referencia: '' }
     }
   }
 }

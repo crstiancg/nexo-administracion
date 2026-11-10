@@ -74,11 +74,13 @@
             option-label="name"
             emit-value
             map-options
-            clearable
+            :clearable="puedeAsignarTecnico"
+            :readonly="!puedeAsignarTecnico"
             dense
             outlined
             placeholder="Sin asignar"
             class="orden-form__control"
+            :hint="puedeAsignarTecnico ? undefined : 'Queda a tu cargo: asignarla a otro pide permiso.'"
           />
         </div>
       </div>
@@ -382,35 +384,85 @@
       <div class="orden-form__pie">
         <div class="orden-form__grow orden-form__anticipo">
           <template v-if="!props.id">
-            <span class="orden-form__label">Adelanto (opcional, entra a la caja abierta)</span>
-            <div class="orden-form__row">
-              <q-select
-                v-model="form.orden.anticipo.metodo"
-                :options="METODOS"
-                emit-value
-                map-options
-                dense
-                outlined
-                aria-label="Método del adelanto"
-                class="orden-form__control orden-form__medio"
-              />
-              <AppTextField
-                v-model="form.orden.anticipo.monto"
-                label="Monto"
-                type="number"
-                min="0"
-                step="0.01"
-                class="orden-form__medio"
-                :error="form.errors[`${PATH}.anticipo.monto`]"
-              />
-              <AppTextField
-                v-if="CON_OPERACION.includes(form.orden.anticipo.metodo) && numero(form.orden.anticipo.monto) > 0"
-                v-model="form.orden.anticipo.referencia"
-                label="N° de operación"
-                maxlength="40"
-                class="orden-form__medio"
-                :error="form.errors[`${PATH}.anticipo.referencia`]"
-              />
+            <div>
+              <h4 class="orden-form__subtitulo">
+                Adelanto <span class="orden-form__opcional">(opcional)</span>
+              </h4>
+              <p class="orden-form__nota">
+                Lo que deja el cliente al recibir el equipo. Entra a la caja abierta de tu sede.
+              </p>
+            </div>
+            <div class="orden-form__adelanto">
+              <div class="orden-form__field">
+                <label
+                  :for="`${uid}-adelanto-metodo`"
+                  class="orden-form__label"
+                >Método de pago</label>
+                <q-select
+                  :id="`${uid}-adelanto-metodo`"
+                  v-model="form.orden.anticipo.metodo"
+                  :options="METODOS"
+                  emit-value
+                  map-options
+                  clearable
+                  dense
+                  outlined
+                  hide-bottom-space
+                  no-error-icon
+                  :display-value="form.orden.anticipo.metodo ? undefined : 'Sin adelanto'"
+                  :error="Boolean(form.errors[`${PATH}.anticipo.metodo`])"
+                  :error-message="form.errors[`${PATH}.anticipo.metodo`]"
+                  :class="['orden-form__control', { 'orden-form__vacio': !form.orden.anticipo.metodo }]"
+                />
+              </div>
+              <div
+                v-if="form.orden.anticipo.metodo"
+                class="orden-form__field"
+              >
+                <label
+                  :for="`${uid}-adelanto-monto`"
+                  class="orden-form__label"
+                >Monto del adelanto <span class="orden-form__requerido">*</span></label>
+                <q-input
+                  :id="`${uid}-adelanto-monto`"
+                  ref="montoAdelantoRef"
+                  v-model="form.orden.anticipo.monto"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  prefix="S/"
+                  placeholder="0.00"
+                  dense
+                  outlined
+                  hide-bottom-space
+                  no-error-icon
+                  :error="Boolean(form.errors[`${PATH}.anticipo.monto`])"
+                  :error-message="form.errors[`${PATH}.anticipo.monto`]"
+                  class="orden-form__control"
+                />
+              </div>
+              <div
+                v-if="pideOperacion"
+                class="orden-form__field"
+              >
+                <label
+                  :for="`${uid}-adelanto-operacion`"
+                  class="orden-form__label"
+                >N° de operación <span class="orden-form__requerido">*</span></label>
+                <q-input
+                  :id="`${uid}-adelanto-operacion`"
+                  v-model="form.orden.anticipo.referencia"
+                  maxlength="40"
+                  placeholder="Ej. 123456"
+                  dense
+                  outlined
+                  hide-bottom-space
+                  no-error-icon
+                  :error="Boolean(form.errors[`${PATH}.anticipo.referencia`])"
+                  :error-message="form.errors[`${PATH}.anticipo.referencia`]"
+                  class="orden-form__control"
+                />
+              </div>
             </div>
           </template>
           <p
@@ -501,7 +553,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
@@ -549,6 +601,8 @@ const tipos = ref([])
 const marcas = ref([])
 const marcasFiltradas = ref([])
 const tecnicos = ref([])
+// Poner a otro usuario a cargo (el backend lo vuelve a exigir).
+const puedeAsignarTecnico = computed(() => userStore.hasPermission('ordenes-servicio.asignar-tecnico'))
 
 function filtrarMarcas (valor, update) {
   const t = valor.trim().toLowerCase()
@@ -599,6 +653,24 @@ const total = computed(() => totalRepuestos.value + numero(form.orden.mano_obra)
 
 // Errores sin campo propio (caja cerrada para el adelanto, total por debajo
 // de lo abonado…).
+// ── Adelanto: elegir el método pide el monto (y el n° de operación si va) ──
+const montoAdelantoRef = ref()
+const pideOperacion = computed(() => CON_OPERACION.includes(form.orden.anticipo.metodo))
+
+watch(() => form.orden.anticipo.metodo, async (metodo, anterior) => {
+  if (!metodo) {
+    form.orden.anticipo.monto = ''
+    form.orden.anticipo.referencia = ''
+    return
+  }
+  if (!CON_OPERACION.includes(metodo)) form.orden.anticipo.referencia = ''
+  // Recién elegido: el cursor va al monto.
+  if (!anterior) {
+    await nextTick()
+    montoAdelantoRef.value?.focus()
+  }
+})
+
 const errorGeneral = computed(() => form.errors.caja ?? form.errors['pedido.items'] ?? form.errors.estado ?? form.errors.sede ??
   form.errors[`${PATH}.cotizacion_id`] ?? form.errors.cotizacion_id ?? null)
 
@@ -615,8 +687,8 @@ onMounted(async () => {
   tecnicos.value = tecnicosResp
 
   if (!props.id) {
-    // Quien recibe suele ser quien la trabaja: se puede cambiar.
-    form.orden.tecnico_id = tecnicos.value.some((t) => t.id === userStore.id) ? userStore.id : null
+    // Queda a cargo de quien la registra; con permiso se elige a otro.
+    form.orden.tecnico_id = puedeAsignarTecnico.value && !tecnicos.value.some((t) => t.id === userStore.id) ? null : userStore.id
     if (props.cotizacionId) await desdeCotizacion(props.cotizacionId)
     return
   }
@@ -885,7 +957,35 @@ defineExpose({ form, submit })
 .orden-form__anticipo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+}
+
+.orden-form__subtitulo {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--app-ink);
+}
+
+// "Sin adelanto" en gris, como un placeholder.
+.orden-form__vacio :deep(.q-field__native) {
+  color: var(--app-ink-2);
+}
+
+.orden-form__opcional {
+  font-weight: 400;
+  color: var(--app-ink-2);
+}
+
+// Tres columnas iguales: método, monto y n° de operación. auto-fill deja el
+// hueco del n° de operación aunque no se muestre (no se estiran los otros
+// dos al aparecer) y en pantallas angostas pasan una debajo de otra.
+.orden-form__adelanto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  align-items: start;
+  gap: 12px 16px;
 }
 
 .orden-form__totales {

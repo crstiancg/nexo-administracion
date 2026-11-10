@@ -33,9 +33,13 @@ return new class extends Migration
             WHERE sedes.activo = 1
               AND NOT EXISTS (SELECT 1 FROM stocks s WHERE s.variante_id = variantes.id AND s.sede_id = sedes.id)
         ');
-        DB::table('stocks')
-            ->join('variantes', 'variantes.id', '=', 'stocks.variante_id')
-            ->update(['stocks.stock_minimo' => DB::raw('variantes.stock_minimo')]);
+        // Subconsulta y no update con join: el join en sqlite (tests) lo arma
+        // Laravel con un rowid IN (...) y la columna de variantes no existe ahí.
+        DB::statement('
+            UPDATE stocks SET stock_minimo = (
+                SELECT variantes.stock_minimo FROM variantes WHERE variantes.id = stocks.variante_id
+            )
+        ');
 
         Schema::table('variantes', function (Blueprint $table) {
             $table->dropColumn('stock_minimo');

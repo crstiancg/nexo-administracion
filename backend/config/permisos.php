@@ -141,7 +141,10 @@ return [
         'ordenes-servicio.firma' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         // Quien ve la orden la imprime (y su etiqueta).
         'ordenes-servicio.impresion' => ['ordenes-servicio.index', 'ordenes-servicio.show', 'ordenes-servicio.store', 'ordenes-servicio.update'],
-        'ordenes-servicio.tecnicos' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
+        // La lista de usuarios la ve quien recibe, edita o filtra órdenes; pero
+        // poner a OTRO como técnico a cargo exige el permiso tildado en el rol
+        // (App\Services\OrdenesServicio no mira estos implícitos).
+        'ordenes-servicio.asignar-tecnico' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
         'tipos-equipo.index' => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.index'],
         'tipos-equipo.show' => ['tipos-equipo.update'],
     ],
@@ -230,7 +233,7 @@ return [
         'productos' => 'Ver más vendidos',
         'inventario' => 'Ver inventario valorizado',
         'resumen' => 'Ver resumen por estado',
-        'tecnicos' => 'Ver técnicos',
+        'asignar-tecnico' => 'Asignar técnico a cargo (a otro usuario)',
         'estado' => 'Cambiar estado / entregar',
         'impresion' => 'Imprimir orden y etiqueta',
         'fotos' => 'Subir fotos',

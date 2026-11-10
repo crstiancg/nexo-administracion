@@ -128,6 +128,59 @@ class OrdenServicioTest extends TestCase
         $this->assertEquals(5, Stock::where('variante_id', $this->disco->id)->value('cantidad'));
     }
 
+    public function test_elegir_metodo_de_adelanto_pide_el_monto_y_la_operacion(): void
+    {
+        $this->recepcion('ordenes-servicio.store');
+
+        $this->postJson('/api/ordenes-servicio', $this->payload([
+            'anticipo' => ['metodo' => 'yape', 'monto' => '', 'referencia' => ''],
+        ]))->assertUnprocessable()
+            ->assertJsonValidationErrors(['orden.anticipo.monto', 'orden.anticipo.referencia']);
+
+        $this->postJson('/api/ordenes-servicio', $this->payload([
+            'anticipo' => ['metodo' => null, 'monto' => 20],
+        ]))->assertUnprocessable()
+            ->assertJsonValidationErrors(['orden.anticipo.metodo']);
+
+        // Sin método ni monto no hay adelanto: se registra igual.
+        $this->postJson('/api/ordenes-servicio', $this->payload([
+            'anticipo' => ['metodo' => null, 'monto' => '', 'referencia' => ''],
+        ]))->assertCreated()
+            ->assertJsonPath('pagado', '0.00');
+    }
+
+    public function test_sin_permiso_de_asignar_el_tecnico_es_quien_registra(): void
+    {
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $otro = User::factory()->create();
+
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload(['tecnico_id' => $otro->id]))
+            ->assertCreated()
+            ->assertJsonPath('tecnico_id', $user->id)
+            ->json('id');
+
+        // Al editar tampoco lo cambia.
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload(['tecnico_id' => $otro->id]))
+            ->assertOk()
+            ->assertJsonPath('tecnico_id', $user->id);
+    }
+
+    public function test_con_permiso_de_asignar_elige_el_tecnico(): void
+    {
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.asignar-tecnico');
+        $tecnico = User::factory()->create();
+        $otro = User::factory()->create();
+
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload(['tecnico_id' => $tecnico->id]))
+            ->assertCreated()
+            ->assertJsonPath('tecnico_id', $tecnico->id)
+            ->json('id');
+
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload(['tecnico_id' => $otro->id]))
+            ->assertOk()
+            ->assertJsonPath('tecnico_id', $otro->id);
+    }
+
     public function test_editar_rearma_el_cobro(): void
     {
         $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');

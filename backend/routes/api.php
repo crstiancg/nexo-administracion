@@ -143,7 +143,7 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
         // {orden} los captura. Sin destroy: una orden se entrega o se abandona.
         Route::apiResource('tipos-equipo', TipoEquipoController::class);
         Route::get('ordenes-servicio/resumen', [OrdenServicioController::class, 'resumen'])->name('ordenes-servicio.resumen');
-        Route::get('ordenes-servicio/tecnicos', [OrdenServicioController::class, 'tecnicos'])->name('ordenes-servicio.tecnicos');
+        Route::get('ordenes-servicio/tecnicos', [OrdenServicioController::class, 'tecnicos'])->name('ordenes-servicio.asignar-tecnico');
         Route::apiResource('ordenes-servicio', OrdenServicioController::class)
             ->parameters(['ordenes-servicio' => 'orden'])
             ->except(['destroy']);

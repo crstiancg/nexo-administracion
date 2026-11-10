@@ -94,9 +94,12 @@ class StoreOrdenServicioRequest extends FormRequest
         }
 
         // El adelanto sólo al recibir el equipo; después se abona desde la orden.
-        if ($this->isMethod('post') && (float) $this->input('orden.anticipo.monto', 0) > 0) {
+        // Elegir el método o poner un monto ya es dar un adelanto: se piden los
+        // dos (y el n° de operación si el método lo lleva).
+        $conAdelanto = filled($this->input('orden.anticipo.metodo')) || (float) $this->input('orden.anticipo.monto', 0) > 0;
+        if ($this->isMethod('post') && $conAdelanto) {
             $rules['orden.anticipo.metodo'] = ['required', Rule::in(array_keys(Pago::METODOS))];
-            $rules['orden.anticipo.monto'] = ['numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2', $this->anticipoNoMayorAlTotal()];
+            $rules['orden.anticipo.monto'] = ['required', 'numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2', $this->anticipoNoMayorAlTotal()];
             $rules['orden.anticipo.recibido'] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
             $rules['orden.anticipo.referencia'] = [
                 Rule::requiredIf(in_array($this->input('orden.anticipo.metodo'), CobrarPedidoRequest::CON_OPERACION, true)),
@@ -161,6 +164,9 @@ class StoreOrdenServicioRequest extends FormRequest
             'orden.falla.required' => 'Describe la falla que reporta el cliente.',
             'orden.seguridad_valor.required' => 'Anota la clave o el patrón para poder probar el equipo.',
             'orden.anticipo.referencia.required' => 'Anota el número de operación para poder verificar el pago.',
+            'orden.anticipo.monto.required' => 'Ingresa el monto del adelanto o quita el método de pago.',
+            'orden.anticipo.monto.min' => 'Ingresa el monto del adelanto o quita el método de pago.',
+            'orden.anticipo.metodo.required' => 'Elige con qué paga el adelanto.',
         ];
     }
 

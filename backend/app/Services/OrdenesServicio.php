@@ -21,6 +21,9 @@ use Illuminate\Validation\ValidationException;
  */
 class OrdenesServicio
 {
+    /** Poner a otro usuario como técnico a cargo (nombre de ruta, ver routes/api.php). */
+    public const PERMISO_ASIGNAR_TECNICO = 'ordenes-servicio.asignar-tecnico';
+
     public function __construct(private Pedidos $pedidos, private Cajas $cajas) {}
 
     /**
@@ -42,6 +45,16 @@ class OrdenesServicio
             // Sin clave no se guarda el valor (un "Sin bloqueo" con PIN viejo).
             if (($datos['seguridad_tipo'] ?? 'ninguno') === 'ninguno') {
                 $datos['seguridad_valor'] = null;
+            }
+
+            // El técnico a cargo es quien registra; elegir a otro (al crear o
+            // al editar) pide el permiso en el rol, no el implícito de la ruta.
+            if (! $usuario->checkPermissionTo(self::PERMISO_ASIGNAR_TECNICO)) {
+                if ($nueva) {
+                    $datos['tecnico_id'] = $usuario->id;
+                } else {
+                    unset($datos['tecnico_id']);
+                }
             }
 
             $orden->fill($datos);
