@@ -26,9 +26,9 @@ class EtiquetaController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('variantes.sku', 'like', $term)
-                ->orWhere('variantes.codigo_barras', 'like', $term)
-                ->orWhere('productos.nombre', 'like', $term));
+                ->whereLike('variantes.sku', $term)
+                ->orWhereLike('variantes.codigo_barras', $term)
+                ->orWhereLike('productos.nombre', $term));
         }
 
         // Por nombre de producto y, dentro, en el orden en que se cargaron.

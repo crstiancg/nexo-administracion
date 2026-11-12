@@ -12,16 +12,24 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative --no-scr
 
 FROM dunglas/frankenphp:1-php8.4-bookworm
 
-# gd con WebP y AVIF (fotos de productos y sus miniaturas), MySQL, soap
-# (Greenter envía los comprobantes a SUNAT por SOAP), etc.
-RUN install-php-extensions gd pdo_mysql intl zip bcmath exif opcache pcntl soap \
+# gd con WebP y AVIF (fotos de productos y sus miniaturas), Postgres (y MySQL,
+# el de desarrollo), soap (Greenter envía los comprobantes a SUNAT por SOAP), etc.
+RUN install-php-extensions gd pdo_pgsql pdo_mysql intl zip bcmath exif opcache pcntl soap \
     # Si GD quedó sin AVIF, las fotos AVIF se quedarían sin miniatura; sin
     # SoapClient no sale ningún comprobante: que falle el build y no producción.
     && php -r 'exit(function_exists("imageavif") && function_exists("imagewebp") && class_exists("SoapClient") ? 0 : 1);'
 
-# mysqldump para los backups de la base (spatie/laravel-backup).
+# pg_dump para los backups de la base (spatie/laravel-backup). Del repositorio
+# oficial de Postgres y no el de Debian (que trae el 15): pg_dump se niega a
+# respaldar un servidor más nuevo que él. Igual o mayor que el de Dokploy.
+ARG PG_CLIENT_VERSION=18
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends default-mysql-client \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-${PG_CLIENT_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/zz-nexo.ini

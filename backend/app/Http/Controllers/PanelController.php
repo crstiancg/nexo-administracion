@@ -84,13 +84,13 @@ class PanelController extends Controller
             $resultados['ordenes'] = OrdenServicio::query()
                 ->with(['cliente:id,nombre', 'tipoEquipo:id,nombre', 'marca:id,nombre'])
                 ->where(fn (Builder $b) => $b
-                    ->where('codigo', 'like', $term)
-                    ->orWhere('serie', 'like', $term)
-                    ->orWhere('modelo', 'like', $term)
+                    ->whereLike('codigo', $term)
+                    ->orWhereLike('serie', $term)
+                    ->orWhereLike('modelo', $term)
                     ->orWhereHas('cliente', fn (Builder $c) => $c
-                        ->where('nombre', 'like', $term)
-                        ->orWhere('numero_documento', 'like', $term)
-                        ->orWhere('telefono', 'like', $term)))
+                        ->whereLike('nombre', $term)
+                        ->orWhereLike('numero_documento', $term)
+                        ->orWhereLike('telefono', $term)))
                 ->latest('id')
                 ->limit(5)
                 ->get()
@@ -106,8 +106,8 @@ class PanelController extends Controller
             $resultados['productos'] = Producto::query()
                 ->with(['marca:id,nombre', 'portada'])
                 ->where(fn (Builder $b) => $b
-                    ->where('nombre', 'like', $term)
-                    ->orWhereHas('variantes', fn (Builder $v) => $v->where('sku', 'like', $term)->orWhere('codigo_barras', 'like', $term)))
+                    ->whereLike('nombre', $term)
+                    ->orWhereHas('variantes', fn (Builder $v) => $v->whereLike('sku', $term)->orWhereLike('codigo_barras', $term)))
                 ->orderBy('nombre')
                 ->limit(5)
                 ->get()
@@ -124,8 +124,8 @@ class PanelController extends Controller
             $resultados['pedidos'] = Pedido::query()
                 ->with('cliente:id,nombre')
                 ->where(fn (Builder $b) => $b
-                    ->where('codigo', 'like', $term)
-                    ->orWhereHas('cliente', fn (Builder $c) => $c->where('nombre', 'like', $term)->orWhere('numero_documento', 'like', $term)))
+                    ->whereLike('codigo', $term)
+                    ->orWhereHas('cliente', fn (Builder $c) => $c->whereLike('nombre', $term)->orWhereLike('numero_documento', $term)))
                 ->latest('id')
                 ->limit(5)
                 ->get()
@@ -139,7 +139,7 @@ class PanelController extends Controller
 
         if ($puede('clientes.index')) {
             $resultados['clientes'] = Cliente::query()
-                ->where(fn (Builder $b) => $b->where('nombre', 'like', $term)->orWhere('numero_documento', 'like', $term))
+                ->where(fn (Builder $b) => $b->whereLike('nombre', $term)->orWhereLike('numero_documento', $term))
                 ->orderBy('nombre')
                 ->limit(5)
                 ->get()
@@ -155,8 +155,8 @@ class PanelController extends Controller
             $resultados['cotizaciones'] = Cotizacion::query()
                 ->with('cliente:id,nombre')
                 ->where(fn (Builder $b) => $b
-                    ->where('codigo', 'like', $term)
-                    ->orWhereHas('cliente', fn (Builder $c) => $c->where('nombre', 'like', $term)))
+                    ->whereLike('codigo', $term)
+                    ->orWhereHas('cliente', fn (Builder $c) => $c->whereLike('nombre', $term)))
                 ->latest('id')
                 ->limit(5)
                 ->get()
@@ -172,7 +172,7 @@ class PanelController extends Controller
         if ($puede('series.show')) {
             $resultados['series'] = Serie::query()
                 ->with('variante:id,producto_id,presentacion', 'variante.producto:id,nombre')
-                ->where('numero', 'like', '%'.Serie::normalizar($request->input('q')).'%')
+                ->whereLike('numero', '%'.Serie::normalizar($request->input('q')).'%')
                 ->orderBy('numero')
                 ->limit(5)
                 ->get()
@@ -203,8 +203,7 @@ class PanelController extends Controller
         $delMes = $resumen(Fechas::inicioDelDia($hoy->copy()->startOfMonth()), Fechas::finDelDia());
 
         // Últimos 14 días, con los días sin ventas en 0 (la serie no se corta).
-        $desfase = (int) now(Fechas::zona())->utcOffset();
-        $dia = "DATE(DATE_ADD(confirmado_at, INTERVAL {$desfase} MINUTE))";
+        $dia = Fechas::diaSql('confirmado_at');
         $porDia = $this->pedidos($sedeId)
             ->whereBetween('confirmado_at', [Fechas::inicioDelDia($hoy->copy()->subDays(13)), Fechas::finDelDia()])
             ->selectRaw("{$dia} as fecha, COUNT(*) as ventas, SUM(total) as total")
@@ -236,7 +235,7 @@ class PanelController extends Controller
             'mes' => $fila($delMes),
             'mes_anterior' => $fila($delMesAnterior),
             'por_dia' => $serie->values(),
-            'por_mes' => $this->ventasPorMes($sedeId, $desfase),
+            'por_mes' => $this->ventasPorMes($sedeId),
             'por_canal' => $this->ventasPorCanal($sedeId),
         ];
     }
@@ -247,10 +246,10 @@ class PanelController extends Controller
      *
      * @return array<int, array<string, mixed>>
      */
-    private function ventasPorMes(int $sedeId, int $desfase): array
+    private function ventasPorMes(int $sedeId): array
     {
         $hoy = Fechas::hoy();
-        $mes = "DATE_FORMAT(DATE_ADD(confirmado_at, INTERVAL {$desfase} MINUTE), '%Y-%m')";
+        $mes = Fechas::mesSql('confirmado_at');
         $primera = $this->pedidos($sedeId)->min('confirmado_at');
         $meses = $primera
             ? max(12, min(36, (int) Carbon::parse($primera)->startOfMonth()->diffInMonths($hoy->copy()->startOfMonth()) + 1))
@@ -370,7 +369,7 @@ class PanelController extends Controller
             ->where('cotizaciones.created_at', '>=', Fechas::inicioDelDia($hoy->copy()->startOfMonth()))
             ->leftJoin('users', 'users.id', '=', 'cotizaciones.user_id')
             ->selectRaw("COALESCE(users.name, 'Sin usuario') as vendedor, COUNT(*) as emitidas")
-            ->selectRaw('SUM(cotizaciones.estado = ?) as convertidas', [Cotizacion::CONVERTIDA])
+            ->selectRaw('SUM(CASE WHEN cotizaciones.estado = ? THEN 1 ELSE 0 END) as convertidas', [Cotizacion::CONVERTIDA])
             ->selectRaw('SUM(CASE WHEN cotizaciones.estado = ? THEN cotizaciones.total ELSE 0 END) as monto', [Cotizacion::CONVERTIDA])
             ->groupBy('users.name')
             ->orderByDesc('emitidas')

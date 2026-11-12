@@ -54,10 +54,10 @@ class InventarioController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('movimiento_inventarios.referencia', 'like', $term)
+                ->whereLike('movimiento_inventarios.referencia', $term)
                 ->orWhereHas('variante', fn (Builder $v) => $v
-                    ->where('sku', 'like', $term)
-                    ->orWhereHas('producto', fn (Builder $p) => $p->where('nombre', 'like', $term))));
+                    ->whereLike('sku', $term)
+                    ->orWhereHas('producto', fn (Builder $p) => $p->whereLike('nombre', $term))));
         }
 
         if (! $request->filled('order_by')) {
@@ -118,9 +118,9 @@ class InventarioController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('variantes.sku', 'like', $term)
-                ->orWhere('variantes.codigo_barras', 'like', $term)
-                ->orWhereHas('producto', fn (Builder $p) => $p->where('nombre', 'like', $term)));
+                ->whereLike('variantes.sku', $term)
+                ->orWhereLike('variantes.codigo_barras', $term)
+                ->orWhereHas('producto', fn (Builder $p) => $p->whereLike('nombre', $term)));
         }
 
         return $this->generateViewSetList(
@@ -157,10 +157,10 @@ class InventarioController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('lotes.codigo', 'like', $term)
+                ->whereLike('lotes.codigo', $term)
                 ->orWhereHas('variante', fn (Builder $v) => $v
-                    ->where('sku', 'like', $term)
-                    ->orWhereHas('producto', fn (Builder $p) => $p->where('nombre', 'like', $term))));
+                    ->whereLike('sku', $term)
+                    ->orWhereHas('producto', fn (Builder $p) => $p->whereLike('nombre', $term))));
         }
 
         // El que vence primero arriba; los sin fecha al final.

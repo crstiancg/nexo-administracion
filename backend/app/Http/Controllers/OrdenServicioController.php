@@ -37,13 +37,13 @@ class OrdenServicioController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('ordenes_servicio.codigo', 'like', $term)
-                ->orWhere('ordenes_servicio.serie', 'like', $term)
-                ->orWhere('ordenes_servicio.modelo', 'like', $term)
+                ->whereLike('ordenes_servicio.codigo', $term)
+                ->orWhereLike('ordenes_servicio.serie', $term)
+                ->orWhereLike('ordenes_servicio.modelo', $term)
                 ->orWhereHas('cliente', fn (Builder $c) => $c
-                    ->where('nombre', 'like', $term)
-                    ->orWhere('numero_documento', 'like', $term)
-                    ->orWhere('telefono', 'like', $term)));
+                    ->whereLike('nombre', $term)
+                    ->orWhereLike('numero_documento', $term)
+                    ->orWhereLike('telefono', $term)));
         }
 
         // "activas" = todo lo que sigue en el taller (sin entregar ni cerrar);

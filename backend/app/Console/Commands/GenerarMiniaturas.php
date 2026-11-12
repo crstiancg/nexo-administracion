@@ -19,7 +19,7 @@ class GenerarMiniaturas extends Command
 
     public function handle(Imagenes $imagenes): int
     {
-        $pendientes = Archivo::query()->whereNull('miniatura')->where('mime', 'like', 'image/%');
+        $pendientes = Archivo::query()->whereNull('miniatura')->whereLike('mime', 'image/%');
 
         $total = $pendientes->count();
         if ($total === 0) {

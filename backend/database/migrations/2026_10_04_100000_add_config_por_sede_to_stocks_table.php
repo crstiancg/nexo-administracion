@@ -28,9 +28,9 @@ return new class extends Migration
         // que tenía la presentación: nada desaparece de ningún POS.
         DB::statement('
             INSERT INTO stocks (variante_id, sede_id, cantidad, activo, stock_minimo)
-            SELECT variantes.id, sedes.id, 0, 1, variantes.stock_minimo
+            SELECT variantes.id, sedes.id, 0, TRUE, variantes.stock_minimo
             FROM variantes CROSS JOIN sedes
-            WHERE sedes.activo = 1
+            WHERE sedes.activo = TRUE
               AND NOT EXISTS (SELECT 1 FROM stocks s WHERE s.variante_id = variantes.id AND s.sede_id = sedes.id)
         ');
         // Subconsulta y no update con join: el join en sqlite (tests) lo arma

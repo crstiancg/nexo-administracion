@@ -27,10 +27,10 @@ class OrdenCompraController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('ordenes_compra.codigo', 'like', $term)
+                ->whereLike('ordenes_compra.codigo', $term)
                 ->orWhereHas('proveedor', fn (Builder $p) => $p
-                    ->where('razon_social', 'like', $term)
-                    ->orWhere('ruc', 'like', $term)));
+                    ->whereLike('razon_social', $term)
+                    ->orWhereLike('ruc', $term)));
         }
 
         if (! $request->filled('order_by')) {

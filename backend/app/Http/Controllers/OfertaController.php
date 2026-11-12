@@ -44,10 +44,10 @@ class OfertaController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('ofertas.nombre', 'like', $term)
-                ->orWhereHas('productos', fn (Builder $p) => $p->where('nombre', 'like', $term))
-                ->orWhereHas('variantes.producto', fn (Builder $p) => $p->where('nombre', 'like', $term))
-                ->orWhereHas('categorias', fn (Builder $c) => $c->where('nombre', 'like', $term)));
+                ->whereLike('ofertas.nombre', $term)
+                ->orWhereHas('productos', fn (Builder $p) => $p->whereLike('nombre', $term))
+                ->orWhereHas('variantes.producto', fn (Builder $p) => $p->whereLike('nombre', $term))
+                ->orWhereHas('categorias', fn (Builder $c) => $c->whereLike('nombre', $term)));
         }
 
         if (! $request->filled('order_by')) {

@@ -74,8 +74,8 @@ class ReporteController extends Controller
             ],
             'por_dia' => $this->pedidos($desde, $hasta, $sedeId)
                 // El día local, no el UTC (una venta de las 20:00 en Lima es de hoy).
-                ->selectRaw("DATE(DATE_ADD(confirmado_at, INTERVAL {$this->desfase()} MINUTE)) as fecha, COUNT(*) as ventas, SUM(total) as total")
-                ->groupByRaw("DATE(DATE_ADD(confirmado_at, INTERVAL {$this->desfase()} MINUTE))")
+                ->selectRaw(Fechas::diaSql('confirmado_at').' as fecha, COUNT(*) as ventas, SUM(total) as total')
+                ->groupByRaw(Fechas::diaSql('confirmado_at'))
                 ->orderBy('fecha')
                 ->get()
                 ->map(fn ($f) => ['fecha' => (string) $f->fecha, 'ventas' => (int) $f->ventas, 'total' => round((float) $f->total, 2)]),
@@ -217,15 +217,6 @@ class ReporteController extends Controller
             'por_sede' => $porSede,
             'top' => $top,
         ]);
-    }
-
-    /**
-     * Minutos entre UTC y la zona del negocio (Lima: -300), para agrupar por
-     * día local en SQL sin depender de las tablas de zonas de MySQL.
-     */
-    private function desfase(): int
-    {
-        return (int) now(Fechas::zona())->utcOffset();
     }
 
     /**

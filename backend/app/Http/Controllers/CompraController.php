@@ -27,11 +27,11 @@ class CompraController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('compras.codigo', 'like', $term)
-                ->orWhere('compras.numero_documento', 'like', $term)
+                ->whereLike('compras.codigo', $term)
+                ->orWhereLike('compras.numero_documento', $term)
                 ->orWhereHas('proveedor', fn (Builder $p) => $p
-                    ->where('razon_social', 'like', $term)
-                    ->orWhere('ruc', 'like', $term)));
+                    ->whereLike('razon_social', $term)
+                    ->orWhereLike('ruc', $term)));
         }
         if ($request->filled('desde')) {
             $query->whereDate('fecha', '>=', $request->date('desde'));

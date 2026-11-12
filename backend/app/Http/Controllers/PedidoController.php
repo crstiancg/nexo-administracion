@@ -87,10 +87,10 @@ class PedidoController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('pedidos.codigo', 'like', $term)
+                ->whereLike('pedidos.codigo', $term)
                 ->orWhereHas('cliente', fn (Builder $c) => $c
-                    ->where('nombre', 'like', $term)
-                    ->orWhere('numero_documento', 'like', $term)));
+                    ->whereLike('nombre', $term)
+                    ->orWhereLike('numero_documento', $term)));
         }
 
         if ($request->filled('desde')) {

@@ -23,7 +23,7 @@ chown -R www-data:www-data storage bootstrap/cache
 
 php artisan storage:link --force --no-interaction >/dev/null 2>&1 || true
 
-# Espera a la base (MySQL puede tardar en aceptar conexiones tras un reinicio).
+# Espera a la base (puede tardar en aceptar conexiones tras un reinicio).
 intentos=0
 until php artisan db:show --no-interaction >/dev/null 2>&1; do
   intentos=$((intentos + 1))

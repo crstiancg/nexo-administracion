@@ -35,8 +35,8 @@ class CreditoController extends Controller
             ->with(['cliente:id,nombre,telefono,tipo_documento,numero_documento', 'pedido' => fn ($q) => $q->select('id', 'codigo', 'canal', 'total', 'estado')->withSum('pagos', 'monto'), 'cuotas'])
             ->when($request->filled('sede_id'), fn (Builder $q) => $q->where('sede_id', $request->integer('sede_id')))
             ->when($request->filled('search'), fn (Builder $q) => $q->whereHas('cliente', fn (Builder $c) => $c
-                ->where('nombre', 'like', '%'.$request->input('search').'%')
-                ->orWhere('numero_documento', 'like', '%'.$request->input('search').'%')))
+                ->whereLike('nombre', '%'.$request->input('search').'%')
+                ->orWhereLike('numero_documento', '%'.$request->input('search').'%')))
             ->latest('id')
             ->get()
             ->map(fn (Credito $c) => $this->fila($c));

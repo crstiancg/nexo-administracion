@@ -35,7 +35,7 @@ class SerieController extends Controller
                     ->where('sede_id', $request->integer('sede_id') ?: $request->user()->sede_id);
             })
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))
-            ->when($request->filled('search'), fn ($q) => $q->where('numero', 'like', '%'.Serie::normalizar($request->input('search')).'%'))
+            ->when($request->filled('search'), fn ($q) => $q->whereLike('numero', '%'.Serie::normalizar($request->input('search')).'%'))
             ->orderBy($request->filled('variante_id') ? 'id' : 'numero')
             ->limit($request->filled('variante_id') ? 500 : 50)
             ->get();

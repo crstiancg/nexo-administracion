@@ -33,7 +33,7 @@ class AuditoriaController extends Controller
             ->when($request->filled('modelo_id'), fn ($q) => $q->where('modelo_id', $request->integer('modelo_id')))
             ->when($request->filled('evento'), fn ($q) => $q->where('evento', $request->input('evento')))
             ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))
-            ->when($request->filled('search'), fn ($q) => $q->where('etiqueta', 'like', '%'.$request->input('search').'%'))
+            ->when($request->filled('search'), fn ($q) => $q->whereLike('etiqueta', '%'.$request->input('search').'%'))
             ->when($request->filled('desde'), fn ($q) => $q->where('created_at', '>=', Fechas::inicioDelDia($request->date('desde'))))
             ->when($request->filled('hasta'), fn ($q) => $q->where('created_at', '<=', Fechas::finDelDia($request->date('hasta'))))
             ->latest('id')

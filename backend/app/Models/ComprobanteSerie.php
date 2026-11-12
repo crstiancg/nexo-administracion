@@ -36,7 +36,10 @@ class ComprobanteSerie extends Model
                 continue;
             }
 
-            $numero = (int) self::query()->where('tipo', $tipo)->max(DB::raw('CAST(SUBSTRING(serie, 2) AS UNSIGNED)')) + 1;
+            // En PHP y no en SQL: el CAST a número es distinto en cada motor.
+            $numero = (int) self::query()->where('tipo', $tipo)->pluck('serie')
+                ->map(fn (string $serie) => (int) substr($serie, 1))
+                ->max() + 1;
             (new self)->forceFill([
                 'sede_id' => $sede->id,
                 'tipo' => $tipo,

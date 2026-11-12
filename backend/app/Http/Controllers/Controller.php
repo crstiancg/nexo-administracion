@@ -62,7 +62,7 @@ abstract class Controller
             $term = '%'.$request->input('search').'%';
             $query->where(function (Builder $q) use ($searchBy, $term, $qualify) {
                 foreach ($searchBy as $column) {
-                    $q->orWhere($qualify($column), 'like', $term);
+                    $q->orWhereLike($qualify($column), $term);
                 }
             });
         }

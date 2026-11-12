@@ -122,11 +122,11 @@ class ProductoController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('productos.nombre', 'like', $term)
+                ->whereLike('productos.nombre', $term)
                 // SKU o código de barras de cualquiera de sus presentaciones.
                 ->orWhereHas('variantes', fn (Builder $v) => $v
-                    ->where('sku', 'like', $term)
-                    ->orWhere('codigo_barras', 'like', $term)));
+                    ->whereLike('sku', $term)
+                    ->orWhereLike('codigo_barras', $term)));
         }
     }
 

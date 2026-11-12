@@ -48,10 +48,10 @@ class CotizacionController extends Controller
         if ($request->filled('search')) {
             $term = '%'.$request->input('search').'%';
             $query->where(fn (Builder $q) => $q
-                ->where('cotizaciones.codigo', 'like', $term)
+                ->whereLike('cotizaciones.codigo', $term)
                 ->orWhereHas('cliente', fn (Builder $c) => $c
-                    ->where('nombre', 'like', $term)
-                    ->orWhere('numero_documento', 'like', $term)));
+                    ->whereLike('nombre', $term)
+                    ->orWhereLike('numero_documento', $term)));
         }
 
         // "vencida" no es una columna: pendiente con la validez pasada.

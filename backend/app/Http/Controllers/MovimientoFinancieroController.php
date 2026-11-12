@@ -34,8 +34,8 @@ class MovimientoFinancieroController extends Controller
             ->when($request->filled('desde'), fn (Builder $q) => $q->whereDate('fecha', '>=', $request->date('desde')))
             ->when($request->filled('hasta'), fn (Builder $q) => $q->whereDate('fecha', '<=', $request->date('hasta')))
             ->when($request->filled('search'), fn (Builder $q) => $q->where(fn (Builder $b) => $b
-                ->where('descripcion', 'like', '%'.$request->input('search').'%')
-                ->orWhereHas('concepto', fn (Builder $c) => $c->where('nombre', 'like', '%'.$request->input('search').'%'))));
+                ->whereLike('descripcion', '%'.$request->input('search').'%')
+                ->orWhereHas('concepto', fn (Builder $c) => $c->whereLike('nombre', '%'.$request->input('search').'%'))));
 
         // Totales del filtro completo (no sólo de la página que se ve).
         $totales = (clone $query)
