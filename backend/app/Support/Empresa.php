@@ -54,7 +54,28 @@ final class Empresa
             // Sólo los que se cambiaron; el front tiene los de por defecto.
             'whatsapp' => (object) array_filter((array) ($guardado['whatsapp'] ?? []), fn ($v) => is_string($v) && trim($v) !== ''),
             'caja' => self::horarioCierre($guardado),
+            'margenes' => self::margenes($guardado),
         ];
+    }
+
+    /**
+     * Tabla de precios de referencia: el % que se le suma al costo de compra
+     * por unidad para sugerir el precio de venta, por tramo de costo. Cada
+     * tramo va "hasta" un costo (incluido) y empieza donde terminó el
+     * anterior; el último puede no tener tope (hasta = null, "en adelante").
+     * Vacía = no se sugiere nada.
+     *
+     * @param  array<string, mixed>|null  $guardado
+     * @return list<array{hasta: float|null, porcentaje: float}>
+     */
+    public static function margenes(?array $guardado = null): array
+    {
+        $guardado ??= Cache::rememberForever(self::CACHE, fn () => Configuracion::query()->pluck('valor', 'clave')->all());
+
+        return array_values(array_map(fn ($t) => [
+            'hasta' => isset($t['hasta']) ? (float) $t['hasta'] : null,
+            'porcentaje' => (float) ($t['porcentaje'] ?? 0),
+        ], (array) ($guardado['margenes'] ?? [])));
     }
 
     /**

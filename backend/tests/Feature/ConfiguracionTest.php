@@ -89,6 +89,49 @@ class ConfiguracionTest extends TestCase
         $this->assertCount(0, Storage::disk('public')->files('empresa'));
     }
 
+    public function test_guarda_la_tabla_de_precios_de_referencia(): void
+    {
+        $this->actuarCon('configuracion.update');
+
+        // Sin configurar: vacía (no se sugiere nada).
+        $this->getJson('/api/configuracion')->assertOk()->assertJsonPath('margenes', []);
+
+        $this->putJson('/api/configuracion', [...$this->datos(), 'margenes' => [
+            ['hasta' => 50, 'porcentaje' => 40],
+            ['hasta' => 200.5, 'porcentaje' => 30],
+            ['hasta' => null, 'porcentaje' => 20],
+        ]])->assertOk()
+            ->assertJsonPath('margenes.0.hasta', 50)
+            ->assertJsonPath('margenes.1.porcentaje', 30)
+            ->assertJsonPath('margenes.2.hasta', null);
+
+        // Guardar sin mandar la tabla no la borra.
+        $this->putJson('/api/configuracion', $this->datos())->assertOk()->assertJsonCount(3, 'margenes');
+
+        // Y la ve cualquiera con sesión (el form de producto la usa).
+        $this->actuarCon('productos.update');
+        $this->getJson('/api/configuracion')->assertJsonPath('margenes.0.porcentaje', 40);
+    }
+
+    public function test_los_tramos_van_en_orden_y_solo_el_ultimo_sin_tope(): void
+    {
+        $this->actuarCon('configuracion.update');
+
+        $this->putJson('/api/configuracion', [...$this->datos(), 'margenes' => [
+            ['hasta' => 200, 'porcentaje' => 30],
+            ['hasta' => 50, 'porcentaje' => 40],
+        ]])->assertUnprocessable()->assertJsonValidationErrors('margenes');
+
+        $this->putJson('/api/configuracion', [...$this->datos(), 'margenes' => [
+            ['hasta' => null, 'porcentaje' => 30],
+            ['hasta' => 50, 'porcentaje' => 40],
+        ]])->assertUnprocessable()->assertJsonValidationErrors('margenes');
+
+        $this->putJson('/api/configuracion', [...$this->datos(), 'margenes' => [
+            ['hasta' => 50, 'porcentaje' => -5],
+        ]])->assertUnprocessable()->assertJsonValidationErrors('margenes.0.porcentaje');
+    }
+
     public function test_sin_permiso_no_cambia_la_configuracion(): void
     {
         $this->actuarCon('pedidos.index');

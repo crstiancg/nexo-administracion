@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\EstadoOrden;
 use App\Support\Empresa;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * Configuración del sistema: datos de la empresa, textos de los documentos,
- * logo y mensajes de WhatsApp por estado de la orden.
+ * logo, mensajes de WhatsApp por estado de la orden y la tabla de precios
+ * de referencia (% sobre el costo para sugerir el precio de venta).
  */
 class ConfiguracionController extends Controller
 {
@@ -36,6 +38,9 @@ class ConfiguracionController extends Controller
             'caja' => ['nullable', 'array'],
             'caja.cierre_desde' => ['required_with:caja', 'date_format:H:i'],
             'caja.cierre_hasta' => ['required_with:caja', 'date_format:H:i', 'after:caja.cierre_desde'],
+            'margenes' => ['nullable', 'array', 'max:20', $this->tramosEnOrden()],
+            'margenes.*.hasta' => ['nullable', 'numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2'],
+            'margenes.*.porcentaje' => ['required', 'numeric', 'min:0', 'max:1000', 'decimal:0,2'],
         ], [
             'caja.cierre_hasta.after' => 'La hora límite tiene que ser después de la hora de aviso.',
         ], [
@@ -49,6 +54,8 @@ class ConfiguracionController extends Controller
             'empresa.terminos_orden' => 'términos de la orden',
             'caja.cierre_desde' => 'aviso de cierre',
             'caja.cierre_hasta' => 'hora límite de cierre',
+            'margenes.*.hasta' => 'costo hasta',
+            'margenes.*.porcentaje' => 'porcentaje',
         ]);
 
         // Sólo los estados que existen (una clave inventada no se guarda).
@@ -59,8 +66,47 @@ class ConfiguracionController extends Controller
         if (isset($datos['caja'])) {
             Empresa::guardar('caja', array_intersect_key($datos['caja'], array_flip(['cierre_desde', 'cierre_hasta'])));
         }
+        if (array_key_exists('margenes', $datos)) {
+            Empresa::guardar('margenes', array_map(fn ($t) => [
+                'hasta' => isset($t['hasta']) && $t['hasta'] !== '' ? round((float) $t['hasta'], 2) : null,
+                'porcentaje' => round((float) $t['porcentaje'], 2),
+            ], array_values($datos['margenes'] ?? [])));
+        }
 
         return response()->json($this->respuesta());
+    }
+
+    /**
+     * Los tramos de la tabla de precios de referencia, de menor a mayor costo
+     * y sin repetirse; sólo el último puede quedar sin tope ("en adelante").
+     */
+    private function tramosEnOrden(): Closure
+    {
+        return function (string $atributo, mixed $tramos, Closure $fail): void {
+            if (! is_array($tramos)) {
+                return;
+            }
+            $anterior = 0.0;
+            $tramos = array_values($tramos);
+            foreach ($tramos as $i => $tramo) {
+                $hasta = is_array($tramo) ? ($tramo['hasta'] ?? null) : null;
+                if ($hasta === null || $hasta === '') {
+                    if ($i < count($tramos) - 1) {
+                        $fail('Sólo el último tramo puede quedar sin tope ("en adelante").');
+
+                        return;
+                    }
+
+                    continue;
+                }
+                if (is_numeric($hasta) && (float) $hasta <= $anterior) {
+                    $fail('Los tramos van de menor a mayor costo: cada "hasta" tiene que ser mayor que el anterior.');
+
+                    return;
+                }
+                $anterior = is_numeric($hasta) ? (float) $hasta : $anterior;
+            }
+        };
     }
 
     public function logo(Request $request): JsonResponse

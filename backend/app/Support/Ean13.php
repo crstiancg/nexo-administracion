@@ -4,8 +4,8 @@ namespace App\Support;
 
 /**
  * Códigos EAN-13. El de cada presentación lo registra el usuario (el de
- * fábrica, el que trae el envase); paraVariante() queda para los datos de
- * demostración y los productos sin código de fábrica.
+ * fábrica, el que trae el envase); si lo deja vacío, el sistema le genera uno
+ * con paraVariante() al guardar (ProductoController::codigosInternos).
  *
  * Formato: prefijo "20" + id de la variante en 10 dígitos + verificador.
  * GS1 reserva los prefijos 20-29 para uso interno: nunca chocan con el código
@@ -16,9 +16,12 @@ final class Ean13
 {
     public const PREFIJO = '20';
 
-    public static function paraVariante(int $id): string
+    /**
+     * @param  string  $prefijo  dos dígitos de uso interno (20-29)
+     */
+    public static function paraVariante(int $id, string $prefijo = self::PREFIJO): string
     {
-        $base = self::PREFIJO.str_pad((string) $id, 10, '0', STR_PAD_LEFT);
+        $base = $prefijo.str_pad((string) $id, 10, '0', STR_PAD_LEFT);
 
         return $base.self::digitoVerificador($base);
     }

@@ -2,7 +2,7 @@
   <div class="app-list-page">
     <AppPageHeader
       title="Configuración"
-      subtitle="Datos de la empresa, textos de los documentos, logo, cierre de caja y mensajes de WhatsApp"
+      subtitle="Datos de la empresa, textos de los documentos, logo, cierre de caja, precios de referencia y mensajes de WhatsApp"
     >
       <template #actions>
         <AppButton
@@ -169,6 +169,96 @@
         </div>
       </AppCard>
 
+      <!-- ── Precios de referencia ── -->
+      <AppCard class="conf-card">
+        <h2 class="conf-titulo">
+          <q-icon name="price_check" /> Precios de referencia
+        </h2>
+        <p class="conf-ayuda">
+          El porcentaje de ganancia que se le suma al costo de compra por unidad para sugerir el precio de venta
+          al registrar un producto. Cada tramo va desde donde terminó el anterior hasta su tope (incluido);
+          deja el último sin tope para que cubra todo lo demás. Es sólo una sugerencia: el precio lo decides tú.
+        </p>
+
+        <div
+          v-if="margenes.length"
+          class="conf-tramos"
+        >
+          <div class="conf-tramo conf-tramo--cabecera">
+            <span>Costo desde</span>
+            <span>Hasta (S/)</span>
+            <span>% de ganancia</span>
+            <span>Ejemplo</span>
+            <span />
+          </div>
+          <div
+            v-for="(tramo, i) in margenes"
+            :key="tramo.uid"
+            class="conf-tramo"
+          >
+            <span class="conf-tramo__desde">{{ desdeDe(i) }}</span>
+            <q-input
+              v-model="tramo.hasta"
+              :aria-label="`Tope del tramo ${i + 1}`"
+              type="number"
+              min="0"
+              step="0.01"
+              :placeholder="i === margenes.length - 1 ? 'En adelante' : '0.00'"
+              dense
+              outlined
+              hide-bottom-space
+              :error="Boolean(error(`margenes.${i}.hasta`))"
+              :error-message="error(`margenes.${i}.hasta`)"
+            />
+            <q-input
+              v-model="tramo.porcentaje"
+              :aria-label="`Porcentaje del tramo ${i + 1}`"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="30"
+              suffix="%"
+              dense
+              outlined
+              hide-bottom-space
+              :error="Boolean(error(`margenes.${i}.porcentaje`))"
+              :error-message="error(`margenes.${i}.porcentaje`)"
+            />
+            <span class="conf-tramo__ejemplo">{{ ejemploDe(i) }}</span>
+            <q-btn
+              flat
+              round
+              dense
+              icon="close"
+              size="sm"
+              :aria-label="`Quitar el tramo ${i + 1}`"
+              @click="margenes.splice(i, 1)"
+            />
+          </div>
+        </div>
+        <p
+          v-else
+          class="conf-ayuda"
+        >
+          Todavía no hay tramos: sin tabla no se sugiere ningún precio.
+        </p>
+        <p
+          v-if="error('margenes')"
+          class="conf-error"
+        >
+          {{ error('margenes') }}
+        </p>
+        <div class="conf-fila">
+          <AppButton
+            variant="secondary"
+            label="Agregar tramo"
+            icon="add"
+            :disable="margenes.length >= 20"
+            @click="agregarTramo"
+          />
+        </div>
+      </AppCard>
+
       <!-- ── WhatsApp ── -->
       <AppCard class="conf-card">
         <h2 class="conf-titulo">
@@ -267,6 +357,8 @@ import AppLogo from '@/components/AppLogo.vue'
 import AppPageHeader from '@/components/AppPageHeader.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import { aplicarConfiguracion, TIENDA } from '@/config/tienda'
+import { formatearPrecio } from '@/utils/moneda'
+import { precioSugerido } from '@/utils/precios'
 import { ESTADOS, PLANTILLA_WHATSAPP_GENERICA, PLANTILLAS_WHATSAPP, rellenarPlantilla, VARIABLES_WHATSAPP, valoresWhatsapp } from '@/modules/OrdenesServicio/constantes'
 import * as Cotizacion from '@/modules/Cotizaciones/constantes'
 import * as Credito from '@/modules/Creditos/constantes'
@@ -282,6 +374,15 @@ const CAMPOS = ['nombre', 'ruc', 'direccion', 'telefono', 'lema', 'garantia', 'p
 const empresa = reactive(Object.fromEntries(CAMPOS.map((c) => [c, ''])))
 // Horario de cierre de caja ("HH:MM", zona del negocio).
 const caja = reactive({ cierre_desde: '19:00', cierre_hasta: '22:00' })
+// Tabla de precios de referencia: { hasta, porcentaje } como texto de los
+// inputs ('' = sin tope). `uid` sólo para el v-for.
+const margenes = ref([])
+let uidTramo = 0
+const aTramo = ({ hasta = '', porcentaje = '' } = {}) => ({
+  uid: ++uidTramo,
+  hasta: hasta === null ? '' : String(hasta),
+  porcentaje: String(porcentaje)
+})
 const EJEMPLO = {
   codigo: 'OS-000012',
   estado: 'reparado',
@@ -355,6 +456,7 @@ onMounted(async () => {
   const datos = await ConfiguracionService.get()
   CAMPOS.forEach((c) => { empresa[c] = datos[c] ?? '' })
   Object.assign(caja, datos.caja ?? {})
+  margenes.value = (datos.margenes ?? []).map((t) => aTramo(t))
   aplicarConfiguracion(datos)
   MENSAJES.value.forEach(({ clave }) => { whatsapp[clave] = datos.whatsapp?.[clave] ?? '' })
   cargado.value = true
@@ -372,7 +474,13 @@ async function guardar () {
   guardando.value = true
   errores.value = {}
   try {
-    const datos = await ConfiguracionService.guardar({ empresa: { ...empresa }, whatsapp: { ...whatsapp }, caja: { ...caja } })
+    const datos = await ConfiguracionService.guardar({
+      empresa: { ...empresa },
+      whatsapp: { ...whatsapp },
+      caja: { ...caja },
+      margenes: margenes.value.map(({ hasta, porcentaje }) => ({ hasta: hasta === '' ? null : hasta, porcentaje }))
+    })
+    margenes.value = (datos.margenes ?? []).map((t) => aTramo(t))
     aplicarConfiguracion(datos)
     $q.notify({ type: 'positive', message: 'Configuración guardada.', position: 'top-right', timeout: 1500 })
   } catch (e) {
@@ -381,6 +489,28 @@ async function guardar () {
   } finally {
     guardando.value = false
   }
+}
+
+// ── Precios de referencia ──
+// El nuevo empieza donde termina el último (si tenía tope).
+function agregarTramo () {
+  margenes.value.push(aTramo())
+}
+
+// Dónde empieza el tramo: donde terminó el anterior.
+function desdeDe (i) {
+  if (i === 0) return formatearPrecio(0)
+  const anterior = margenes.value[i - 1].hasta
+  return anterior === '' ? '—' : `más de ${formatearPrecio(anterior)}`
+}
+
+// "S/ 50.00 → S/ 70.00": el tope del tramo (o, sin tope, el inicio) con su %.
+function ejemploDe (i) {
+  const { hasta, porcentaje } = margenes.value[i]
+  if (porcentaje === '') return ''
+  const costo = hasta !== '' ? Number(hasta) : Number(margenes.value[i - 1]?.hasta || 100)
+  const sugerido = precioSugerido(costo, [{ hasta: null, porcentaje: Number(porcentaje) }])
+  return sugerido ? `${formatearPrecio(costo)} → ${formatearPrecio(sugerido.precio)}` : ''
 }
 
 // ── Logo ──
@@ -481,6 +611,45 @@ const vistaPrevia = computed(() => rellenarPlantilla(
   margin: 0;
   font-size: 12.5px;
   color: var(--q-negative);
+}
+
+.conf-tramos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.conf-tramo {
+  display: grid;
+  grid-template-columns: 130px 150px 130px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+
+  &--cabecera {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--app-ink-2);
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr 1fr 32px;
+
+    &--cabecera {
+      display: none;
+    }
+  }
+}
+
+.conf-tramo__desde,
+.conf-tramo__ejemplo {
+  font-size: 13px;
+  color: var(--app-ink-2);
+  font-variant-numeric: tabular-nums;
+
+  @media (max-width: 700px) {
+    grid-column: 1 / -1;
+  }
 }
 
 .conf-logo {

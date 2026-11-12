@@ -104,8 +104,10 @@
       </div>
     </div>
 
-    <div class="producto-form__row producto-form__row--end">
-      <div class="producto-form__field producto-form__grow">
+    <!-- Marca, costo y precio: tres columnas iguales (dos al editar sin
+         presentaciones nuevas); en pantallas angostas bajan una por fila. -->
+    <div class="producto-form__precios">
+      <div class="producto-form__field">
         <label
           :id="`${uid}-marca`"
           class="producto-form__label"
@@ -139,6 +141,22 @@
         </p>
       </div>
 
+      <!-- Primero el costo: con él se llena solo el precio de venta (tabla de
+           precios de referencia de Configuración). Sólo con presentaciones
+           nuevas: es el costo del stock inicial que entra al guardar. -->
+      <AppTextField
+        v-if="hayNuevas"
+        v-model="form.producto.costo_compra"
+        :label="unidadesIniciales ? 'Costo de compra (S/) *' : 'Costo de compra (S/)'"
+        icon="payments"
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="0.00"
+        hint="Lo que te costó cada unidad, con IGV. Con él se sugiere el precio."
+        :error="form.errors[`${PATH}.costo_compra`]"
+      />
+
       <AppTextField
         v-model="form.producto.precio"
         label="Precio base (S/)"
@@ -147,12 +165,34 @@
         min="0"
         step="0.01"
         placeholder="0.00"
-        hint="Precio de venta al público, con IGV. Lo usan las presentaciones que no tengan precio propio."
-        class="producto-form__precio"
+        hint="Venta al público, con IGV. Lo usan las presentaciones sin precio propio."
         :error="form.errors[`${PATH}.precio`]"
         @change="form.validate(`${PATH}.precio`)"
-      />
+      >
+        <!-- Sugerido por la tabla de precios de referencia (Configuración):
+             junto a la etiqueta, para no mover el resto de la fila. -->
+        <template #aside>
+          <button
+            v-if="sugeridoBase && Number(form.producto.precio) !== Number(sugeridoBase.precio)"
+            type="button"
+            class="producto-form__sugerido"
+            @click="usarSugeridoBase"
+          >
+            <q-icon
+              name="auto_awesome"
+              size="13px"
+            />
+            {{ formatearPrecio(sugeridoBase.precio) }}
+            <q-tooltip>
+              Sugerido: costo {{ formatearPrecio(costoBase) }} + {{ sugeridoBase.porcentaje }} %. Usar este precio
+            </q-tooltip>
+          </button>
+        </template>
+      </AppTextField>
+    </div>
 
+    <!-- Los tres interruptores del producto, juntos. -->
+    <div class="producto-form__toggles">
       <q-toggle
         v-model="form.producto.activo"
         label="Activo (se puede vender)"
@@ -322,7 +362,8 @@
           <dd>Código interno; se arma solo con el nombre, la presentación y el color. Puedes cambiarlo.</dd>
           <dt>Código de barras</dt>
           <dd>
-            Obligatorio: el que trae el envase o uno propio. Escanealo con la lectora o escríbelo. Es el que lee el punto de venta
+            El que trae el envase o uno propio. Escanealo con la lectora o escríbelo. Si el producto no tiene, déjalo vacío:
+            al guardar, el sistema le genera uno único (empieza con 20, de uso interno). Es el que lee el punto de venta
             y el que se imprime en las etiquetas.
           </dd>
           <dt>Precio</dt>
@@ -500,7 +541,7 @@
                   :aria-label="`Código de barras de la presentación ${i + 1}`"
                   :error="Boolean(errorDe(i, 'codigo_barras'))"
                   :error-message="errorDe(i, 'codigo_barras')"
-                  placeholder="7751234567890"
+                  placeholder="Vacío = lo genera el sistema"
                   dense
                   outlined
                   hide-bottom-space
@@ -535,6 +576,23 @@
                   class="producto-form__control"
                   @change="form.validate(`${PATH}.variantes.${i}.precio`)"
                 />
+                <!-- Sólo si su costo es otro que el del precio base: si no,
+                     ya le sirve el base. -->
+                <button
+                  v-if="sugeridoDe(variante) && Number(variante.precio) !== Number(sugeridoDe(variante).precio)"
+                  type="button"
+                  class="producto-form__sugerido"
+                  @click="variante.precio = sugeridoDe(variante).precio; form.validate(`${PATH}.variantes.${i}.precio`)"
+                >
+                  <q-icon
+                    name="auto_awesome"
+                    size="14px"
+                  />
+                  Sugerido {{ formatearPrecio(sugeridoDe(variante).precio) }}
+                  <q-tooltip>
+                    Costo {{ formatearPrecio(costoDe(variante)) }} + {{ sugeridoDe(variante).porcentaje }} %. Usar este precio
+                  </q-tooltip>
+                </button>
               </div>
               <div class="producto-form__campo">
                 <span class="producto-form__campoLabel">Precio por mayor (S/)</span>
@@ -781,19 +839,14 @@
           {{ userStore.sede?.nombre ?? 'tu sede' }} como “Alta de producto”. Si todavía no tienes,
           deja las cantidades vacías y cárgala después con una compra o una entrada.
         </p>
+        <p
+          v-if="unidadesIniciales && !Number(form.producto.costo_compra)"
+          class="producto-form__hint producto-form__hint--aviso"
+        >
+          Con stock inicial, llena arriba el <strong>Costo de compra</strong> (o el costo de cada presentación abajo):
+          sin costo, toda la venta contaría como ganancia.
+        </p>
         <div class="producto-form__row">
-          <AppTextField
-            v-model="form.producto.costo_compra"
-            :label="unidadesIniciales ? 'Costo de compra por unidad (S/) — obligatorio' : 'Costo de compra por unidad (S/)'"
-            icon="payments"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            hint="Cuánto te costó cada unidad al proveedor, con IGV. NO es el precio de venta: sirve para calcular la ganancia. Vale para todas las presentaciones, salvo que abajo les pongas otro."
-            class="producto-form__grow"
-            :error="form.errors[`${PATH}.costo_compra`]"
-          />
           <AppTextField
             v-model="form.producto.referencia_compra"
             label="Factura o guía (opcional)"
@@ -957,6 +1010,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useForm } from 'laravel-precognition-vue'
+import { useQuasar } from 'quasar'
 import AppButton from '@/components/AppButton.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import AppFotos from '@/components/AppFotos.vue'
@@ -970,6 +1024,8 @@ import UnidadService from '@/services/UnidadService'
 import { useUserStore } from '@/stores/user-store'
 import { formatearCantidad } from '@/utils/cantidad'
 import { formatearPrecio } from '@/utils/moneda'
+import { precioSugerido } from '@/utils/precios'
+import { TIENDA } from '@/config/tienda'
 import { opcionesPadre } from '@/modules/Categorias/arbol'
 import CategoriasForm from '@/modules/Categorias/CategoriasForm.vue'
 import formProducto, { nuevaVariante } from './FormProducto'
@@ -1024,6 +1080,7 @@ const props = defineProps({
 const emit = defineEmits(['save'])
 
 const uid = `producto-${useId()}`
+const $q = useQuasar()
 
 // Editar va por POST + _method=PUT (ver FormProducto.js).
 const form = props.id
@@ -1347,6 +1404,8 @@ onMounted(async () => {
           stock_minimo: formatearCantidad(s.stock_minimo) ?? '0'
         })),
         con_movimientos: v.con_movimientos ?? false,
+        // Para sugerir el precio (sólo llega a quien puede ver costos).
+        costo_promedio: v.costo_promedio ?? null,
         archivos: v.archivos.map(aFoto),
         // Si el SKU guardado no es el que se sugeriría, lo escribieron a mano.
         skuManual: v.sku !== sugerirSku(nombre, v.presentacion, v.color?.nombre)
@@ -1354,6 +1413,48 @@ onMounted(async () => {
     }
   })
 })
+
+// ── Precio sugerido ──
+// Tabla de precios de referencia (Configuración): costo de compra por unidad
+// + el % de su tramo. Es una sugerencia: nunca pisa un precio sola.
+const conCosto = (valor) => Number(valor) > 0 ? Number(valor) : null
+
+// El costo de una presentación: el propio del stock inicial, el promedio de
+// lo que ya entró o, si no, el general de la compra.
+function costoDe (variante) {
+  return conCosto(variante.costo_unitario) ?? conCosto(variante.costo_promedio) ?? conCosto(form.producto.costo_compra)
+}
+
+// El del precio base: el general de la compra o, al editar, el de la primera
+// presentación que tenga costo.
+const costoBase = computed(() => conCosto(form.producto.costo_compra) ??
+  form.producto.variantes.map(costoDe).find((c) => c !== null) ?? null)
+
+const sugeridoBase = computed(() => costoBase.value ? precioSugerido(costoBase.value, TIENDA.margenes) : null)
+
+function usarSugeridoBase () {
+  form.producto.precio = sugeridoBase.value.precio
+  form.validate(`${PATH}.precio`)
+}
+
+// Al escribir el costo, el precio base se llena solo con el sugerido. Si el
+// precio lo escribieron a mano (no es el último que se puso solo), no se
+// toca: queda la pastilla para usar el sugerido con un clic.
+let precioAuto = null
+watch(sugeridoBase, (nuevo) => {
+  const actual = String(form.producto.precio ?? '')
+  if (actual !== '' && actual !== precioAuto) return
+  precioAuto = nuevo?.precio ?? null
+  form.producto.precio = precioAuto ?? ''
+  if (precioAuto) form.forgetError(`${PATH}.precio`)
+})
+
+// Una presentación con otro costo que el del base, su propia sugerencia.
+function sugeridoDe (variante) {
+  const costo = costoDe(variante)
+  if (!costo || costo === costoBase.value) return null
+  return precioSugerido(costo, TIENDA.margenes)
+}
 
 // Las vistas previas de fotos nuevas (blob:) se liberan al cerrar el form.
 // Acá y no en AppFotos: la misma foto puede estar copiada en varias galerías.
@@ -1363,7 +1464,25 @@ onBeforeUnmount(() => {
     .forEach((url) => URL.revokeObjectURL(url))
 })
 
-async function submit () {
+// Antes de guardar: si alguna presentación no tiene código de barras, se
+// avisa que el sistema le va a generar uno (y se puede volver a ponerlo).
+function submit () {
+  const sinCodigo = form.producto.variantes.filter((v) => !String(v.codigo_barras ?? '').trim())
+  if (!sinCodigo.length) return guardar()
+
+  const nombres = sinCodigo.map((v) => `• ${etiquetaDe(v)}`).join('\n')
+  $q.dialog({
+    title: 'Sin código de barras',
+    message: `${sinCodigo.length === 1 ? 'Esta presentación no tiene' : 'Estas presentaciones no tienen'} código de barras:\n${nombres}\n\n` +
+      'Si no lo registras, el sistema le generará uno único (empieza con 20, de uso interno) para el punto de venta y las etiquetas.',
+    style: 'white-space: pre-line',
+    cancel: { label: 'Volver a registrarlo', flat: true, noCaps: true },
+    ok: { label: 'Generar y guardar', noCaps: true, unelevated: true },
+    persistent: true
+  }).onOk(guardar)
+}
+
+async function guardar () {
   try {
     const respuesta = await form.submit()
     form.reset()
@@ -1398,8 +1517,54 @@ defineExpose({ form, submit })
   min-width: 0;
 }
 
-.producto-form__precio {
-  flex: 0 1 200px;
+.producto-form__precios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  align-items: start;
+  gap: 16px;
+
+  // La fila de la etiqueta, misma altura en las tres columnas: la pastilla
+  // del precio sugerido no empuja el input de esa columna más abajo.
+  .producto-form__label,
+  :deep(.app-field__top) {
+    display: flex;
+    align-items: center;
+    min-height: 22px;
+  }
+}
+
+.producto-form__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+}
+
+// Precio sugerido por la tabla de referencia: un clic lo usa. Va junto a la
+// etiqueta del precio base y bajo el precio de cada presentación.
+.producto-form__sugerido {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border: 1px dashed var(--app-border-control);
+  border-radius: 999px;
+  background: var(--app-brand-soft);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-brand-soft-ink);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+
+  &:hover {
+    border-style: solid;
+  }
+}
+
+// En la columna de la presentación, a la izquierda y no estirado.
+.producto-form__campo > .producto-form__sugerido {
+  align-self: flex-start;
 }
 
 .producto-form__garantia {
@@ -1559,6 +1724,10 @@ defineExpose({ form, submit })
   font-size: 12px;
   line-height: 1.5;
   color: var(--app-ink-2);
+}
+
+.producto-form__hint--aviso {
+  color: var(--app-ink-warning);
 }
 
 .producto-form__vacio {

@@ -8,13 +8,14 @@ use App\Models\Archivo;
 use App\Models\Categoria;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
+use App\Models\Sede;
 use App\Models\Stock;
 use App\Models\Variante;
 use App\Services\ArchivosService;
 use App\Services\Exportaciones;
 use App\Services\Inventario;
+use App\Support\Ean13;
 use App\Support\Permisos;
-use App\Models\Sede;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -287,7 +288,37 @@ class ProductoController extends Controller
             $guardadas[] = $variante;
         }
 
+        // Al final: así los códigos que escribió el usuario ya están tomados
+        // y el generado nunca choca con uno de este mismo guardado.
+        $this->codigosInternos($guardadas);
+
         return $guardadas;
+    }
+
+    /**
+     * Las presentaciones sin código de barras (el producto no trae uno de
+     * fábrica) reciben uno interno: EAN-13 con prefijo de uso interno (20-29,
+     * reservado por GS1: nunca choca con un código de fábrica), sacado del id
+     * de la variante. Si alguien ya registró ese número a mano, se prueba con
+     * el siguiente prefijo.
+     *
+     * @param  array<int, Variante>  $variantes
+     */
+    private function codigosInternos(array $variantes): void
+    {
+        foreach ($variantes as $variante) {
+            if ($variante->codigo_barras !== null && $variante->codigo_barras !== '') {
+                continue;
+            }
+
+            foreach (range(20, 29) as $prefijo) {
+                $codigo = Ean13::paraVariante($variante->id, (string) $prefijo);
+                if (! Variante::query()->where('codigo_barras', $codigo)->whereKeyNot($variante->id)->exists()) {
+                    $variante->update(['codigo_barras' => $codigo]);
+                    break;
+                }
+            }
+        }
     }
 
     /**

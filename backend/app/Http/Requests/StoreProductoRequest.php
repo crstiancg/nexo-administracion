@@ -166,11 +166,12 @@ class StoreProductoRequest extends FormRequest
                 // (o reusar el de una que se quita) en el mismo guardado.
                 Rule::unique('variantes', 'sku')->where(fn ($q) => $q->where('producto_id', '!=', $producto?->getKey() ?? 0)),
             ];
-            // El que trae el envase (o uno propio): sólo obligatorio, sin reglas
-            // de formato ni de largo. Único: si no, la lectora del POS no
-            // sabría qué producto agregar. (255 = el tope de la columna.)
+            // El que trae el envase (o uno propio), sin reglas de formato ni de
+            // largo. Vacío = el sistema le genera uno interno al guardar
+            // (ProductoController::codigosInternos). Único: si no, la lectora
+            // del POS no sabría qué producto agregar. (255 = el tope de la columna.)
             $rules["producto.variantes.{$i}.codigo_barras"] = [
-                'required', 'string', 'max:255',
+                'nullable', 'string', 'max:255',
                 $this->codigoUnicoEnElProducto($i),
                 Rule::unique('variantes', 'codigo_barras')->where(fn ($q) => $q->where('producto_id', '!=', $producto?->getKey() ?? 0)),
             ];

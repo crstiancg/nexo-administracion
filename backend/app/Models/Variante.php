@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * sedes; cada sede la habilita y le pone precio y mínimo en `stocks`.
  * `stock` y `costo_promedio` no son fillable a propósito: sólo los mueve
  * App\Services\Inventario, dejando su movimiento en el libro.
- * `codigo_barras` es el EAN-13 que registra el usuario (el de fábrica):
- * obligatorio y único (StoreProductoRequest).
+ * `codigo_barras` es el que registra el usuario (el de fábrica), único
+ * (StoreProductoRequest); si lo deja vacío, el sistema le genera un EAN-13
+ * interno al guardar (App\Support\Ean13::paraVariante).
  */
 #[Fillable(['presentacion', 'unidad_id', 'color_id', 'sku', 'codigo_barras', 'precio', 'precio_mayor'])]
 class Variante extends Model

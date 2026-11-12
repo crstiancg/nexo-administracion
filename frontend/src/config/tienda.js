@@ -28,7 +28,10 @@ export const TIENDA = reactive({
   whatsapp: {},
   // Estados de la orden de servicio (Catálogos > Estados de orden). Vacío =
   // los de fábrica (modules/OrdenesServicio/constantes.js).
-  estados_orden: []
+  estados_orden: [],
+  // Tabla de precios de referencia ({ hasta, porcentaje }): sugiere el precio
+  // de venta a partir del costo de compra (utils/precios.js). Vacía = nada.
+  margenes: []
 })
 
 /** Vuelca lo que devuelve la API (GET/PUT api/configuracion) en TIENDA. */
