@@ -93,8 +93,13 @@ class Finanzas
             ->selectRaw('SUM(CASE WHEN pedido_items.costo_unitario IS NULL THEN 1 ELSE 0 END) as sin_costo')
             ->first();
 
+        // Desde el día inicial y ANTES del siguiente al final (no BETWEEN):
+        // en SQLite la fecha se guarda como "2026-11-12 00:00:00" y quedaría
+        // fuera de "hasta 2026-11-12". Así sirve en los tres motores y usa
+        // el índice (whereDate lo perdería en MySQL).
         $movimientos = MovimientoFinanciero::query()
-            ->whereBetween('fecha', [$desde->copy()->setTimezone(Fechas::zona())->toDateString(), $hasta->copy()->setTimezone(Fechas::zona())->toDateString()])
+            ->where('fecha', '>=', $desde->copy()->setTimezone(Fechas::zona())->toDateString())
+            ->where('fecha', '<', $hasta->copy()->setTimezone(Fechas::zona())->addDay()->toDateString())
             ->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId));
 
         $porConcepto = (clone $movimientos)
