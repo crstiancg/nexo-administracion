@@ -361,7 +361,8 @@ class PanelController extends Controller
             ->where('ordenes_servicio.sede_id', $sedeId)
             ->where('tipos_equipo.kg_basura', '>', 0)
             ->selectRaw('tipos_equipo.nombre as tipo, tipos_equipo.kg_basura as kg')
-            ->selectRaw('SUM(CASE WHEN ordenes_servicio.entregado_reparado = 1 THEN 1 ELSE 0 END) as reparados')
+            // La columna sola como condición: "= 1" rompe en Postgres (boolean = integer).
+            ->selectRaw('SUM(CASE WHEN ordenes_servicio.entregado_reparado THEN 1 ELSE 0 END) as reparados')
             ->selectRaw('SUM(CASE WHEN ordenes_servicio.estado = ? THEN 1 ELSE 0 END) as entregados', [$entregado])
             ->selectRaw('SUM(CASE WHEN ordenes_servicio.estado IN ('.implode(',', array_fill(0, count($activas), '?')).') THEN 1 ELSE 0 END) as por_reparar', $activas)
             ->groupBy('tipos_equipo.id', 'tipos_equipo.nombre', 'tipos_equipo.kg_basura')
