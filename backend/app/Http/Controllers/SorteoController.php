@@ -153,6 +153,14 @@ class SorteoController extends Controller
         $total = (clone $query)->getCountForPagination();
         $filas = $tamano ? $query->forPage(max(1, $request->integer('page', 1)), $tamano)->get() : $query->get();
         $enJuego = max(1, (int) $sorteo->tickets()->vigentes()->count());
+        // Los números de cada uno (para avisarle cuáles tiene). Aparte y no con
+        // GROUP_CONCAT / string_agg: sirve igual en MySQL y en Postgres.
+        $numeros = $sorteo->tickets()->vigentes()
+            ->whereIn('cliente_id', $filas->pluck('cliente_id'))
+            ->orderBy('numero')
+            ->get(['cliente_id', 'numero'])
+            ->groupBy('cliente_id')
+            ->map(fn ($tickets) => $tickets->map(fn ($t) => $t->codigo())->values());
 
         return response()->json([
             'data' => $filas->map(fn ($f) => [
@@ -162,6 +170,7 @@ class SorteoController extends Controller
                 'numero_documento' => $f->numero_documento,
                 'telefono' => $f->telefono,
                 'tickets' => (int) $f->tickets,
+                'numeros' => $numeros->get($f->cliente_id, collect())->all(),
                 // Su chance en el próximo premio, si todos siguen en juego.
                 'probabilidad' => round((int) $f->tickets / $enJuego * 100, 2),
             ])->values(),

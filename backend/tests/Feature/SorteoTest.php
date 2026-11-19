@@ -284,6 +284,8 @@ class SorteoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.tickets', 3)
+            // Sus números, para avisarle cuáles tiene.
+            ->assertJsonPath('data.0.numeros', ['#000001', '#000002', '#000003'])
             ->assertJsonPath('data.0.probabilidad', 100);
 
         $this->getJson("/api/sorteos/{$sorteo}/tickets?search=juan")->assertOk()->assertJsonPath('total', 3);

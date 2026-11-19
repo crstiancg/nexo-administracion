@@ -68,11 +68,22 @@ export function formSorteo () {
   }
 }
 
-/** WhatsApp al participante: cuántos tickets tiene y cuándo se sortea. */
-export function enlaceWhatsappParticipante (sorteo, participante) {
+/** "#000004, #000005 y #000009" */
+function listaNumeros (numeros) {
+  if (numeros.length <= 1) return numeros.join('')
+  return `${numeros.slice(0, -1).join(', ')} y ${numeros.at(-1)}`
+}
+
+/**
+ * WhatsApp al participante: cuántos tickets tiene, CUÁLES (sus números) y
+ * cuándo se sortea. `numeros` puede venir aparte (los recién vendidos).
+ */
+export function enlaceWhatsappParticipante (sorteo, participante, numeros = participante.numeros ?? []) {
   const nombre = participante.nombre?.split(' ')[0] ?? ''
-  const tickets = participante.tickets === 1 ? '1 ticket' : `${participante.tickets} tickets`
-  const mensaje = `Hola ${nombre}, ya tienes ${tickets} para el ${sorteo.nombre}. ` +
+  const cantidad = numeros.length || participante.tickets
+  const tickets = cantidad === 1 ? '1 ticket' : `${cantidad} tickets`
+  const cuales = numeros.length ? ` (${numeros.length === 1 ? 'tu número es el' : 'tus números son'} ${listaNumeros(numeros)})` : ''
+  const mensaje = `Hola ${nombre}, ya tienes ${tickets}${cuales} para el ${sorteo.nombre}. ` +
     `El sorteo es el ${fechaCorta(sorteo.termina_el)}: cada compra o servicio técnico te suma otro, y también puedes comprar más tickets en tienda. ¡Mucha suerte!\n— ${TIENDA.nombre}`
   return `https://wa.me/${numeroWhatsapp(participante.telefono) ?? ''}?text=${encodeURIComponent(mensaje)}`
 }

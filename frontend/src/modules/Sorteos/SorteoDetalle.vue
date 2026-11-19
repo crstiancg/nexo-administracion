@@ -503,8 +503,27 @@ async function vendido (venta) {
     message: `${numeros.length === 1 ? 'Ticket vendido' : `${numeros.length} tickets vendidos`} a ${venta.cliente?.nombre ?? 'el cliente'}: ${numeros.join(', ')}`,
     position: 'top-right',
     timeout: 6000,
-    actions: [{ label: 'Imprimir ticket', color: 'white', handler: () => impresionRef.value?.imprimir(venta) }]
+    actions: [
+      { label: 'Imprimir ticket', color: 'white', handler: () => impresionRef.value?.imprimir(venta) },
+      // Todos sus números en el sorteo (los de antes también), así sabe cuáles tiene.
+      { label: 'Avisar por WhatsApp', color: 'white', icon: 'mdi-whatsapp', handler: () => avisarCompra(venta, numeros) }
+    ]
   })
+}
+
+async function avisarCompra (venta, vendidos) {
+  const ventana = window.open('', '_blank')
+  try {
+    const { data } = await SorteoService.participantes(props.id, { params: { search: venta.cliente?.numero_documento || venta.cliente?.nombre, rowsPerPage: 5 } })
+    const fila = data.find((p) => p.cliente_id === venta.cliente?.id)
+    const participante = fila ?? { nombre: venta.cliente?.nombre, telefono: venta.cliente?.telefono, tickets: vendidos.length }
+    const enlace = enlaceWhatsappParticipante(sorteo.value, participante, fila?.numeros ?? vendidos)
+    if (ventana) ventana.location.href = enlace
+    else window.location.href = enlace
+  } catch {
+    ventana?.close()
+    $q.notify({ type: 'negative', message: 'No se pudo armar el aviso.', position: 'top-right' })
+  }
 }
 
 const formDialog = ref(false)
