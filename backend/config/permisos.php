@@ -127,6 +127,8 @@ return [
         // eligen tipo de equipo, marca, técnico, cliente y repuestos.
         'ordenes-servicio.show' => ['ordenes-servicio.index', 'ordenes-servicio.update', 'ordenes-servicio.estado'],
         'ordenes-servicio.resumen' => ['ordenes-servicio.index'],
+        // Quien arma o edita la orden ve los vales del cliente para aplicarlos.
+        'ordenes-servicio.vales' => ['ordenes-servicio.store', 'ordenes-servicio.update'],
         // Pagar una comisión necesita saber si hay caja (sale del cajón).
         'comisiones.index' => ['comisiones.porcentajes', 'comisiones.pagar'],
         // Quien ve los créditos abre su detalle.
@@ -263,6 +265,8 @@ return [
         'participantes' => 'Ver participantes',
         'sortear' => 'Sortear premios (en vivo)',
         'vender' => 'Vender tickets',
+        'vale' => 'Dar vale de descuento (fidelización)',
+        'vale.quitar' => 'Quitar vale de descuento',
         'candidatos' => 'Ver tickets en juego (ruleta)',
         'descartar' => 'Descartar ganador y volver a sortear',
     ],

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
@@ -122,6 +123,18 @@ class OrdenServicio extends Model
     public function archivos(): MorphMany
     {
         return $this->morphMany(Archivo::class, 'archivable')->orderBy('orden');
+    }
+
+    /** El vale de fidelización que se usó en esta orden (descuento en la mano de obra). */
+    public function valeAplicado(): HasOne
+    {
+        return $this->hasOne(Vale::class, 'orden_uso_id');
+    }
+
+    /** El vale que se le dio al cliente en esta orden, para su próxima visita. */
+    public function valeGenerado(): HasOne
+    {
+        return $this->hasOne(Vale::class, 'orden_origen_id');
     }
 
     public function movimientos(): HasMany

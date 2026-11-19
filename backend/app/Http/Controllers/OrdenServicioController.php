@@ -7,6 +7,7 @@ use App\Http\Resources\OrdenServicioResource;
 use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\User;
+use App\Models\Vale;
 use App\Services\OrdenesServicio;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -174,8 +175,55 @@ class OrdenServicioController extends Controller
             'pedido.pagos' => fn ($q) => $q->orderBy('id'),
             'pedido.pagos.usuario:id,name',
             'pedido.comprobantes' => fn ($q) => $q->latest('id'),
+            'valeAplicado.ordenOrigen:id,codigo',
+            'valeGenerado.ordenUso:id,codigo',
         ]);
 
         return (new OrdenServicioResource($orden))->resolve(request());
+    }
+
+    /**
+     * Los vales disponibles de un cliente, para aplicar en su orden. Con
+     * `orden_id` (editando) también sale el que esa orden ya tiene.
+     */
+    public function vales(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'cliente_id' => ['required', 'integer'],
+            'orden_id' => ['nullable', 'integer'],
+        ]);
+
+        $vales = Vale::query()
+            ->with('ordenOrigen:id,codigo')
+            ->where('cliente_id', $datos['cliente_id'])
+            ->where(fn (Builder $q) => $q->whereNull('orden_uso_id')
+                ->when($datos['orden_id'] ?? null, fn ($o, $id) => $o->orWhere('orden_uso_id', $id)))
+            // El de la propia orden no se usa en ella.
+            ->when($datos['orden_id'] ?? null, fn ($q, $id) => $q->where(fn ($o) => $o->whereNull('orden_origen_id')->orWhere('orden_origen_id', '!=', $id)))
+            ->orderByDesc('porcentaje')
+            ->get();
+
+        return response()->json($vales->map(fn (Vale $v) => $v->resumen())->values());
+    }
+
+    /** Genera el vale de la orden para la próxima visita del cliente. */
+    public function generarVale(Request $request, OrdenServicio $orden): JsonResponse
+    {
+        $datos = $request->validate(
+            ['porcentaje' => ['required', 'integer', 'min:1', 'max:100']],
+            [],
+            ['porcentaje' => 'porcentaje'],
+        );
+
+        $this->ordenes->generarVale($orden, $datos['porcentaje'], $request->user());
+
+        return response()->json($this->conDetalle($orden), 201);
+    }
+
+    public function quitarVale(OrdenServicio $orden): JsonResponse
+    {
+        $this->ordenes->quitarVale($orden);
+
+        return response()->json($this->conDetalle($orden));
     }
 }

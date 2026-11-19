@@ -138,6 +138,9 @@
 
         <div class="os-der">
             <dl class="os-totales">
+                @if ($vale && $descuento > 0)
+                    <dt>Vale {{ $vale->porcentaje }}%</dt><dd>−S/ {{ number_format($descuento, 2) }}</dd>
+                @endif
                 <dt>Total</dt><dd>S/ {{ number_format($total, 2) }}</dd>
                 <dt>A cuenta</dt><dd>S/ {{ number_format($pagado, 2) }}</dd>
                 <dt class="os-total">{{ $saldo > 0 ? 'Saldo' : 'Pagado' }}</dt>

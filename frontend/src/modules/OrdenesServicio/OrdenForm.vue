@@ -59,6 +59,44 @@
           >
             Sin teléfono: no se le podrá avisar por WhatsApp.
           </p>
+
+          <!-- Vales de fidelización del cliente: uno por orden, sobre la mano de obra. -->
+          <div
+            v-if="vales.length"
+            class="orden-form__vales"
+            role="radiogroup"
+            aria-label="Vale de descuento del cliente"
+          >
+            <span class="orden-form__valesTitulo">
+              <q-icon
+                name="redeem"
+                size="18px"
+              />
+              {{ vales.length === 1 ? 'Tiene un vale de descuento' : `Tiene ${vales.length} vales de descuento` }}
+            </span>
+            <button
+              v-for="v in vales"
+              :key="v.id"
+              type="button"
+              role="radio"
+              :aria-checked="form.orden.vale_id === v.id"
+              :class="['orden-form__vale', { 'orden-form__vale--activo': form.orden.vale_id === v.id }]"
+              @click="form.orden.vale_id = form.orden.vale_id === v.id ? null : v.id"
+            >
+              <strong>{{ v.porcentaje }}%</strong>
+              <span>en mano de obra · {{ v.codigo }}<template v-if="v.origen"> (de {{ v.origen }})</template></span>
+              <q-icon
+                :name="form.orden.vale_id === v.id ? 'check_circle' : 'radio_button_unchecked'"
+                size="18px"
+              />
+            </button>
+            <p
+              v-if="form.errors[`${PATH}.vale_id`]"
+              class="orden-form__error"
+            >
+              {{ form.errors[`${PATH}.vale_id`] }}
+            </p>
+          </div>
         </div>
 
         <div class="orden-form__field orden-form__medio">
@@ -499,6 +537,12 @@
               class="orden-form__control"
             />
           </dd>
+          <template v-if="valeElegido">
+            <dt>Vale {{ valeElegido.codigo }} ({{ valeElegido.porcentaje }}%)</dt>
+            <dd class="text-mono orden-form__descuento">
+              −{{ formatearPrecio(descuentoVale) }}
+            </dd>
+          </template>
           <dt class="orden-form__total">
             Total
           </dt>
@@ -619,7 +663,29 @@ watch(() => form.orden.tipo_equipo_id, (id) => {
 
 // ── Cliente ──
 const cliente = ref(null)
-watch(cliente, (valor) => { form.orden.cliente_id = valor?.id ?? null })
+watch(cliente, (valor) => {
+  form.orden.cliente_id = valor?.id ?? null
+  cargarVales()
+})
+
+// Los vales disponibles del cliente elegido (editando, también el de esta orden).
+const vales = ref([])
+async function cargarVales () {
+  const id = cliente.value?.id
+  if (!id) {
+    vales.value = []
+    form.orden.vale_id = null
+    return
+  }
+  try {
+    const lista = await OrdenServicioService.vales(id, props.id)
+    if (cliente.value?.id !== id) return
+    vales.value = lista
+    if (form.orden.vale_id && !lista.some((v) => v.id === form.orden.vale_id)) form.orden.vale_id = null
+  } catch {
+    vales.value = []
+  }
+}
 
 const clienteDialog = ref(false)
 const clienteFormRef = ref()
@@ -649,7 +715,10 @@ function subtotalDe (item) {
 }
 
 const totalRepuestos = computed(() => form.orden.repuestos.reduce((suma, item) => suma + subtotalDe(item), 0))
-const total = computed(() => totalRepuestos.value + numero(form.orden.mano_obra))
+// El vale descuenta su % de la mano de obra (igual que el backend).
+const valeElegido = computed(() => vales.value.find((v) => v.id === form.orden.vale_id) ?? null)
+const descuentoVale = computed(() => valeElegido.value ? Math.round(numero(form.orden.mano_obra) * valeElegido.value.porcentaje) / 100 : 0)
+const total = computed(() => totalRepuestos.value + numero(form.orden.mano_obra) - descuentoVale.value)
 
 // Errores sin campo propio (caja cerrada para el adelanto, total por debajo
 // de lo abonado…).
@@ -718,6 +787,7 @@ onMounted(async () => {
       es_garantia: orden.es_garantia,
       garantia_dias: orden.garantia_dias,
       mano_obra: Number(orden.mano_obra) ? orden.mano_obra : '',
+      vale_id: orden.vale?.id ?? null,
       repuestos: (orden.repuestos ?? []).map((item) => ({
         variante_id: item.variante_id,
         variante: item.variante,
@@ -1014,6 +1084,69 @@ defineExpose({ form, submit })
   font-size: 16px;
   font-weight: 700;
   color: var(--app-ink) !important;
+}
+
+.orden-form__descuento {
+  color: var(--q-positive) !important;
+  font-weight: 600;
+}
+
+.orden-form__vales {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--q-positive) 55%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--q-positive) 8%, transparent);
+}
+
+.orden-form__valesTitulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--q-positive);
+}
+
+.orden-form__vale {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--app-border-control);
+  border-radius: 10px;
+  background: var(--app-surface);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--app-ink-2);
+  cursor: pointer;
+
+  strong {
+    font-size: 15px;
+    color: var(--app-ink);
+  }
+
+  span {
+    flex: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--q-primary);
+    outline-offset: 2px;
+  }
+
+  &--activo {
+    border-color: var(--q-positive);
+    color: var(--app-ink);
+
+    .q-icon {
+      color: var(--q-positive);
+    }
+  }
 }
 
 .orden-form__nota {

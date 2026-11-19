@@ -7,6 +7,7 @@ use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Models\Pedido;
 use App\Models\User;
+use App\Models\Vale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -79,12 +80,17 @@ class OrdenesServicio
                 ]);
             }
 
+            // Vale de fidelización: su % sobre la mano de obra va como descuento del cobro.
+            $vale = array_key_exists('vale_id', $datos)
+                ? $this->aplicarVale($orden, $datos['vale_id'])
+                : Vale::query()->where('orden_uso_id', $orden->id)->first();
+
             $pedido = $this->pedidos->guardar(
                 $orden->pedido ?? new Pedido(['canal' => Pedido::CANAL_SERVICIO]),
                 [
                     'cliente_id' => $orden->cliente_id,
                     'observacion' => "Orden de servicio {$orden->codigo}",
-                    'descuento' => 0,
+                    'descuento' => $vale?->descuentoSobre((float) $orden->mano_obra) ?? 0,
                     'items' => $this->lineasDeCobro($orden, $datos['repuestos'] ?? []),
                 ],
                 $usuario,
@@ -151,6 +157,83 @@ class OrdenesServicio
             ]);
 
             return $orden;
+        });
+    }
+
+    /**
+     * Deja en la orden el vale elegido (o ninguno): libera el que tenía si
+     * cambió y reserva el nuevo. Un vale es del cliente de la orden, se usa
+     * una sola vez y no en la misma orden que lo generó.
+     */
+    private function aplicarVale(OrdenServicio $orden, ?int $valeId): ?Vale
+    {
+        $actual = Vale::query()->where('orden_uso_id', $orden->id)->lockForUpdate()->first();
+        if ($actual && $actual->id === $valeId) {
+            return $actual;
+        }
+        $actual?->forceFill(['orden_uso_id' => null, 'usado_at' => null])->save();
+
+        if (! $valeId) {
+            return null;
+        }
+
+        $vale = Vale::query()->whereKey($valeId)->lockForUpdate()->firstOrFail();
+        $problema = match (true) {
+            $vale->cliente_id !== $orden->cliente_id => 'Ese vale es de otro cliente.',
+            ! $vale->disponible() => "El vale {$vale->codigo} ya se usó.",
+            $vale->orden_origen_id === $orden->id => 'El vale se usa en la próxima orden, no en la que lo generó.',
+            default => null,
+        };
+        if ($problema) {
+            throw ValidationException::withMessages(['orden.vale_id' => $problema]);
+        }
+
+        $vale->forceFill(['orden_uso_id' => $orden->id, 'usado_at' => now()])->save();
+
+        return $vale;
+    }
+
+    /**
+     * Genera el vale de fidelización de la orden: un % de descuento en la mano
+     * de obra de la próxima orden del cliente. Uno por orden.
+     */
+    public function generarVale(OrdenServicio $orden, int $porcentaje, User $usuario): Vale
+    {
+        return DB::transaction(function () use ($orden, $porcentaje, $usuario) {
+            $orden = OrdenServicio::query()->whereKey($orden->id)->lockForUpdate()->firstOrFail();
+
+            if ($existente = $orden->valeGenerado()->first()) {
+                throw ValidationException::withMessages([
+                    'vale' => "Esta orden ya dio el vale {$existente->codigo}.",
+                ])->status(409);
+            }
+
+            $vale = new Vale;
+            $vale->forceFill([
+                'codigo' => Vale::nuevoCodigo(),
+                'cliente_id' => $orden->cliente_id,
+                'porcentaje' => $porcentaje,
+                'orden_origen_id' => $orden->id,
+                'user_id' => $usuario->id,
+            ])->save();
+
+            return $vale;
+        });
+    }
+
+    /** Quita el vale que dio la orden, si el cliente todavía no lo usó. */
+    public function quitarVale(OrdenServicio $orden): void
+    {
+        DB::transaction(function () use ($orden) {
+            $vale = Vale::query()->where('orden_origen_id', $orden->id)->lockForUpdate()->firstOrFail();
+
+            if (! $vale->disponible()) {
+                throw ValidationException::withMessages([
+                    'vale' => "El vale {$vale->codigo} ya se usó: no se puede quitar.",
+                ])->status(409);
+            }
+
+            $vale->delete();
         });
     }
 

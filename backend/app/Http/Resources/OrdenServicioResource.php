@@ -71,6 +71,11 @@ class OrdenServicioResource extends JsonResource
                 'estado' => $pedido->estado,
             ]),
             'total' => $pedido?->total,
+            'descuento' => $pedido?->descuento,
+            // Vale de fidelización usado acá (descuento en la mano de obra) y el
+            // que se le dio al cliente para su próxima orden.
+            'vale' => $this->whenLoaded('valeAplicado', fn () => $this->valeAplicado?->resumen()),
+            'vale_generado' => $this->whenLoaded('valeGenerado', fn () => $this->valeGenerado?->resumen()),
             // El saldo se financió en cuotas (null = sin crédito).
             'credito_id' => $this->when($pedido !== null, fn () => $pedido->credito()->value('id')),
             'pagado' => $pagado === null ? null : number_format($pagado, 2, '.', ''),

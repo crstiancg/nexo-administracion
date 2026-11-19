@@ -29,6 +29,7 @@ class ImpresionController extends Controller
             'pedido.items' => fn ($q) => $q->orderBy('id'),
             'pedido.items.variante.producto:id,nombre',
             'pedido.pagos',
+            'valeAplicado',
         ]);
 
         $total = (float) ($orden->pedido?->total ?? 0);
@@ -47,6 +48,9 @@ class ImpresionController extends Controller
             'qr' => QrCode::svg($orden->urlSeguimiento()),
             'repuestos' => $orden->pedido?->items->whereNotNull('variante_id') ?? collect(),
             'total' => $total,
+            // Vale de fidelización usado en esta orden (descuento en la mano de obra).
+            'vale' => $orden->valeAplicado,
+            'descuento' => (float) ($orden->pedido?->descuento ?? 0),
             'pagado' => $pagado,
             'saldo' => round($total - $pagado, 2),
             'estado' => EstadoOrden::nombreDe($orden->estado),

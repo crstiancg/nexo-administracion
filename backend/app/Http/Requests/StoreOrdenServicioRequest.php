@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Cotizacion;
 use App\Models\OrdenServicio;
 use App\Models\Pago;
+use App\Models\Vale;
 use App\Support\Cantidades;
 use App\Support\Sedes;
 use Closure;
@@ -75,6 +76,8 @@ class StoreOrdenServicioRequest extends FormRequest
             'orden.es_garantia' => ['boolean'],
             'orden.garantia_dias' => ['integer', 'min:0', 'max:1095'],
             'orden.mano_obra' => ['numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'],
+            // Vale de fidelización del cliente (se valida al aplicarlo, con la orden bloqueada).
+            'orden.vale_id' => ['nullable', 'integer', 'exists:vales,id'],
             'orden.repuestos' => ['present', 'array', 'max:'.self::MAX_REPUESTOS],
         ];
 
@@ -129,8 +132,13 @@ class StoreOrdenServicioRequest extends FormRequest
     private function anticipoNoMayorAlTotal(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail) {
-            $total = (float) $this->input('orden.mano_obra', 0) + collect((array) $this->input('orden.repuestos', []))
+            $manoObra = (float) $this->input('orden.mano_obra', 0);
+            $total = $manoObra + collect((array) $this->input('orden.repuestos', []))
                 ->sum(fn ($r) => round((float) ($r['cantidad'] ?? 0) * (float) ($r['precio_unitario'] ?? 0), 2));
+            // Con vale, el total ya trae su descuento.
+            if ($vale = Vale::find($this->input('orden.vale_id'))) {
+                $total -= $vale->descuentoSobre($manoObra);
+            }
 
             if ((float) $value > round($total, 2)) {
                 $fail('El adelanto no puede ser mayor que el total de la orden.');

@@ -28,6 +28,20 @@ class OrdenServicioService {
   }
 
   // { orden, etiqueta }: enlaces firmados (unos minutos) a los documentos impresos.
+  // Vales de fidelización disponibles del cliente (con `ordenId`, también el de esa orden).
+  static async vales (clienteId, ordenId = null) {
+    return (await api.get('api/ordenes-servicio/vales', { params: { cliente_id: clienteId, orden_id: ordenId ?? undefined } })).data
+  }
+
+  // Da el vale para la próxima visita del cliente; devuelve la orden con `vale_generado`.
+  static async generarVale (id, porcentaje) {
+    return (await api.post(`api/ordenes-servicio/${id}/vale`, { porcentaje })).data
+  }
+
+  static async quitarVale (id) {
+    return (await api.delete(`api/ordenes-servicio/${id}/vale`)).data
+  }
+
   static async impresion (id) {
     return (await api.post(`api/ordenes-servicio/${id}/impresion`)).data
   }

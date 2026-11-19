@@ -46,8 +46,14 @@
 
     /* Totales: una barra de cinco casillas (etiqueta arriba, monto abajo); el
        total y el saldo en azul noche (verde si está pagado), como antes. */
-    .resumen { display: grid; grid-template-columns: 1fr 1fr 1.2fr 1fr 1.3fr; overflow: hidden; border-radius: 2.4mm; box-shadow: inset 0 0 0 0.75pt #C7D5F2; background: #fff; }
-    .resumen > div { display: flex; flex-direction: column; justify-content: center; gap: .3mm; padding: 1.5mm 3.4mm; text-align: right; }
+    .resumen { display: flex; overflow: hidden; border-radius: 2.4mm; box-shadow: inset 0 0 0 0.75pt #C7D5F2; background: #fff; }
+    .resumen > div { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: .3mm; padding: 1.5mm 3.4mm; text-align: right; }
+    .resumen > .fuerte { flex-grow: 1.25; }
+    /* El saldo / pagado por adelantado, la casilla más ancha: su etiqueta va en una línea. */
+    .resumen > .fuerte:last-child { flex-grow: 1.65; }
+    .resumen small { white-space: nowrap; }
+    /* El descuento del vale de fidelización, en verde. */
+    .resumen .vale b { color: #15803D; }
     .resumen > div + div { border-left: 0.75pt solid #DCE4F5; }
     .resumen small { font-size: 7.8pt; font-weight: 700; color: #6B7A99; text-transform: uppercase; letter-spacing: .2px; text-align: left; }
     .resumen b { font-size: 11pt; font-weight: 700; white-space: nowrap; }
@@ -173,6 +179,9 @@
         <div class="resumen">
             <div><small>Repuestos</small><b>S/ {{ number_format($repuestos->sum('subtotal'), 2) }}</b></div>
             <div><small>Mano de obra</small><b>S/ {{ number_format((float) $orden->mano_obra, 2) }}</b></div>
+            @if ($vale && $descuento > 0)
+                <div class="vale"><small>Vale {{ $vale->porcentaje }}%</small><b>−S/ {{ number_format($descuento, 2) }}</b></div>
+            @endif
             <div class="fuerte"><small>Total</small><b>S/ {{ number_format($total, 2) }}</b></div>
             {{-- Con saldo: lo dado a cuenta y lo que falta. Ya pagado todo: el saldo en
                  cero y, resaltado, cuánto pagó (por adelantado si el equipo aún no se entregó). --}}

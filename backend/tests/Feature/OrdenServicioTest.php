@@ -15,6 +15,7 @@ use App\Models\Stock;
 use App\Models\TipoEquipo;
 use App\Models\Unidad;
 use App\Models\User;
+use App\Models\Vale;
 use App\Models\Variante;
 use App\Services\Cajas;
 use App\Services\Inventario;
@@ -466,6 +467,64 @@ class OrdenServicioTest extends TestCase
             ->assertJsonPath('taller.basura.porcentaje', 50)
             ->assertJsonCount(1, 'taller.basura.por_tipo')
             ->assertJsonPath('taller.basura.por_tipo.0.tipo', 'Laptop');
+    }
+
+    public function test_el_vale_de_una_orden_descuenta_la_mano_de_obra_de_la_siguiente(): void
+    {
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.vale', 'ordenes-servicio.vale.quitar', 'ordenes-servicio.impresion');
+        $primera = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+
+        $vale = $this->postJson("/api/ordenes-servicio/{$primera}/vale", ['porcentaje' => 10])
+            ->assertCreated()
+            ->assertJsonPath('vale_generado.porcentaje', 10)
+            ->assertJsonPath('vale_generado.disponible', true)
+            ->json('vale_generado');
+        $this->assertMatchesRegularExpression('/^VALE-[A-Z2-9]{6}$/', $vale['codigo']);
+        // Uno por orden.
+        $this->postJson("/api/ordenes-servicio/{$primera}/vale", ['porcentaje' => 20])->assertConflict();
+
+        // Sale entre los disponibles del cliente, pero no en la orden que lo dio.
+        $this->getJson("/api/ordenes-servicio/vales?cliente_id={$this->cliente->id}")->assertOk()->assertJsonCount(1);
+        $this->getJson("/api/ordenes-servicio/vales?cliente_id={$this->cliente->id}&orden_id={$primera}")->assertJsonCount(0);
+
+        // Próxima orden: 10% de la mano de obra (80 → 8); el repuesto, completo.
+        $segunda = $this->postJson('/api/ordenes-servicio', $this->payload(['vale_id' => $vale['id']]))
+            ->assertCreated()
+            ->assertJsonPath('vale.codigo', $vale['codigo'])
+            ->assertJsonPath('descuento', '8.00')
+            ->assertJsonPath('total', '222.00')
+            ->json('id');
+
+        // Sale en las impresiones de la orden.
+        $enlaces = $this->postJson("/api/ordenes-servicio/{$segunda}/impresion")->json();
+        $this->get($enlaces['orden-premium'])->assertOk()->assertSee('Vale 10%')->assertSee('−S/ 8.00', false);
+        $this->get($enlaces['orden'])->assertOk()->assertSee($vale['codigo']);
+
+        // Ya usado: no se aplica en otra ni se quita de la que lo dio.
+        $this->postJson('/api/ordenes-servicio', $this->payload(['vale_id' => $vale['id']]))
+            ->assertUnprocessable()->assertJsonValidationErrors('orden.vale_id');
+        $this->deleteJson("/api/ordenes-servicio/{$primera}/vale")->assertConflict();
+
+        // Editar la mano de obra recalcula el descuento; sacar el vale lo libera.
+        $this->putJson("/api/ordenes-servicio/{$segunda}", $this->payload(['vale_id' => $vale['id'], 'mano_obra' => 200]))
+            ->assertOk()->assertJsonPath('descuento', '20.00')->assertJsonPath('total', '330.00');
+        $this->putJson("/api/ordenes-servicio/{$segunda}", $this->payload(['vale_id' => null]))
+            ->assertOk()->assertJsonPath('descuento', '0.00')->assertJsonPath('vale', null);
+        $this->assertTrue(Vale::find($vale['id'])->disponible());
+    }
+
+    public function test_el_vale_es_solo_del_cliente_y_se_puede_quitar_si_no_se_uso(): void
+    {
+        $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.vale', 'ordenes-servicio.vale.quitar');
+        $orden = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+        $vale = $this->postJson("/api/ordenes-servicio/{$orden}/vale", ['porcentaje' => 15])->json('vale_generado');
+        $otro = Cliente::create(['nombre' => 'Luis Mamani']);
+
+        $this->postJson('/api/ordenes-servicio', $this->payload(['cliente_id' => $otro->id, 'vale_id' => $vale['id']]))
+            ->assertUnprocessable()->assertJsonValidationErrors('orden.vale_id');
+
+        $this->deleteJson("/api/ordenes-servicio/{$orden}/vale")->assertOk()->assertJsonPath('vale_generado', null);
+        $this->assertSame(0, Vale::count());
     }
 
     public function test_sube_y_quita_fotos_del_equipo(): void

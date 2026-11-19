@@ -149,6 +149,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
         Route::apiResource('estados-orden', EstadoOrdenController::class)->parameters(['estados-orden' => 'estado']);
         Route::get('ordenes-servicio/resumen', [OrdenServicioController::class, 'resumen'])->name('ordenes-servicio.resumen');
         Route::get('ordenes-servicio/tecnicos', [OrdenServicioController::class, 'tecnicos'])->name('ordenes-servicio.asignar-tecnico');
+        // Vales de fidelización disponibles de un cliente (para aplicar en su orden).
+        Route::get('ordenes-servicio/vales', [OrdenServicioController::class, 'vales'])->name('ordenes-servicio.vales');
         Route::apiResource('ordenes-servicio', OrdenServicioController::class)
             ->parameters(['ordenes-servicio' => 'orden'])
             ->except(['destroy']);
@@ -269,6 +271,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('ordenes-servicio/{orden}/estado', [OrdenServicioController::class, 'estado'])->name('ordenes-servicio.estado');
     // Enlaces firmados para imprimir la orden (A4) y la etiqueta del equipo.
     Route::post('ordenes-servicio/{orden}/impresion', [OrdenServicioController::class, 'impresion'])->name('ordenes-servicio.impresion');
+    // Vale de fidelización: un % en la mano de obra de la próxima orden del cliente.
+    Route::post('ordenes-servicio/{orden}/vale', [OrdenServicioController::class, 'generarVale'])->name('ordenes-servicio.vale');
+    Route::delete('ordenes-servicio/{orden}/vale', [OrdenServicioController::class, 'quitarVale'])->name('ordenes-servicio.vale.quitar');
     // Evidencia: fotos del equipo y firma del cliente (recibir / entregar).
     Route::post('ordenes-servicio/{orden}/fotos', [OrdenServicioArchivoController::class, 'subirFotos'])->name('ordenes-servicio.fotos');
     Route::delete('ordenes-servicio/{orden}/fotos/{archivo}', [OrdenServicioArchivoController::class, 'quitarFoto'])->name('ordenes-servicio.fotos.quitar');

@@ -214,6 +214,9 @@
             </tbody>
         </table>
         <table class="totales" style="width: 260px; margin: 6px 0 0 auto">
+            @if ($vale && $descuento > 0)
+                <tr><td>Vale {{ $vale->codigo }} ({{ $vale->porcentaje }}%)</td><td class="num">−S/ {{ number_format($descuento, 2) }}</td></tr>
+            @endif
             <tr><td>Total</td><td class="num">S/ {{ number_format($total, 2) }}</td></tr>
             <tr><td>A cuenta</td><td class="num">S/ {{ number_format($pagado, 2) }}</td></tr>
             <tr class="saldo"><td>Saldo</td><td class="num">S/ {{ number_format($saldo, 2) }}</td></tr>

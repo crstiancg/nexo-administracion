@@ -27,6 +27,8 @@ export default function formOrden () {
       garantia_dias: 30,
       mano_obra: '',
       repuestos: [],
+      // Vale de fidelización del cliente: su % se descuenta de la mano de obra.
+      vale_id: null,
       // Sólo al crear: la cotización aceptada de la que nace (queda convertida).
       cotizacion_id: null,
       // Sólo al crear: entra a la caja abierta. Sin método = sin adelanto;

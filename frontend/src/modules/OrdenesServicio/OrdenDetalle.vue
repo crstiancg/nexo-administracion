@@ -118,6 +118,13 @@
           <span>Mano de obra</span>
           <span class="text-mono">{{ formatearPrecio(orden.mano_obra) }}</span>
         </div>
+        <div
+          v-if="orden.vale"
+          class="os-detalle__linea os-detalle__descuento"
+        >
+          <span>Vale {{ orden.vale.codigo }} ({{ orden.vale.porcentaje }}% en mano de obra)</span>
+          <span class="text-mono">−{{ formatearPrecio(orden.descuento) }}</span>
+        </div>
         <p
           v-if="!orden.repuestos?.length && !Number(orden.mano_obra)"
           class="os-detalle__sub"
@@ -163,6 +170,98 @@
     >
       Garantía hasta el <strong>{{ fechaCorta(orden.garantia_hasta) }}</strong>.
     </p>
+
+    <!-- ── Vale de fidelización: un % en la mano de obra de su próxima orden ── -->
+    <section
+      v-if="orden.vale_generado || puedeDarVale"
+      class="os-detalle__vale"
+    >
+      <h4 class="os-detalle__h">
+        <q-icon
+          name="redeem"
+          size="18px"
+        />
+        Vale para su próxima visita
+      </h4>
+
+      <div
+        v-if="orden.vale_generado"
+        class="os-detalle__valeTarjeta"
+      >
+        <div class="os-detalle__valePct">
+          {{ orden.vale_generado.porcentaje }}%
+        </div>
+        <div class="os-detalle__valeTexto">
+          <strong class="text-mono">{{ orden.vale_generado.codigo }}</strong>
+          <span>de descuento en la mano de obra de su próxima orden</span>
+          <span
+            v-if="!orden.vale_generado.disponible"
+            class="os-detalle__valeUsado"
+          >Usado en {{ orden.vale_generado.usado_en ?? 'otra orden' }}</span>
+        </div>
+        <div class="os-detalle__valeAcciones">
+          <q-btn
+            v-if="orden.vale_generado.disponible && enlaceVale"
+            flat
+            dense
+            no-caps
+            icon="mdi-whatsapp"
+            color="positive"
+            label="Enviar"
+            :href="enlaceVale"
+            target="_blank"
+            rel="noopener"
+          />
+          <q-btn
+            v-if="orden.vale_generado.disponible && userStore.hasPermission('ordenes-servicio.vale.quitar')"
+            flat
+            dense
+            round
+            icon="delete_outline"
+            aria-label="Quitar el vale"
+            :loading="guardandoVale"
+            @click="quitarVale"
+          />
+        </div>
+      </div>
+
+      <form
+        v-else
+        class="os-detalle__valeForm"
+        @submit.prevent="darVale"
+      >
+        <q-input
+          v-model="porcentajeVale"
+          type="number"
+          min="1"
+          max="100"
+          step="1"
+          suffix="%"
+          dense
+          outlined
+          hide-bottom-space
+          aria-label="Porcentaje de descuento del vale"
+          class="os-detalle__valeInput"
+        />
+        <q-btn
+          type="submit"
+          unelevated
+          no-caps
+          color="positive"
+          icon="redeem"
+          label="Dar vale"
+          :loading="guardandoVale"
+        />
+        <span class="os-detalle__sub">Descuento en la mano de obra de su próxima orden. No vence.</span>
+      </form>
+      <p
+        v-if="errorVale"
+        class="os-detalle__error"
+        role="alert"
+      >
+        {{ errorVale }}
+      </p>
+    </section>
 
     <!-- ── Fotos del equipo ── -->
     <section>
@@ -298,7 +397,8 @@ import OrdenServicioService from '@/services/OrdenServicioService'
 import { formatearCantidad } from '@/utils/cantidad'
 import { formatearFechaHora } from '@/utils/fechas'
 import { formatearPrecio } from '@/utils/moneda'
-import { claveEntregado, estadoDe, fechaCorta } from './constantes'
+import { TIENDA } from '@/config/tienda'
+import { claveEntregado, enlaceWhatsappCon, estadoDe, fechaCorta } from './constantes'
 
 const props = defineProps({
   id: {
@@ -324,6 +424,37 @@ function actualizar (nueva) {
 
 // ── Evidencia: fotos y firmas ──
 const userStore = useUserStore()
+
+// ── Vale de fidelización ──
+const puedeDarVale = computed(() => userStore.hasPermission('ordenes-servicio.vale'))
+const porcentajeVale = ref('10')
+const guardandoVale = ref(false)
+const errorVale = ref('')
+
+async function conVale (accion) {
+  guardandoVale.value = true
+  errorVale.value = ''
+  try {
+    orden.value = await accion()
+  } catch (e) {
+    const errores = e.response?.data?.errors
+    errorVale.value = errores ? Object.values(errores)[0][0] : (e.response?.data?.message ?? 'No se pudo guardar el vale.')
+  } finally {
+    guardandoVale.value = false
+  }
+}
+
+const darVale = () => conVale(() => OrdenServicioService.generarVale(orden.value.id, Number(porcentajeVale.value)))
+const quitarVale = () => conVale(() => OrdenServicioService.quitarVale(orden.value.id))
+
+// WhatsApp al cliente con su vale.
+const enlaceVale = computed(() => {
+  const vale = orden.value?.vale_generado
+  if (!vale) return null
+  const nombre = orden.value.cliente?.nombre?.split(' ')[0] ?? ''
+  return enlaceWhatsappCon(orden.value, `Hola ${nombre}, gracias por confiar en nosotros. Te regalamos un vale del ${vale.porcentaje}% de descuento en la mano de obra de tu próximo servicio técnico. ` +
+    `Tu código: ${vale.codigo}. ¡Te esperamos!\n— ${TIENDA.nombre}`)
+})
 const puedeEvidencia = computed(() => ['ordenes-servicio.store', 'ordenes-servicio.update', 'ordenes-servicio.estado']
   .some((p) => userStore.hasPermission(p)))
 
@@ -541,6 +672,77 @@ const historial = computed(() => {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+.os-detalle__descuento {
+  font-weight: 600;
+  color: var(--q-positive);
+}
+
+.os-detalle__vale .os-detalle__h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.os-detalle__valeTarjeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px dashed color-mix(in srgb, var(--q-positive) 55%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--q-positive) 8%, transparent);
+}
+
+.os-detalle__valePct {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--q-positive);
+}
+
+.os-detalle__valeTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--app-ink-2);
+
+  strong {
+    font-size: 14px;
+    color: var(--app-ink);
+  }
+}
+
+.os-detalle__valeUsado {
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.os-detalle__valeAcciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.os-detalle__valeForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.os-detalle__valeInput {
+  width: 96px;
+}
+
+.os-detalle__error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--q-negative);
 }
 
 .os-detalle__totales {
