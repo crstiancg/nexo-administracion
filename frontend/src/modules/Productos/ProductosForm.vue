@@ -142,10 +142,11 @@
       </div>
 
       <!-- Primero el costo: con él se llena solo el precio de venta (tabla de
-           precios de referencia de Configuración). Sólo con presentaciones
-           nuevas: es el costo del stock inicial que entra al guardar. -->
+           precios de referencia de Configuración). Al crear se ve siempre
+           (escribirlo abre la primera presentación si no hay); al editar,
+           sólo con presentaciones nuevas: es el costo del stock inicial. -->
       <AppTextField
-        v-if="hayNuevas"
+        v-if="!props.id || hayNuevas"
         v-model="form.producto.costo_compra"
         :label="unidadesIniciales ? 'Costo de compra (S/) *' : 'Costo de compra (S/)'"
         icon="payments"
@@ -1310,6 +1311,12 @@ function ponerATodas () {
   if (cantidadParaTodas.value === '') return
   form.producto.variantes.filter((v) => !v.id).forEach((v) => { v.stock_inicial = String(cantidadParaTodas.value) })
 }
+
+// Al crear, escribir el costo sin presentaciones todavía abre la primera:
+// el costo es de lo que entra en ellas.
+watch(() => form.producto.costo_compra, (costo) => {
+  if (!props.id && Number(costo) > 0 && !form.producto.variantes.length) agregarPresentacion()
+})
 
 const unidadesIniciales = computed(() =>
   form.producto.variantes.filter((v) => !v.id).reduce((s, v) => s + (Number(v.stock_inicial) || 0), 0))
