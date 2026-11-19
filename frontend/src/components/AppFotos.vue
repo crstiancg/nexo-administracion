@@ -103,7 +103,53 @@
           >
         </label>
       </li>
+
+      <!-- La cámara: en vivo dentro del sistema (webcam o celular). Si el
+           navegador no la deja usar (http fuera de localhost), el input con
+           capture: en el celular abre la cámara directo. -->
+      <li
+        v-if="!optimizando && model.length < max && !soloLectura"
+        class="app-fotos__item app-fotos__item--agregar"
+      >
+        <button
+          v-if="hayCamara"
+          type="button"
+          class="app-fotos__agregar app-fotos__camara"
+          :aria-label="`Tomar foto con la cámara: ${label}`"
+          @click="camara = true"
+        >
+          <q-icon
+            name="photo_camera"
+            size="20px"
+          />
+          <span>Tomar foto</span>
+        </button>
+        <label
+          v-else
+          class="app-fotos__agregar"
+        >
+          <q-icon
+            name="photo_camera"
+            size="20px"
+          />
+          <span>Tomar foto</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            class="app-fotos__input"
+            :aria-label="`Tomar foto con la cámara: ${label}`"
+            @change="agregar"
+          >
+        </label>
+      </li>
     </ul>
+
+    <AppCamara
+      v-model="camara"
+      :restantes="max - model.length"
+      @foto="deCamara"
+    />
 
     <p
       v-for="mensaje in [...rechazos, ...errores]"
@@ -139,6 +185,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import AppCamara from '@/components/AppCamara.vue'
 import { comprimirImagen, detectarTipoReal, problemaAlDecodificar } from '@/utils/imagenes'
 
 /**
@@ -204,10 +251,25 @@ const hayAmpliada = computed({
   set: (abierta) => { if (!abierta) ampliada.value = null }
 })
 
-async function agregar (event) {
+// getUserMedia sólo existe en HTTPS o localhost.
+const hayCamara = typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
+const camara = ref(false)
+
+// Las fotos de la cámara llegan de a una (cada disparo): en fila, para que el
+// tope de fotos se cuente bien aunque se dispare rápido.
+let cola = Promise.resolve()
+function deCamara (archivo) {
+  cola = cola.then(() => procesar([archivo], false))
+}
+
+function agregar (event) {
   const elegidos = Array.from(event.target.files ?? [])
   event.target.value = ''
-  rechazos.value = []
+  return procesar(elegidos)
+}
+
+async function procesar (elegidos, limpiar = true) {
+  if (limpiar) rechazos.value = []
 
   if (!elegidos.length) return
 
@@ -402,6 +464,19 @@ function hacerPortada (i) {
   }
 
   &:focus-within {
+    outline: 2px solid var(--q-primary);
+    outline-offset: -2px;
+  }
+}
+
+.app-fotos__camara {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+
+  &:focus-visible {
     outline: 2px solid var(--q-primary);
     outline-offset: -2px;
   }
