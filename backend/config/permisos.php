@@ -102,6 +102,8 @@ return [
         'cotizaciones.show' => ['cotizaciones.index', 'cotizaciones.update'],
         // Quien ve una cotización (o la lista de productos) la baja en Excel.
         'cotizaciones.excel' => ['cotizaciones.index', 'cotizaciones.show'],
+        // Y la abre en A4 premium para imprimirla o guardarla en PDF.
+        'cotizaciones.impresion' => ['cotizaciones.index', 'cotizaciones.show'],
         // El filtro "Atendido por" de la lista.
         'cotizaciones.usuarios' => ['cotizaciones.index'],
         // Quien arma cotizaciones carga y guarda plantillas de PC; borrarlas, quien crea.

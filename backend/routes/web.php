@@ -13,3 +13,8 @@ Route::get('imprimir/ordenes-servicio/{orden}/{formato}', [ImpresionController::
     ->middleware('signed')
     ->whereIn('formato', ImpresionController::FORMATOS)
     ->name('imprimir.orden-servicio');
+
+// La cotización en A4 premium (POST api/cotizaciones/{cotizacion}/impresion).
+Route::get('imprimir/cotizaciones/{cotizacion}', [ImpresionController::class, 'cotizacion'])
+    ->middleware('signed')
+    ->name('imprimir.cotizacion');

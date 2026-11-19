@@ -120,6 +120,41 @@ class CotizacionPcTest extends TestCase
             ->assertJsonPath('items.1.precio_venta', '1020.00');
     }
 
+    public function test_imprime_la_cotizacion_premium_con_enlace_firmado_sin_mostrar_el_costo(): void
+    {
+        $this->actuarCon('cotizaciones.store', 'cotizaciones.index')
+            ->forceFill(['sede_id' => $this->sede->id])->save();
+        // Costo de un equipo: 150 + 850 = 1000; con 200 de ganancia, 180 + 1020.
+        $cotizacion = $this->crear(['equipos' => 3, 'ganancia' => 200, 'ganancia_tipo' => 'monto'])->json();
+
+        $enlace = $this->postJson("/api/cotizaciones/{$cotizacion['id']}/impresion")
+            ->assertOk()
+            ->json('premium');
+
+        $this->get($enlace)
+            ->assertOk()
+            ->assertSee($cotizacion['codigo'])
+            ->assertSee('Disco sólido SSD')
+            ->assertSee('Intel Core i5-14400')
+            ->assertSee('S/ 180.00')
+            ->assertSee('S/ 1,020.00')
+            ->assertSee('S/ 3,600.00')
+            // El cliente nunca ve el precio de llegada.
+            ->assertDontSee('S/ 150.00')
+            ->assertDontSee('S/ 850.00');
+
+        // Sin firma no se abre.
+        $this->get("/imprimir/cotizaciones/{$cotizacion['id']}")->assertForbidden();
+    }
+
+    public function test_sin_permiso_no_obtiene_el_enlace_de_la_cotizacion_premium(): void
+    {
+        $id = $this->crear([])->json('id');
+
+        $this->actuarCon('pedidos.index');
+        $this->postJson("/api/cotizaciones/{$id}/impresion")->assertForbidden();
+    }
+
     public function test_la_ganancia_en_porcentaje_es_sobre_el_costo(): void
     {
         $this->crear(['ganancia' => 15, 'ganancia_tipo' => 'porcentaje'])

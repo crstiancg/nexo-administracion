@@ -12,6 +12,7 @@ use App\Support\Fechas;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -159,6 +160,19 @@ class CotizacionController extends Controller
     public function excel(Cotizacion $cotizacion, Exportaciones $exportar): StreamedResponse
     {
         return $exportar->descargar($exportar->cotizacion($cotizacion), "{$cotizacion->codigo}.xlsx");
+    }
+
+    /**
+     * Enlace firmado (unos minutos) para abrir la cotización en A4 premium en
+     * una pestaña nueva, que no lleva el token de la sesión.
+     */
+    public function impresion(Cotizacion $cotizacion): JsonResponse
+    {
+        return response()->json([
+            'premium' => URL::temporarySignedRoute(
+                'imprimir.cotizacion', now()->addMinutes(config('empresa.impresion_minutos')), ['cotizacion' => $cotizacion->id],
+            ),
+        ]);
     }
 
     public function rechazar(Cotizacion $cotizacion): JsonResponse

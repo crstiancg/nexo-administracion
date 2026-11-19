@@ -234,8 +234,32 @@
           variant="tertiary"
           label="Imprimir / PDF"
           icon="print"
-          @click="impresionRef.imprimir(detalle)"
-        />
+        >
+          <q-menu>
+            <q-list dense>
+              <q-item
+                v-close-popup
+                clickable
+                @click="impresionRef.imprimir(detalle)"
+              >
+                <q-item-section avatar>
+                  <q-icon name="description" />
+                </q-item-section>
+                <q-item-section>Proforma (A4 clásica)</q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
+                @click="imprimirPremium(detalle)"
+              >
+                <q-item-section avatar>
+                  <q-icon name="auto_awesome" />
+                </q-item-section>
+                <q-item-section>Cotización (diseño premium)</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </AppButton>
         <!-- La proforma pública: por WhatsApp, copiando el enlace o para verla. -->
         <AppButton
           v-if="detalle?.token"
@@ -671,6 +695,23 @@ function guardada (cotizacion) {
 }
 
 const impresionRef = ref()
+
+/**
+ * La premium la arma el servidor (el diseño de la orden de servicio premium):
+ * se abre por un enlace firmado en una pestaña nueva. La pestaña se abre antes
+ * de pedir el enlace para que el navegador no la bloquee como ventana emergente.
+ */
+async function imprimirPremium (cotizacion) {
+  const ventana = window.open('', '_blank')
+  try {
+    const { premium } = await CotizacionService.impresion(cotizacion.id)
+    if (ventana) ventana.location.href = premium
+    else window.location.href = premium
+  } catch {
+    ventana?.close()
+    $q.notify({ type: 'negative', message: 'No se pudo abrir la cotización.', position: 'top-right' })
+  }
+}
 
 // ── Detalle y acciones ──
 const detalleDialog = ref(false)

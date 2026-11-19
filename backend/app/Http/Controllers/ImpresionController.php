@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cotizacion;
 use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
 use App\Support\Empresa;
+use App\Support\NumeroALetras;
 use App\Support\QrCode;
 use Illuminate\Contracts\View\View;
 
@@ -49,6 +51,30 @@ class ImpresionController extends Controller
             'saldo' => round($total - $pagado, 2),
             'estado' => EstadoOrden::nombreDe($orden->estado),
             'seguridad' => OrdenServicio::SEGURIDAD[$orden->seguridad_tipo] ?? $orden->seguridad_tipo,
+        ]);
+    }
+
+    /**
+     * La cotización en A4 premium (el diseño de la orden premium). Lo que ve
+     * el cliente: precios con la ganancia de la PC repartida, sin costos ni
+     * notas internas.
+     */
+    public function cotizacion(Cotizacion $cotizacion): View
+    {
+        $cotizacion->load([
+            'cliente', 'sede', 'usuario:id,name',
+            'items' => fn ($q) => $q->orderBy('id'),
+            'items.variante.producto:id,nombre',
+            'items.variante.unidad:id,abreviatura',
+            'items.variante.color:id,nombre',
+            'items.archivos',
+        ]);
+
+        return view('impresion.cotizacion-premium', [
+            'cotizacion' => $cotizacion,
+            'empresa' => Empresa::datos(),
+            'ventas' => $cotizacion->preciosDeVenta(),
+            'totalLetras' => NumeroALetras::convertir((float) $cotizacion->total, 'SOLES'),
         ]);
     }
 }

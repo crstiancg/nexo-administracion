@@ -43,6 +43,11 @@ class CotizacionService {
     return (await api.post(`api/cotizaciones/${id}/convertir`, items ? { items } : {})).data
   }
 
+  // { premium }: enlace firmado (unos minutos) a la cotización en A4 premium.
+  static async impresion (id) {
+    return (await api.post(`api/cotizaciones/${id}/impresion`)).data
+  }
+
   static async rechazar (id) {
     return (await api.post(`api/cotizaciones/${id}/rechazar`)).data
   }

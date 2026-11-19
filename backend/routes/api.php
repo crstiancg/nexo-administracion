@@ -228,6 +228,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::post('ordenes-compra/{orden}/enviar', [OrdenCompraController::class, 'enviar'])->name('ordenes-compra.enviar');
     Route::post('ordenes-compra/{orden}/anular', [OrdenCompraController::class, 'anular'])->name('ordenes-compra.anular');
     Route::get('cotizaciones/{cotizacion}/excel', [CotizacionController::class, 'excel'])->name('cotizaciones.excel');
+    // Enlace firmado para abrir la cotización en A4 premium.
+    Route::post('cotizaciones/{cotizacion}/impresion', [CotizacionController::class, 'impresion'])->name('cotizaciones.impresion');
     Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])->name('cotizaciones.convertir');
     Route::post('cotizaciones/{cotizacion}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
 
