@@ -344,6 +344,110 @@
         </AppCard>
       </div>
 
+      <!-- ── Basura tecnológica evitada (acumulado) ──
+           Lo entregado reparado ya no es basura: los kilos de cada tipo de
+           equipo (Catálogos > Tipos de equipo, opcional). -->
+      <div
+        v-if="datos.taller?.basura"
+        class="dash__fila"
+      >
+        <AppCard class="dash__card dash__basura">
+          <div class="dash__cardCabecera">
+            <div>
+              <h2 class="dash__titulo">
+                Basura tecnológica evitada
+              </h2>
+              <p class="dash__muted">
+                Equipos reparados y entregados que no terminaron en la basura
+              </p>
+            </div>
+            <router-link
+              to="/tipos-equipo"
+              class="dash__link"
+            >
+              Kilos por tipo
+            </router-link>
+          </div>
+
+          <p
+            v-if="!basura.por_tipo.length"
+            class="dash__muted"
+          >
+            Ponle los kilos a cada tipo de equipo (Catálogos › Tipos de equipo) y aquí verás cuánta basura tecnológica se evita al repararlos.
+          </p>
+          <template v-else>
+            <div class="dash__basuraCifras">
+              <div class="dash__basuraCifra dash__basuraCifra--evitada">
+                <q-icon
+                  name="recycling"
+                  size="26px"
+                />
+                <div>
+                  <strong class="text-mono">{{ kilos(basura.kg_evitados) }}</strong>
+                  <span>evitados · {{ basura.equipos_reparados }} {{ basura.equipos_reparados === 1 ? 'equipo reparado' : 'equipos reparados' }}</span>
+                </div>
+              </div>
+              <div class="dash__basuraCifra">
+                <q-icon
+                  name="build_circle"
+                  size="26px"
+                />
+                <div>
+                  <strong class="text-mono">{{ kilos(basura.kg_por_reparar) }}</strong>
+                  <span>por reparar · {{ basura.equipos_por_reparar }} en el taller</span>
+                </div>
+              </div>
+              <div
+                v-if="basura.porcentaje !== null"
+                class="dash__basuraCifra"
+              >
+                <q-icon
+                  name="percent"
+                  size="26px"
+                />
+                <div>
+                  <strong class="text-mono">{{ basura.porcentaje }}%</strong>
+                  <span>de lo entregado salió reparado</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="dash__subtitulo">
+                Por tipo de equipo
+              </h3>
+              <ul class="dash__canales">
+                <li
+                  v-for="t in basura.por_tipo"
+                  :key="t.tipo"
+                >
+                  <span class="dash__canalNombre">
+                    <q-icon
+                      name="devices"
+                      size="16px"
+                    />
+                    {{ t.tipo }}
+                  </span>
+                  <span class="dash__canalPct text-mono">{{ kilos(t.kg_evitados) }}</span>
+                  <span class="dash__canalBarra dash__basuraBarra">
+                    <span :style="{ width: `${maxKg ? (t.kg_evitados / maxKg) * 100 : 0}%` }" />
+                    <span
+                      class="dash__basuraBarraPendiente"
+                      :style="{ width: `${maxKg ? (t.kg_por_reparar / maxKg) * 100 : 0}%` }"
+                    />
+                  </span>
+                  <span class="dash__muted dash__canalDetalle">
+                    {{ t.reparados }} {{ t.reparados === 1 ? 'reparado' : 'reparados' }}
+                    · {{ t.por_reparar }} por reparar ({{ kilos(t.kg_por_reparar) }})
+                    · {{ kilos(t.kg_equipo) }} c/u
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </AppCard>
+      </div>
+
       <!-- ── Cotizaciones: conversión del mes + por vencer ── -->
       <div
         v-if="datos.cotizaciones"
@@ -674,6 +778,15 @@ const variacion = computed(() => {
   return { texto: `${pct > 0 ? '+' : ''}${pct}%`, sube: pct >= 0 }
 })
 
+// ── Basura tecnológica evitada ──
+const basura = computed(() => datos.value?.taller?.basura ?? { por_tipo: [] })
+// La barra de cada tipo: evitado (verde) + por reparar (claro), sobre el mayor.
+const maxKg = computed(() => Math.max(0, ...basura.value.por_tipo.map((t) => t.kg_evitados + t.kg_por_reparar)))
+function kilos (kg) {
+  const n = Number(kg) || 0
+  return `${n.toLocaleString('es-PE', { maximumFractionDigits: n >= 100 ? 0 : 1 })} kg`
+}
+
 // Cada atajo sólo si su número llegó (permiso).
 const atajos = computed(() => {
   const p = datos.value?.pendientes ?? {}
@@ -821,6 +934,56 @@ const atajos = computed(() => {
   &:focus-visible {
     outline: 2px solid var(--q-primary);
     outline-offset: 1px;
+  }
+}
+
+.dash__basuraCifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.dash__basuraCifra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--app-border-subtle);
+  border-radius: 12px;
+  color: var(--app-ink-2);
+
+  strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--app-ink);
+  }
+
+  span {
+    font-size: 12px;
+  }
+
+  &--evitada {
+    border-color: color-mix(in srgb, var(--q-positive) 45%, transparent);
+    background: color-mix(in srgb, var(--q-positive) 10%, transparent);
+
+    .q-icon,
+    strong {
+      color: var(--q-positive);
+    }
+  }
+}
+
+.dash__basuraBarra {
+  display: flex;
+
+  span {
+    background: var(--q-positive);
+  }
+
+  .dash__basuraBarraPendiente {
+    background: color-mix(in srgb, var(--q-positive) 30%, transparent);
   }
 }
 

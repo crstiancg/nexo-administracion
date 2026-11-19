@@ -436,6 +436,38 @@ class OrdenServicioTest extends TestCase
         $this->assertEquals(230, $panel->json('ventas.por_mes.11.total'));
     }
 
+    public function test_el_dashboard_suma_la_basura_tecnologica_evitada_por_tipo(): void
+    {
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.index', 'ordenes-servicio.estado', 'pedidos.pagos');
+        $this->abrirCaja($user);
+        $this->laptop->update(['kg_basura' => 2.5]);
+        // Un tipo sin kilos no suma nada.
+        $celular = TipoEquipo::create(['nombre' => 'Celular', 'checklist' => [], 'activo' => true]);
+
+        $entregar = function (string $desde) {
+            $orden = $this->postJson('/api/ordenes-servicio', $this->payload())->json();
+            $this->postJson("/api/pedidos/{$orden['pedido_id']}/pagos", ['pago' => ['metodo' => 'efectivo', 'monto' => 230]]);
+            $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => $desde]);
+            $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'entregado'])->assertOk();
+        };
+        $entregar('reparado');
+        $entregar('sin_reparacion');
+        // En el taller, por reparar.
+        $this->postJson('/api/ordenes-servicio', $this->payload());
+        $this->postJson('/api/ordenes-servicio', $this->payload(['tipo_equipo_id' => $celular->id]));
+
+        $this->getJson('/api/panel/dashboard')->assertOk()
+            // Sólo la reparada y entregada es basura evitada.
+            ->assertJsonPath('taller.basura.kg_evitados', 2.5)
+            ->assertJsonPath('taller.basura.equipos_reparados', 1)
+            ->assertJsonPath('taller.basura.kg_por_reparar', 2.5)
+            ->assertJsonPath('taller.basura.equipos_por_reparar', 1)
+            // De 5 kg entregados, 2.5 salieron reparados.
+            ->assertJsonPath('taller.basura.porcentaje', 50)
+            ->assertJsonCount(1, 'taller.basura.por_tipo')
+            ->assertJsonPath('taller.basura.por_tipo.0.tipo', 'Laptop');
+    }
+
     public function test_sube_y_quita_fotos_del_equipo(): void
     {
         Storage::fake('public');

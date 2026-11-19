@@ -340,6 +340,55 @@ class PanelController extends Controller
                 ->get()
                 ->map(fn ($f) => ['tecnico' => $f->tecnico, 'total' => (int) $f->total])
                 ->values(),
+            'basura' => $this->basura($sedeId, $activas),
+        ];
+    }
+
+    /**
+     * Basura tecnológica evitada (acumulado de la sede), con los kilos de cada
+     * tipo de equipo (sólo los tipos que los tienen): lo entregado reparado ya
+     * no es basura; lo que está en el taller, por reparar, es lo que falta.
+     * `porcentaje`: de los kilos entregados, cuánto salió reparado.
+     *
+     * @param  list<string>  $activas
+     * @return array<string, mixed>
+     */
+    private function basura(int $sedeId, array $activas): array
+    {
+        $entregado = EstadoOrden::entregado();
+        $filas = OrdenServicio::query()
+            ->join('tipos_equipo', 'tipos_equipo.id', '=', 'ordenes_servicio.tipo_equipo_id')
+            ->where('ordenes_servicio.sede_id', $sedeId)
+            ->where('tipos_equipo.kg_basura', '>', 0)
+            ->selectRaw('tipos_equipo.nombre as tipo, tipos_equipo.kg_basura as kg')
+            ->selectRaw('SUM(CASE WHEN ordenes_servicio.entregado_reparado = 1 THEN 1 ELSE 0 END) as reparados')
+            ->selectRaw('SUM(CASE WHEN ordenes_servicio.estado = ? THEN 1 ELSE 0 END) as entregados', [$entregado])
+            ->selectRaw('SUM(CASE WHEN ordenes_servicio.estado IN ('.implode(',', array_fill(0, count($activas), '?')).') THEN 1 ELSE 0 END) as por_reparar', $activas)
+            ->groupBy('tipos_equipo.id', 'tipos_equipo.nombre', 'tipos_equipo.kg_basura')
+            ->get()
+            ->map(fn ($f) => [
+                'tipo' => $f->tipo,
+                'kg_equipo' => (float) $f->kg,
+                'reparados' => (int) $f->reparados,
+                'kg_evitados' => round((int) $f->reparados * (float) $f->kg, 2),
+                'por_reparar' => (int) $f->por_reparar,
+                'kg_por_reparar' => round((int) $f->por_reparar * (float) $f->kg, 2),
+                'kg_entregados' => round((int) $f->entregados * (float) $f->kg, 2),
+            ])
+            ->filter(fn ($f) => $f['reparados'] || $f['por_reparar'])
+            ->sortByDesc('kg_evitados')
+            ->values();
+
+        $evitados = round($filas->sum('kg_evitados'), 2);
+        $entregados = $filas->sum('kg_entregados');
+
+        return [
+            'kg_evitados' => $evitados,
+            'equipos_reparados' => $filas->sum('reparados'),
+            'kg_por_reparar' => round($filas->sum('kg_por_reparar'), 2),
+            'equipos_por_reparar' => $filas->sum('por_reparar'),
+            'porcentaje' => $entregados > 0 ? (int) round($evitados / $entregados * 100) : null,
+            'por_tipo' => $filas->map(fn ($f) => collect($f)->except('kg_entregados')->all())->values(),
         ];
     }
 

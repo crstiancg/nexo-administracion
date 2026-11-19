@@ -48,6 +48,8 @@ class StoreTipoEquipoRequest extends FormRequest
             'tipo.nombre' => ['required', 'string', 'max:60', $this->nombreUnico($this->route('tipos_equipo'))],
             'tipo.checklist' => ['present', 'array', 'max:30'],
             'tipo.checklist.*' => ['string', 'max:40'],
+            // Opcional: sin kilos, el tipo no suma a la basura evitada.
+            'tipo.kg_basura' => ['nullable', 'numeric', 'min:0', 'max:9999'],
             'tipo.activo' => ['required', 'boolean'],
         ];
     }
@@ -78,6 +80,7 @@ class StoreTipoEquipoRequest extends FormRequest
             'tipo.nombre' => 'nombre',
             'tipo.checklist' => 'lista de revisión',
             'tipo.checklist.*' => 'punto de revisión',
+            'tipo.kg_basura' => 'kilos de basura tecnológica',
             'tipo.activo' => 'activo',
         ];
     }

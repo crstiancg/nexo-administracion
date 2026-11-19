@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Laptop, Celular, Impresora… Cada tipo trae la lista de revisión que se
  * marca al recibir el equipo (`checklist`: ["Enciende", "Pantalla", …]).
+ *
+ * `kg_basura` (opcional): cuánto pesa uno. Cada equipo de este tipo que se
+ * entrega reparado son esos kilos de basura tecnológica evitada.
  */
-#[Fillable(['nombre', 'checklist', 'activo'])]
+#[Fillable(['nombre', 'checklist', 'kg_basura', 'activo'])]
 class TipoEquipo extends Model
 {
     /**
@@ -22,6 +25,7 @@ class TipoEquipo extends Model
     {
         return [
             'checklist' => 'array',
+            'kg_basura' => 'decimal:2',
             'activo' => 'boolean',
         ];
     }

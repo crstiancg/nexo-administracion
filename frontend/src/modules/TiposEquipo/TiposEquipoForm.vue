@@ -55,6 +55,21 @@
       </button>
     </div>
 
+    <!-- Opcional: sin kilos, este tipo no suma a la basura evitada del dashboard. -->
+    <AppTextField
+      v-model="form.tipo.kg_basura"
+      label="Kilos de basura tecnológica por equipo (opcional)"
+      icon="recycling"
+      type="number"
+      min="0"
+      step="0.1"
+      inputmode="decimal"
+      placeholder="Ej.: 2.5"
+      hint="Cada equipo de este tipo que se entrega reparado suma estos kilos como basura evitada en el dashboard."
+      :error="form.errors[`${PATH}.kg_basura`]"
+      @change="form.validate(`${PATH}.kg_basura`)"
+    />
+
     <q-toggle
       v-model="form.tipo.activo"
       label="Activo (se puede elegir en órdenes nuevas)"
@@ -88,7 +103,7 @@ const props = defineProps({
 const emit = defineEmits(['save'])
 
 // Función y no objeto: useForm guarda estos datos como "originales" para el reset().
-const inicial = () => ({ tipo: { nombre: '', checklist: ['Enciende'], activo: true } })
+const inicial = () => ({ tipo: { nombre: '', checklist: ['Enciende'], kg_basura: null, activo: true } })
 
 const form = props.id
   ? useForm('put', `api/tipos-equipo/${props.id}`, inicial)
@@ -97,11 +112,13 @@ const form = props.id
 onMounted(async () => {
   if (!props.id) return
 
-  const { nombre, checklist, activo } = await TipoEquipoService.get(props.id)
-  form.setData({ [PATH]: { nombre, checklist: checklist ?? [], activo } })
+  const { nombre, checklist, kg_basura: kg, activo } = await TipoEquipoService.get(props.id)
+  form.setData({ [PATH]: { nombre, checklist: checklist ?? [], kg_basura: kg === null ? null : Number(kg), activo } })
 })
 
 async function submit () {
+  // Campo vacío = sin kilos (null), no 0.
+  if (form.tipo.kg_basura === '') form.tipo.kg_basura = null
   try {
     await form.submit()
     form.reset()

@@ -27,6 +27,12 @@ use Illuminate\Support\Carbon;
 ])]
 class OrdenServicio extends Model
 {
+    /**
+     * Entregada desde este estado = se entregó reparada: sus kilos (los del
+     * tipo de equipo) cuentan como basura tecnológica evitada.
+     */
+    public const ESTADO_REPARADO = 'reparado';
+
     // Claves de los estados de fábrica (migración create_estados_orden). Los
     // usan los seeders y los tests; la lógica pregunta por el tipo.
     public const RECIBIDO = 'recibido';
@@ -65,6 +71,7 @@ class OrdenServicio extends Model
     protected function casts(): array
     {
         return [
+            'entregado_reparado' => 'boolean',
             // La clave del equipo del cliente no queda en texto plano.
             'seguridad_valor' => 'encrypted',
             'checklist' => 'array',

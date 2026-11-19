@@ -17,7 +17,7 @@ class TipoEquipoController extends Controller
             TipoEquipo::query()->withCount('ordenes'),
             ['activo'],
             ['nombre'],
-            ['id', 'nombre', 'activo'],
+            ['id', 'nombre', 'kg_basura', 'activo'],
         );
     }
 

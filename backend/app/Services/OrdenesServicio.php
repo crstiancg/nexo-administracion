@@ -170,7 +170,8 @@ class OrdenesServicio
         // Falta cobrar → 409 con el saldo; la transacción deshace la confirmación.
         $this->pedidos->entregar($pedido);
 
-        $orden->forceFill(['entregado_at' => now()]);
+        // Reparada y entregada: ya no es basura (kilos en el dashboard).
+        $orden->forceFill(['entregado_at' => now(), 'entregado_reparado' => $orden->estado === OrdenServicio::ESTADO_REPARADO]);
     }
 
     /**

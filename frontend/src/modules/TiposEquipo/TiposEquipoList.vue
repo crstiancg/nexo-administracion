@@ -150,6 +150,7 @@ const userStore = useUserStore()
 const columns = [
   { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left', sortable: true },
   { name: 'checklist', label: 'Puntos de revisión', field: (row) => (row.checklist ?? []).length, align: 'right', classes: 'text-mono' },
+  { name: 'kg_basura', label: 'Kg por equipo', field: (row) => (row.kg_basura === null ? '—' : `${Number(row.kg_basura)} kg`), align: 'right', classes: 'text-mono' },
   { name: 'ordenes_count', label: 'Órdenes', field: 'ordenes_count', align: 'right', classes: 'text-mono' },
   { name: 'activo', label: 'Estado', field: 'activo', align: 'left', sortable: true },
   { name: 'acciones', label: '', field: 'id', align: 'right' }
