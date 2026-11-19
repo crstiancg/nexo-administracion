@@ -76,6 +76,8 @@ class Exportaciones
         $fila++;
         $inicio = $fila;
         $this->cabecera($hoja, $fila, ['#', 'Descripción', 'SKU', 'Cant.', 'Und.', 'P. unit.', 'Importe']);
+        // Con la ganancia de la PC repartida: el cliente no ve el costo.
+        $ventas = $cotizacion->preciosDeVenta();
         foreach ($cotizacion->items as $n => $item) {
             $fila++;
             $variante = $item->variante;
@@ -87,8 +89,8 @@ class Exportaciones
                 $variante?->sku,
                 (float) $item->cantidad,
                 $variante ? $variante->unidad?->abreviatura : $item->unidad,
-                (float) $item->precio_unitario,
-                (float) $item->subtotal,
+                (float) $ventas[$item->id]['precio_unitario'],
+                (float) $ventas[$item->id]['subtotal'],
             ], null, "A{$fila}");
         }
         $this->bordes($hoja, "A{$inicio}:G{$fila}");

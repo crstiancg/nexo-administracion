@@ -51,6 +51,18 @@
       <CotizacionDocumento :cotizacion="cotizacion" />
     </div>
 
+    <!-- Sólo acá (interno): la proforma muestra los precios con la ganancia. -->
+    <p
+      v-if="Number(cotizacion.ganancia_equipo)"
+      class="cot-detalle__nota"
+    >
+      <strong>Ganancia:</strong> {{ formatearPrecio(cotizacion.ganancia_equipo) }} por equipo<template v-if="cotizacion.ganancia_tipo === 'porcentaje'">
+        ({{ Number(cotizacion.ganancia) }} % sobre el costo)
+      </template><template v-if="cotizacion.equipos > 1">
+        · {{ formatearPrecio(cotizacion.ganancia_equipo * cotizacion.equipos) }} en los {{ cotizacion.equipos }} equipos
+      </template>. Los componentes están a precio de llegada.
+    </p>
+
     <p
       v-if="cotizacion.observacion"
       class="cot-detalle__nota"
@@ -72,6 +84,7 @@ import { onMounted, ref } from 'vue'
 import AppChip from '@/components/AppChip.vue'
 import CotizacionService from '@/services/CotizacionService'
 import { formatearFechaHora } from '@/utils/fechas'
+import { formatearPrecio } from '@/utils/moneda'
 import CotizacionDocumento from './CotizacionDocumento.vue'
 import { ESTADOS, fechaCorta } from './constantes'
 

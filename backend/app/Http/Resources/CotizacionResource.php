@@ -30,6 +30,12 @@ class CotizacionResource extends JsonResource
             'mostrar_precios' => $this->mostrar_precios,
             // PC armada: los ítems son de UN equipo y el total es por todos.
             'equipos' => $this->multiplicador(),
+            // PC a precio de llegada: la ganancia por equipo (S/ o %) y lo que
+            // resultó en soles. Los ítems van al costo; `precio_venta` es lo
+            // que ve el cliente (con la ganancia repartida).
+            'ganancia' => $this->ganancia,
+            'ganancia_tipo' => $this->ganancia_tipo,
+            'ganancia_equipo' => $this->ganancia_equipo,
             // pendiente | vencida | convertida | rechazada
             'estado' => $this->estadoVisible(),
             'editable' => $this->editable(),
@@ -54,23 +60,36 @@ class CotizacionResource extends JsonResource
             'items_count' => $this->whenCounted('items'),
             // Con VarianteStockResource: el form edita los ítems igual que
             // los de un pedido (producto, presentación, stock de hoy).
-            'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
-                'id' => $item->id,
-                'variante_id' => $item->variante_id,
-                'componente' => $item->componente,
-                // Libre (fuera del catálogo): sin variante, con su descripción.
-                'descripcion' => $item->descripcion,
-                'unidad' => $item->unidad,
-                'cantidad' => $item->cantidad,
-                'precio_unitario' => $item->precio_unitario,
-                'subtotal' => $item->subtotal,
-                // [] o [foto]: el mismo formato que las fotos de un producto.
-                'archivos' => ArchivoResource::collection($item->archivos)->resolve($request),
-                'variante' => $item->variante ? (new VarianteStockResource($item->variante))->resolve($request) : null,
-            ])),
+            'items' => $this->whenLoaded('items', fn () => $this->itemsConVenta($request)),
             'pedido' => $this->whenLoaded('pedido', fn () => $this->pedido?->only(['id', 'codigo', 'estado'])),
             'orden_servicio' => $this->whenLoaded('ordenServicio', fn () => $this->ordenServicio?->only(['id', 'codigo', 'estado'])),
             'usuario' => $this->whenLoaded('usuario', fn () => $this->usuario?->only(['id', 'name'])),
         ];
+    }
+
+    /**
+     * Los ítems al costo (lo que se edita) y con `precio_venta` y
+     * `subtotal_venta`: lo que ve el cliente, con la ganancia repartida.
+     */
+    private function itemsConVenta(Request $request): array
+    {
+        $ventas = $this->preciosDeVenta();
+
+        return $this->items->map(fn ($item) => [
+            'id' => $item->id,
+            'variante_id' => $item->variante_id,
+            'componente' => $item->componente,
+            // Libre (fuera del catálogo): sin variante, con su descripción.
+            'descripcion' => $item->descripcion,
+            'unidad' => $item->unidad,
+            'cantidad' => $item->cantidad,
+            'precio_unitario' => $item->precio_unitario,
+            'subtotal' => $item->subtotal,
+            'precio_venta' => $ventas[$item->id]['precio_unitario'],
+            'subtotal_venta' => $ventas[$item->id]['subtotal'],
+            // [] o [foto]: el mismo formato que las fotos de un producto.
+            'archivos' => ArchivoResource::collection($item->archivos)->resolve($request),
+            'variante' => $item->variante ? (new VarianteStockResource($item->variante))->resolve($request) : null,
+        ])->all();
     }
 }

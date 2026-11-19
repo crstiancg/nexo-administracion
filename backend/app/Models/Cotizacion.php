@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * `valida_hasta` pasada se muestra como vencida. Los cambios de estado pasan
  * por App\Services\Cotizaciones.
  */
-#[Fillable(['tipo', 'mostrar_precios', 'equipos', 'cliente_id', 'valida_hasta', 'forma_pago', 'entrega', 'garantia', 'condiciones', 'observacion', 'descuento'])]
+#[Fillable(['tipo', 'mostrar_precios', 'equipos', 'ganancia', 'ganancia_tipo', 'cliente_id', 'valida_hasta', 'forma_pago', 'entrega', 'garantia', 'condiciones', 'observacion', 'descuento'])]
 class Cotizacion extends Model
 {
     public const PENDIENTE = 'pendiente';
@@ -56,6 +56,8 @@ class Cotizacion extends Model
             'vista_at' => 'datetime',
             'mostrar_precios' => 'boolean',
             'equipos' => 'integer',
+            'ganancia' => 'decimal:2',
+            'ganancia_equipo' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'descuento' => 'decimal:2',
             'total' => 'decimal:2',
@@ -71,6 +73,68 @@ class Cotizacion extends Model
     public function multiplicador(): int
     {
         return $this->tipo === 'pc' ? max(1, (int) $this->equipos) : 1;
+    }
+
+    /**
+     * La ganancia de UN equipo en soles, sobre su costo (lo que suman los
+     * ítems): el monto tal cual o el % del costo. Sólo en una PC armada.
+     */
+    public static function gananciaPorEquipo(?string $tipo, float $costoEquipo, float $ganancia, ?string $gananciaTipo): float
+    {
+        if ($tipo !== 'pc' || $ganancia <= 0) {
+            return 0.0;
+        }
+
+        return $gananciaTipo === 'porcentaje'
+            ? round($costoEquipo * $ganancia / 100, 2)
+            : round($ganancia, 2);
+    }
+
+    /**
+     * El precio que ve el cliente de cada ítem: la ganancia del equipo
+     * repartida en proporción a su costo, así la proforma (y el pedido) nunca
+     * muestran el precio de llegada y las líneas suman el precio del equipo.
+     * Lo que sobra o falta por el redondeo va a una línea de cantidad 1 (o,
+     * si no hay, a la más cara). Sin ganancia, los precios tal cual.
+     *
+     * Usa los `items` cargados (todos: también los libres, que llevan su parte).
+     *
+     * @return array<int, array{precio_unitario: string, subtotal: string}> por id de ítem
+     */
+    public function preciosDeVenta(): array
+    {
+        $dinero = fn (float $valor) => number_format($valor, 2, '.', '');
+        $costo = round($this->items->sum(fn ($item) => (float) $item->subtotal), 2);
+        $ganancia = (float) $this->ganancia_equipo;
+
+        if ($ganancia <= 0 || $costo <= 0) {
+            return $this->items->mapWithKeys(fn ($item) => [$item->id => [
+                'precio_unitario' => $dinero((float) $item->precio_unitario),
+                'subtotal' => $dinero((float) $item->subtotal),
+            ]])->all();
+        }
+
+        $factor = ($costo + $ganancia) / $costo;
+        $filas = [];
+        foreach ($this->items as $item) {
+            $precio = round((float) $item->precio_unitario * $factor, 2);
+            $filas[$item->id] = ['cantidad' => (float) $item->cantidad, 'precio' => $precio, 'subtotal' => round((float) $item->cantidad * $precio, 2)];
+        }
+
+        $resto = round($costo + $ganancia - array_sum(array_column($filas, 'subtotal')), 2);
+        if ($resto != 0.0) {
+            $unitarias = array_filter($filas, fn ($fila) => $fila['cantidad'] == 1.0);
+            $candidatas = $unitarias ?: $filas;
+            uasort($candidatas, fn ($a, $b) => $b['subtotal'] <=> $a['subtotal']);
+            $id = array_key_first($candidatas);
+            $filas[$id]['subtotal'] = round($filas[$id]['subtotal'] + $resto, 2);
+            $filas[$id]['precio'] = round($filas[$id]['subtotal'] / $filas[$id]['cantidad'], 2);
+        }
+
+        return array_map(fn ($fila) => [
+            'precio_unitario' => $dinero($fila['precio']),
+            'subtotal' => $dinero($fila['subtotal']),
+        ], $filas);
     }
 
     public function vencida(): bool

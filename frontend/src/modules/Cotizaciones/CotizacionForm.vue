@@ -174,8 +174,18 @@
           :excluir="form.cotizacion.items.map((i) => i.variante_id).filter(Boolean)"
           @elegir="agregar"
         />
-        <!-- Lo que la tienda no tiene se cotiza igual, descrito a mano. -->
+        <!-- Lo que la tienda no tiene se cotiza igual, descrito a mano. En
+             la PC es un casillero más (refrigeración líquida, WiFi…) que se
+             llena del catálogo (lupa) o escrito. -->
         <AppButton
+          v-if="form.cotizacion.tipo === 'pc'"
+          variant="secondary"
+          icon="add_box"
+          label="Agregar componente"
+          @click="agregarComponente"
+        />
+        <AppButton
+          v-else
           variant="secondary"
           icon="add_box"
           label="Ítem que no hay en tienda"
@@ -194,7 +204,11 @@
         class="cotizacion-form__ayudaPc"
       >
         Llena cada casillero buscando en el catálogo (lupa) o escribiendo el componente.
-        Los que queden vacíos no se guardan ni salen en la proforma.
+        Los que queden vacíos no se guardan ni salen en la proforma. ¿Lleva algo más (refrigeración líquida,
+        WiFi, licencia…)? Usa “Agregar componente”.
+        <template v-if="puedeVerCostos">
+          Los productos del catálogo entran a <strong>precio de llegada</strong> (su costo): pon tu ganancia abajo, en los totales.
+        </template>
       </p>
 
       <p
@@ -281,8 +295,9 @@
                 <!-- PC armada: el casillero de este componente. -->
                 <q-select
                   v-if="form.cotizacion.tipo === 'pc'"
+                  :ref="(el) => { if (el) selectsComponente[item.uid] = el; else delete selectsComponente[item.uid] }"
                   v-model="item.componente"
-                  :options="COMPONENTES_PC"
+                  :options="OPCIONES_COMPONENTE"
                   aria-label="Componente"
                   placeholder="Componente"
                   use-input
@@ -426,6 +441,10 @@
                   v-if="item.por_mayor && (item.precio_auto === undefined || item.precio_unitario === item.precio_auto)"
                   class="precio-mayor"
                 >Por mayor</span>
+                <span
+                  v-else-if="item.precio_costo !== undefined && item.precio_unitario === item.precio_costo"
+                  class="precio-mayor"
+                >Precio de llegada</span>
               </td>
 
               <td class="text-right text-mono cotizacion-form__subtotal">
@@ -539,12 +558,72 @@
       </div>
 
       <dl class="cotizacion-form__totales">
-        <!-- PC para varios equipos: los ítems de arriba son de uno. -->
-        <template v-if="equipos > 1">
-          <dt>Precio por equipo</dt>
+        <!-- PC a precio de llegada: costo de UN equipo + la ganancia por
+             equipo (en S/ o %). El cliente ve el precio, no el costo. -->
+        <template v-if="form.cotizacion.tipo === 'pc'">
+          <dt>Costo por equipo</dt>
           <dd class="text-mono">
             {{ formatearPrecio(subtotalEquipo) }}
           </dd>
+          <dt>
+            <label :for="`${uid}-ganancia`">Ganancia por equipo</label>
+          </dt>
+          <dd class="cotizacion-form__ganancia">
+            <q-btn-toggle
+              v-model="form.cotizacion.ganancia_tipo"
+              :options="[
+                { label: 'S/', value: 'monto' },
+                { label: '%', value: 'porcentaje' }
+              ]"
+              aria-label="Ganancia en soles o en porcentaje"
+              dense
+              no-caps
+              unelevated
+              toggle-color="primary"
+              class="cotizacion-form__gananciaTipo"
+            />
+            <q-input
+              :id="`${uid}-ganancia`"
+              v-model="form.cotizacion.ganancia"
+              type="number"
+              min="0"
+              step="0.01"
+              :suffix="form.cotizacion.ganancia_tipo === 'porcentaje' ? '%' : undefined"
+              :prefix="form.cotizacion.ganancia_tipo === 'monto' ? 'S/' : undefined"
+              placeholder="0"
+              dense
+              outlined
+              hide-bottom-space
+              no-error-icon
+              :error="Boolean(form.errors[`${PATH}.ganancia`])"
+              :error-message="form.errors[`${PATH}.ganancia`]"
+              class="cotizacion-form__control cotizacion-form__descuento"
+              @change="form.validate(`${PATH}.ganancia`)"
+            />
+          </dd>
+          <template v-if="gananciaEquipo">
+            <dt class="cotizacion-form__nota">
+              {{ form.cotizacion.ganancia_tipo === 'porcentaje' ? 'Ganancia en soles' : 'Margen sobre el costo' }}
+            </dt>
+            <dd class="text-mono cotizacion-form__nota">
+              {{ form.cotizacion.ganancia_tipo === 'porcentaje'
+                ? formatearPrecio(gananciaEquipo)
+                : (subtotalEquipo ? `${(gananciaEquipo / subtotalEquipo * 100).toFixed(1)} %` : '—') }}
+            </dd>
+          </template>
+          <dt>Precio por equipo</dt>
+          <dd class="text-mono">
+            {{ formatearPrecio(precioEquipo) }}
+          </dd>
+          <dd
+            v-if="!gananciaEquipo && hayAlCosto"
+            class="cotizacion-form__aviso cotizacion-form__avisoGanancia"
+          >
+            Sin ganancia: estás cotizando a precio de llegada.
+          </dd>
+        </template>
+        <!-- PC para varios equipos: los ítems de arriba son de uno. -->
+        <template v-if="equipos > 1">
           <dt>N° de equipos</dt>
           <dd class="text-mono">
             × {{ equipos }}
@@ -618,7 +697,10 @@
       <p class="cotizacion-form__opcional">
         Se guardan {{ componentesLlenos.length }} componentes<template v-if="form.cotizacion.garantia">
           y la garantía
-        </template>. Los productos del catálogo se cargan siempre con el precio del día.
+        </template>. Los productos del catálogo se cargan siempre con el precio del día
+        <template v-if="puedeVerCostos">
+          (el de llegada)
+        </template>; la ganancia se pone en cada cotización.
       </p>
       <p
         v-if="reemplazaPlantilla"
@@ -674,7 +756,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
@@ -690,7 +772,7 @@ import { desglosarIgv, ETIQUETA_IGV } from '@/utils/igv'
 import BuscadorCliente from '@/modules/Pedidos/BuscadorCliente.vue'
 import { nuevoItem, reprecio } from '@/modules/Pedidos/FormPedido'
 import formCotizacion, {
-  casilleroVacio, COMPONENTES_PC, conUid, DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO, GARANTIAS, MAX_EQUIPOS, nuevoItemLibre
+  casilleroVacio, COMPONENTES_EXTRA, COMPONENTES_PC, conUid, DIAS_VALIDEZ, ENTREGAS, FORMAS_PAGO, GARANTIAS, MAX_EQUIPOS, nuevoItemLibre
 } from './FormCotizacion'
 import { fechaCorta, hoyLocal } from './constantes'
 
@@ -754,8 +836,26 @@ function etiquetaDe (item) {
   return item.variante?.sku ?? (item.descripcion || 'ítem sin descripción')
 }
 
+// El costo promedio sólo lo usa quien puede verlo (como en productos).
+const puedeVerCostos = computed(() =>
+  userStore.hasPermission('productos.update') || userStore.hasPermission('reportes.ventas'))
+
+/**
+ * Un ítem del catálogo. En la PC armada se trabaja a precio de llegada: entra
+ * con su costo promedio (si lo tiene y se puede ver) y la ganancia va aparte,
+ * por equipo. `precio_costo` marca ese precio (para la etiqueta y para volver
+ * al de venta si se pasa a ítems sueltos). Si no, con el precio de venta.
+ */
+function itemDeCatalogo (variante, paraCliente = cliente.value) {
+  const item = nuevoItem(variante, paraCliente)
+  const costo = Number(variante.costo_promedio)
+  if (form.cotizacion.tipo !== 'pc' || !puedeVerCostos.value || !(costo > 0)) return item
+  const precio = costo.toFixed(2)
+  return { ...item, precio_unitario: precio, precio_costo: precio, precio_auto: null, por_mayor: false }
+}
+
 function agregar (variante) {
-  form.cotizacion.items.push(conUid(nuevoItem(variante, cliente.value)))
+  form.cotizacion.items.push(conUid(itemDeCatalogo(variante)))
 }
 
 function agregarLibre () {
@@ -763,6 +863,37 @@ function agregarLibre () {
 }
 
 // ── PC armada ──
+const OPCIONES_COMPONENTE = [...COMPONENTES_PC, ...COMPONENTES_EXTRA]
+
+// Los select del casillero, por uid del ítem (para abrir el nuevo).
+const selectsComponente = {}
+
+/** Un casillero más (refrigeración líquida, WiFi…): se abre para elegir qué es. */
+async function agregarComponente () {
+  const item = nuevoItemLibre()
+  form.cotizacion.items.push(item)
+  await nextTick()
+  const select = selectsComponente[item.uid]
+  select?.focus()
+  select?.showPopup()
+}
+
+/**
+ * Al cambiar de tipo, los precios que puso el sistema siguen al tipo: en la
+ * PC, el de llegada; en ítems sueltos, el de venta. Los escritos a mano no
+ * se tocan.
+ */
+function repreciarSegunTipo () {
+  form.cotizacion.items = form.cotizacion.items.map((item) => {
+    if (!item.variante) return item
+    const puesto = item.precio_unitario === item.precio_auto || item.precio_unitario === item.precio_costo
+    if (!puesto) return item
+    const resto = { ...item }
+    delete resto.precio_costo
+    return { ...resto, ...itemDeCatalogo(item.variante), cantidad: item.cantidad }
+  })
+}
+
 const faltanCasilleros = computed(() => COMPONENTES_PC.some((c) => !form.cotizacion.items.some((item) => item.componente === c)))
 
 /** Agrega, en orden, los casilleros que todavía no están. */
@@ -773,12 +904,17 @@ function completarCasilleros () {
 
 function cambiarTipo (tipo) {
   form.cotizacion.tipo = tipo
+  repreciarSegunTipo()
   if (tipo === 'pc') {
     completarCasilleros()
+    // A precio de llegada, la proforma sale sólo con el total (se puede prender).
+    if (!props.id) form.cotizacion.mostrar_precios = false
   } else {
-    // Ítems sueltos: los casilleros vacíos sobran y es un solo "equipo".
+    // Ítems sueltos: los casilleros vacíos sobran, es un solo "equipo" y sin
+    // ganancia aparte (cada ítem va a su precio de venta).
     form.cotizacion.items = form.cotizacion.items.filter((item) => !casilleroVacio(item))
     form.cotizacion.equipos = 1
+    form.cotizacion.ganancia = ''
   }
 }
 
@@ -799,7 +935,7 @@ async function cargarPlantillas () {
 /** Del catálogo, con el precio de hoy (y el de mayorista si toca); libres, como se guardaron. */
 function itemDePlantilla (item) {
   if (item.variante) {
-    return conUid({ ...nuevoItem(item.variante, cliente.value), componente: item.componente, cantidad: String(item.cantidad) })
+    return conUid({ ...itemDeCatalogo(item.variante), componente: item.componente, cantidad: String(item.cantidad) })
   }
   return {
     ...nuevoItemLibre(item.componente),
@@ -896,7 +1032,7 @@ function borrarPlantilla (plantilla) {
 function usarDelCatalogo (i, variante) {
   const anterior = form.cotizacion.items[i]
   form.cotizacion.items.splice(i, 1, conUid({
-    ...nuevoItem(variante, cliente.value),
+    ...itemDeCatalogo(variante),
     componente: anterior.componente,
     cantidad: anterior.cantidad || '1',
     archivos: anterior.archivos
@@ -923,7 +1059,17 @@ function faltaStock (item) {
 // Vista previa: el total que vale es el que calcula el backend.
 const equipos = computed(() => (form.cotizacion.tipo === 'pc' ? Math.max(1, Math.trunc(numero(form.cotizacion.equipos))) : 1))
 const subtotalEquipo = computed(() => form.cotizacion.items.reduce((suma, item) => suma + subtotalDe(item), 0))
-const subtotal = computed(() => Math.round(subtotalEquipo.value * equipos.value * 100) / 100)
+// PC: la ganancia por equipo (S/ o % del costo), igual que
+// Cotizacion::gananciaPorEquipo().
+const gananciaEquipo = computed(() => {
+  const ganancia = numero(form.cotizacion.ganancia)
+  if (form.cotizacion.tipo !== 'pc' || ganancia <= 0) return 0
+  const enSoles = form.cotizacion.ganancia_tipo === 'porcentaje' ? subtotalEquipo.value * ganancia / 100 : ganancia
+  return Math.round(enSoles * 100) / 100
+})
+const precioEquipo = computed(() => Math.round((subtotalEquipo.value + gananciaEquipo.value) * 100) / 100)
+const hayAlCosto = computed(() => form.cotizacion.items.some((item) => item.precio_costo !== undefined && item.precio_unitario === item.precio_costo))
+const subtotal = computed(() => Math.round(precioEquipo.value * equipos.value * 100) / 100)
 const total = computed(() => Math.max(0, subtotal.value - numero(form.cotizacion.descuento)))
 
 // ── Carga ──
@@ -943,6 +1089,8 @@ onMounted(async () => {
 async function copiar (id) {
   const original = await CotizacionService.get(id)
   cliente.value = original.cliente
+  // Antes de armar los ítems: en una PC entran a precio de llegada.
+  form.cotizacion.tipo = original.tipo ?? 'normal'
   let cambiaron = 0
   form.setData({
     [PATH]: {
@@ -950,6 +1098,8 @@ async function copiar (id) {
       tipo: original.tipo ?? 'normal',
       mostrar_precios: original.mostrar_precios ?? true,
       equipos: original.equipos ?? 1,
+      ganancia: Number(original.ganancia) ? original.ganancia : '',
+      ganancia_tipo: original.ganancia_tipo ?? 'monto',
       cliente_id: original.cliente_id,
       forma_pago: original.forma_pago ?? '',
       entrega: original.entrega ?? '',
@@ -965,7 +1115,7 @@ async function copiar (id) {
             precio_unitario: item.precio_unitario
           }
         }
-        const nuevo = nuevoItem(item.variante, original.cliente)
+        const nuevo = itemDeCatalogo(item.variante, original.cliente)
         if (nuevo.precio_unitario !== '' && Number(nuevo.precio_unitario) !== Number(item.precio_unitario)) cambiaron++
         return conUid({ ...nuevo, componente: item.componente, cantidad: String(item.cantidad) })
       })
@@ -991,6 +1141,8 @@ async function cargar (id) {
       tipo: cotizacion.tipo ?? 'normal',
       mostrar_precios: cotizacion.mostrar_precios ?? true,
       equipos: cotizacion.equipos ?? 1,
+      ganancia: Number(cotizacion.ganancia) ? cotizacion.ganancia : '',
+      ganancia_tipo: cotizacion.ganancia_tipo ?? 'monto',
       cliente_id: cotizacion.cliente_id,
       // Una vencida se edita para renovarla: la validez queda vacía (y si
       // no se pone otra, vale DIAS_VALIDEZ días desde hoy).
@@ -1393,6 +1545,40 @@ defineExpose({ form, submit })
     text-align: right;
     color: var(--app-ink);
   }
+}
+
+// Ganancia de la PC: el S/ | % junto al monto, en la columna de los importes.
+.cotizacion-form__ganancia {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+
+  .cotizacion-form__descuento {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cotizacion-form__gananciaTipo {
+  flex-shrink: 0;
+  border: 1px solid var(--app-border-control);
+  border-radius: 8px;
+}
+
+// La columna de importes se ensancha para el S/ | % junto al monto.
+.cotizacion-form__totales:has(.cotizacion-form__ganancia) {
+  grid-template-columns: auto 200px;
+}
+
+.cotizacion-form__nota {
+  font-size: 11.5px;
+}
+
+dd.cotizacion-form__avisoGanancia {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  text-align: right;
 }
 
 .cotizacion-form__total {

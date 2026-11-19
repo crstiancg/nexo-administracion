@@ -68,6 +68,11 @@ class StoreCotizacionRequest extends FormRequest
         if (in_array($cotizacion['descuento'] ?? null, [null, ''], true)) {
             $cotizacion['descuento'] = 0;
         }
+        // Ganancia por equipo: sólo en una PC armada (a precio de llegada).
+        if ($cotizacion['tipo'] !== 'pc' || in_array($cotizacion['ganancia'] ?? null, [null, ''], true)) {
+            $cotizacion['ganancia'] = 0;
+        }
+        $cotizacion['ganancia_tipo'] ??= 'monto';
 
         // Descripción del ítem libre sin espacios de más ("" = sin describir).
         foreach ((array) ($cotizacion['items'] ?? []) as $i => $item) {
@@ -96,6 +101,11 @@ class StoreCotizacionRequest extends FormRequest
             'cotizacion.tipo' => ['required', Rule::in(Cotizacion::TIPOS)],
             'cotizacion.mostrar_precios' => ['boolean'],
             'cotizacion.equipos' => ['integer', 'min:1', 'max:'.Cotizacion::MAX_EQUIPOS],
+            'cotizacion.ganancia_tipo' => ['required', Rule::in(['monto', 'porcentaje'])],
+            'cotizacion.ganancia' => [
+                'numeric', 'min:0', 'decimal:0,2',
+                $this->input('cotizacion.ganancia_tipo') === 'porcentaje' ? 'max:1000' : 'max:99999999.99',
+            ],
             'cotizacion.descuento' => ['numeric', 'min:0', 'max:99999999.99', 'decimal:0,2', $this->descuentoNoMayorAlSubtotal()],
             'cotizacion.items' => ['required', 'array', 'min:1', 'max:'.self::MAX_ITEMS],
         ];
@@ -182,8 +192,15 @@ class StoreCotizacionRequest extends FormRequest
             $subtotal = collect((array) $this->input('cotizacion.items', []))
                 ->sum(fn ($i) => round((float) ($i['cantidad'] ?? 0) * (float) ($i['precio_unitario'] ?? 0), 2));
             $equipos = max(1, (int) $this->input('cotizacion.equipos', 1));
+            $subtotal = round($subtotal, 2);
+            $ganancia = Cotizacion::gananciaPorEquipo(
+                $this->input('cotizacion.tipo'),
+                $subtotal,
+                (float) $this->input('cotizacion.ganancia', 0),
+                $this->input('cotizacion.ganancia_tipo'),
+            );
 
-            if ((float) $value > round($subtotal * $equipos, 2)) {
+            if ((float) $value > round(($subtotal + $ganancia) * $equipos, 2)) {
                 $fail('El descuento no puede ser mayor que el subtotal.');
             }
         };
@@ -221,6 +238,8 @@ class StoreCotizacionRequest extends FormRequest
             'cotizacion.tipo' => 'tipo',
             'cotizacion.mostrar_precios' => 'mostrar precios',
             'cotizacion.equipos' => 'N° de equipos',
+            'cotizacion.ganancia' => 'ganancia',
+            'cotizacion.ganancia_tipo' => 'tipo de ganancia',
             'cotizacion.items.*.componente' => 'componente',
             'cotizacion.items.*.variante_id' => 'presentación',
             'cotizacion.items.*.descripcion' => 'descripción',

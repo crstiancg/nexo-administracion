@@ -82,9 +82,13 @@ class Cotizaciones
                 $this->archivos->eliminarDe($viejo);
             }
 
-            // PC armada por N equipos: los ítems son los de uno.
-            $subtotal = round($subtotal, 2) * $cotizacion->multiplicador();
+            // PC armada por N equipos: los ítems son los de uno (al costo, si
+            // se trabaja a precio de llegada) y la ganancia es por equipo.
+            $costoEquipo = round($subtotal, 2);
+            $gananciaEquipo = Cotizacion::gananciaPorEquipo($cotizacion->tipo, $costoEquipo, (float) $cotizacion->ganancia, $cotizacion->ganancia_tipo);
+            $subtotal = round($costoEquipo + $gananciaEquipo, 2) * $cotizacion->multiplicador();
             $cotizacion->forceFill([
+                'ganancia_equipo' => $gananciaEquipo,
                 'subtotal' => round($subtotal, 2),
                 'total' => round($subtotal - (float) ($datos['descuento'] ?? 0), 2),
             ])->save();
@@ -149,9 +153,15 @@ class Cotizaciones
      */
     private function itemsElegidos(Cotizacion $cotizacion, ?array $elegidos): array
     {
+        // Al precio que vio el cliente: con la ganancia de la PC repartida
+        // (los libres también la llevan, aunque no pasen al pedido).
+        $ventas = $cotizacion->load('items')->preciosDeVenta();
         $cotizados = $cotizacion->items()->whereNotNull('variante_id')
             ->with('variante.unidad:id,fraccionable')->orderBy('id')->get()->keyBy('variante_id')
-            ->each(fn ($item) => $item->cantidad = round((float) $item->cantidad * $cotizacion->multiplicador(), 3));
+            ->each(function ($item) use ($cotizacion, $ventas) {
+                $item->cantidad = round((float) $item->cantidad * $cotizacion->multiplicador(), 3);
+                $item->precio_unitario = $ventas[$item->id]['precio_unitario'];
+            });
 
         if ($elegidos === null) {
             if ($cotizados->isEmpty()) {

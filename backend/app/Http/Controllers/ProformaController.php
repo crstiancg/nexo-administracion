@@ -42,6 +42,10 @@ class ProformaController extends Controller
         $empresa = Empresa::datos();
         unset($empresa['whatsapp']);
 
+        // PC a precio de llegada: el cliente ve los precios con la ganancia
+        // repartida, nunca el costo.
+        $ventas = $cotizacion->preciosDeVenta();
+
         return response()->json([
             'empresa' => $empresa,
             'cotizacion' => [
@@ -72,8 +76,8 @@ class ProformaController extends Controller
                     'descripcion' => $item->descripcion,
                     'unidad' => $item->unidad,
                     'cantidad' => $item->cantidad,
-                    'precio_unitario' => $item->precio_unitario,
-                    'subtotal' => $item->subtotal,
+                    'precio_unitario' => $ventas[$item->id]['precio_unitario'],
+                    'subtotal' => $ventas[$item->id]['subtotal'],
                     'archivos' => ArchivoResource::collection($item->archivos)->resolve($request),
                     // Sólo lo que describe el producto (sin stock ni costo).
                     'variante' => $item->variante ? [

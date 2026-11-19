@@ -106,6 +106,77 @@ class CotizacionPcTest extends TestCase
             ->assertJsonValidationErrors('items.0.cantidad');
     }
 
+    public function test_la_ganancia_en_soles_es_por_equipo_y_se_suma_al_costo(): void
+    {
+        // Costo de un equipo: 150 + 850 = 1000.
+        $this->crear(['equipos' => 3, 'ganancia' => 200, 'ganancia_tipo' => 'monto'])
+            ->assertCreated()
+            ->assertJsonPath('ganancia_equipo', '200.00')
+            ->assertJsonPath('subtotal', '3600.00')
+            ->assertJsonPath('total', '3600.00')
+            // Los ítems quedan al costo y el cliente ve la ganancia repartida.
+            ->assertJsonPath('items.0.precio_unitario', '150.00')
+            ->assertJsonPath('items.0.precio_venta', '180.00')
+            ->assertJsonPath('items.1.precio_venta', '1020.00');
+    }
+
+    public function test_la_ganancia_en_porcentaje_es_sobre_el_costo(): void
+    {
+        $this->crear(['ganancia' => 15, 'ganancia_tipo' => 'porcentaje'])
+            ->assertCreated()
+            ->assertJsonPath('ganancia_equipo', '150.00')
+            ->assertJsonPath('total', '1150.00');
+    }
+
+    public function test_una_cotizacion_normal_no_lleva_ganancia(): void
+    {
+        $this->crear(['tipo' => 'normal', 'ganancia' => 200])
+            ->assertCreated()
+            ->assertJsonPath('ganancia_equipo', '0.00')
+            ->assertJsonPath('total', '1000.00')
+            ->assertJsonPath('items.0.precio_venta', '150.00');
+    }
+
+    public function test_el_redondeo_de_la_ganancia_cuadra_con_el_precio_del_equipo(): void
+    {
+        $respuesta = $this->postJson('/api/cotizaciones', ['cotizacion' => [
+            'tipo' => 'pc',
+            'ganancia' => 10,
+            'valida_hasta' => Fechas::hoy()->addDays(7)->toDateString(),
+            'items' => collect(['Teclado', 'Mouse', 'Parlante'])->map(fn ($c) => [
+                'componente' => $c, 'descripcion' => $c, 'cantidad' => 1, 'precio_unitario' => 10,
+            ])->all(),
+        ]])->assertCreated();
+
+        // 40 / 3 no es exacto: el centavo que falta va a una de las líneas.
+        $this->assertEquals(40, collect($respuesta->json('items'))->sum(fn ($i) => (float) $i['subtotal_venta']));
+    }
+
+    public function test_el_descuento_se_compara_con_el_precio_con_ganancia(): void
+    {
+        $this->crear(['ganancia' => 200, 'descuento' => 1100])->assertCreated();
+        $this->crear(['ganancia' => 200, 'descuento' => 1300])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('cotizacion.descuento');
+    }
+
+    public function test_la_proforma_y_el_pedido_van_con_la_ganancia_repartida(): void
+    {
+        $respuesta = $this->crear(['equipos' => 2, 'ganancia' => 200]);
+        $cotizacion = Cotizacion::find($respuesta->json('id'));
+
+        // El cliente nunca ve el precio de llegada.
+        $this->getJson("/api/proforma/{$cotizacion->token}")
+            ->assertOk()
+            ->assertJsonPath('cotizacion.items.0.precio_unitario', '180.00')
+            ->assertJsonPath('cotizacion.items.0.subtotal', '180.00');
+
+        $this->postJson("/api/cotizaciones/{$cotizacion->id}/convertir")->assertOk();
+        $item = $cotizacion->fresh()->pedido->items()->sole();
+        $this->assertEquals(180, $item->precio_unitario);
+        $this->assertEquals(2, $item->cantidad);
+    }
+
     public function test_guarda_una_plantilla_y_al_cargarla_trae_el_precio_de_hoy(): void
     {
         $this->postJson('/api/cotizaciones/plantillas', [

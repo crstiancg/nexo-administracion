@@ -157,11 +157,13 @@
             {{ formatearCantidad(item.cantidad) }}
           </td>
           <template v-if="conPrecios">
+            <!-- Lo que ve el cliente: con la ganancia de la PC repartida
+                 (la proforma pública ya trae ese precio en precio_unitario). -->
             <td class="cot-doc__num">
-              {{ formatearPrecio(item.precio_unitario) }}
+              {{ formatearPrecio(item.precio_venta ?? item.precio_unitario) }}
             </td>
             <td class="cot-doc__num">
-              {{ formatearPrecio(item.subtotal) }}
+              {{ formatearPrecio(item.subtotal_venta ?? item.subtotal) }}
             </td>
           </template>
         </tr>

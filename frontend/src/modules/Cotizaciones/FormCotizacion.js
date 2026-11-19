@@ -27,6 +27,24 @@ export const COMPONENTES_PC = [
   'Estabilizador'
 ]
 
+// Lo que no va en todas las PCs: se ofrece al "Agregar componente" (y se
+// puede escribir cualquier otro).
+export const COMPONENTES_EXTRA = [
+  'Refrigeración líquida',
+  'Cooler de aire',
+  'Ventiladores',
+  'Pasta térmica',
+  'Tarjeta WiFi',
+  'Adaptador Bluetooth',
+  'Lectora / quemador',
+  'Licencia de Windows',
+  'Licencia de Office',
+  'Antivirus',
+  'Webcam',
+  'UPS',
+  'Ensamblaje y configuración'
+]
+
 // Tope de "N° de equipos" (igual que Cotizacion::MAX_EQUIPOS).
 export const MAX_EQUIPOS = 999
 
@@ -63,6 +81,11 @@ export default function formCotizacion (editando = false) {
       mostrar_precios: true,
       // PC armada para varios equipos iguales: los ítems son los de UNO.
       equipos: 1,
+      // PC a precio de llegada: los componentes van al costo y encima esta
+      // ganancia POR EQUIPO, en soles (monto) o en % del costo. El cliente
+      // la ve repartida en los precios, nunca el costo.
+      ganancia: '',
+      ganancia_tipo: 'monto',
       cliente_id: null,
       // Vacía: si no se pone, el backend la deja en DIAS_VALIDEZ días.
       valida_hasta: '',
