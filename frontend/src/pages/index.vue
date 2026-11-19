@@ -315,7 +315,8 @@ const MENU = [
       { to: '/creditos', icon: 'credit_score', label: 'Créditos', permiso: 'creditos.index' },
       { to: '/clientes', icon: 'groups', label: 'Clientes', permiso: 'clientes.index' },
       { to: '/caja', icon: 'account_balance_wallet', label: 'Caja', permiso: 'cajas.actual' },
-      { to: '/ofertas', icon: 'local_offer', label: 'Ofertas', permiso: 'ofertas.index' }
+      { to: '/ofertas', icon: 'local_offer', label: 'Ofertas', permiso: 'ofertas.index' },
+      { to: '/sorteos', icon: 'redeem', label: 'Sorteos', permiso: 'sorteos.index' }
     ]
   },
   {

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Cotizacion;
 use App\Models\Pedido;
+use App\Models\Sorteo;
+use App\Models\SorteoTicket;
 use App\Models\Variante;
 use App\Support\Fechas;
 use Illuminate\Support\Carbon;
@@ -337,6 +339,104 @@ class Exportaciones
     }
 
     /** El .xlsx como descarga. */
+    /**
+     * El sorteo en tres hojas: participantes (con cuántos tickets tiene cada
+     * uno), todos los tickets (también los anulados) y los ganadores.
+     *
+     * @param  Collection<int, object>  $participantes  filas con cliente y `tickets`
+     * @param  Collection<int, SorteoTicket>  $tickets
+     */
+    public function sorteo(Sorteo $sorteo, Collection $participantes, Collection $tickets): Spreadsheet
+    {
+        $libro = new Spreadsheet;
+        $periodo = $sorteo->inicia_el->format('d/m/Y').' al '.$sorteo->termina_el->format('d/m/Y');
+        $regla = 'S/ '.number_format((float) $sorteo->monto_por_ticket, 2).' de compra = 1 ticket'
+            .($sorteo->max_tickets_por_compra ? " (máx. {$sorteo->max_tickets_por_compra} por compra)" : '');
+        $encabezado = function (Worksheet $hoja, string $titulo) use ($sorteo, $periodo, $regla) {
+            $hoja->setCellValue('A1', "{$sorteo->nombre} — {$titulo}")->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $hoja->setCellValue('A2', "Del {$periodo} · {$regla}");
+            $hoja->setCellValue('A3', 'Exportado el '.now()->setTimezone(Fechas::zona())->format('d/m/Y H:i'));
+        };
+        $documento = fn ($tipo, $numero) => trim(($tipo ?? '').' '.($numero ?? ''));
+        $cerrar = function (Worksheet $hoja, int $columnas, int $fila) {
+            $ultima = Coordinate::stringFromColumnIndex($columnas);
+            $this->bordes($hoja, "A5:{$ultima}{$fila}");
+            $hoja->setAutoFilter("A5:{$ultima}{$fila}");
+            $hoja->freezePane('A6');
+            foreach (range(1, $columnas) as $i) {
+                $hoja->getColumnDimensionByColumn($i)->setAutoSize(true);
+            }
+        };
+
+        // ── Participantes ──
+        $hoja = $libro->getActiveSheet()->setTitle('Participantes');
+        $encabezado($hoja, 'Participantes');
+        $columnas = ['#', 'Cliente', 'Documento', 'Teléfono', 'Tickets', 'Chance (%)'];
+        $this->cabecera($hoja, 5, $columnas);
+        $enJuego = max(1, (int) $participantes->sum('tickets'));
+        $fila = 5;
+        foreach ($participantes->values() as $n => $p) {
+            $fila++;
+            $hoja->fromArray([$n + 1, $p->nombre, null, null, (int) $p->tickets, round((int) $p->tickets / $enJuego * 100, 2)], null, "A{$fila}");
+            // Como texto: un DNI o un celular con 0 adelante no pierde el 0.
+            $hoja->setCellValueExplicit("C{$fila}", $documento($p->tipo_documento, $p->numero_documento), DataType::TYPE_STRING);
+            $hoja->setCellValueExplicit("D{$fila}", (string) $p->telefono, DataType::TYPE_STRING);
+        }
+        $cerrar($hoja, count($columnas), $fila);
+
+        // ── Tickets ──
+        $hoja = $libro->createSheet()->setTitle('Tickets');
+        $encabezado($hoja, 'Tickets');
+        $columnas = ['Ticket', 'Fecha', 'Cliente', 'Documento', 'Venta', 'Total venta', 'Sede', 'Estado'];
+        $this->cabecera($hoja, 5, $columnas);
+        $fila = 5;
+        foreach ($tickets as $t) {
+            $fila++;
+            $hoja->fromArray([
+                $t->codigo(),
+                $t->created_at?->setTimezone(Fechas::zona())->format('d/m/Y H:i'),
+                $t->cliente?->nombre,
+                null,
+                $t->pedido?->codigo,
+                $t->pedido ? (float) $t->pedido->total : null,
+                $t->sede?->nombre,
+                $t->anulado_at ? 'Anulado (venta anulada)' : 'Vigente',
+            ], null, "A{$fila}");
+            $hoja->setCellValueExplicit("D{$fila}", $documento($t->cliente?->tipo_documento, $t->cliente?->numero_documento), DataType::TYPE_STRING);
+        }
+        $hoja->getStyle("F6:F{$fila}")->getNumberFormat()->setFormatCode(self::SOLES);
+        $cerrar($hoja, count($columnas), $fila);
+
+        // ── Ganadores ──
+        $hoja = $libro->createSheet()->setTitle('Ganadores');
+        $encabezado($hoja, 'Ganadores');
+        $columnas = ['Puesto', 'Premio', 'Ticket', 'Ganador', 'Documento', 'Teléfono', 'Sorteado el', 'Tickets en juego', 'Descartados'];
+        $this->cabecera($hoja, 5, $columnas);
+        $fila = 5;
+        foreach ($sorteo->premios as $premio) {
+            $fila++;
+            $cliente = $premio->ticket?->cliente;
+            $hoja->fromArray([
+                "{$premio->orden}.°",
+                $premio->descripcion,
+                $premio->ticket?->codigo() ?? 'Sin sortear',
+                $cliente?->nombre,
+                null,
+                null,
+                $premio->sorteado_at?->setTimezone(Fechas::zona())->format('d/m/Y H:i'),
+                $premio->participantes,
+                collect($premio->descartes ?? [])->map(fn ($d) => '#'.str_pad((string) $d['numero'], 6, '0', STR_PAD_LEFT)." {$d['cliente']} ({$d['motivo']})")->implode('; '),
+            ], null, "A{$fila}");
+            $hoja->setCellValueExplicit("E{$fila}", $documento($cliente?->tipo_documento, $cliente?->numero_documento), DataType::TYPE_STRING);
+            $hoja->setCellValueExplicit("F{$fila}", (string) $cliente?->telefono, DataType::TYPE_STRING);
+        }
+        $cerrar($hoja, count($columnas), $fila);
+
+        $libro->setActiveSheetIndex(0);
+
+        return $libro;
+    }
+
     public function descargar(Spreadsheet $libro, string $nombre): StreamedResponse
     {
         return response()->streamDownload(function () use ($libro) {

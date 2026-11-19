@@ -52,7 +52,7 @@ return [
         'sedes.show' => ['sedes.update'],
         // Elegir sede: al asignarla a un usuario, al cambiarse de sede, al
         // trasladar y en los filtros de inventario, pedidos y cajas.
-        'sedes.index' => ['usuarios.store', 'usuarios.update', 'auth.cambiar-sede', 'inventario.traslados', 'inventario.index', 'inventario.lotes', 'pedidos.index', 'cajas.index', 'productos.index', 'productos.store', 'productos.update'],
+        'sedes.index' => ['usuarios.store', 'usuarios.update', 'sorteos.store', 'sorteos.update', 'auth.cambiar-sede', 'inventario.traslados', 'inventario.index', 'inventario.lotes', 'pedidos.index', 'cajas.index', 'productos.index', 'productos.store', 'productos.update'],
         'unidades.show' => ['unidades.update'],
         // Quien ve la lista abre la ficha del producto (stock, lotes, movimientos).
         'productos.show' => ['productos.update', 'productos.index'],
@@ -149,6 +149,14 @@ return [
         'tipos-equipo.show' => ['tipos-equipo.update'],
         'estados-orden.show' => ['estados-orden.update'],
         'estados-orden.ordenar' => ['estados-orden.update'],
+        // Sorteos: quien ve la lista abre el detalle, los tickets, los
+        // participantes y el Excel; quien sortea arma la ruleta y descarta.
+        'sorteos.show' => ['sorteos.index', 'sorteos.update', 'sorteos.sortear'],
+        'sorteos.tickets' => ['sorteos.index'],
+        'sorteos.participantes' => ['sorteos.index'],
+        'sorteos.excel' => ['sorteos.index'],
+        'sorteos.candidatos' => ['sorteos.sortear'],
+        'sorteos.descartar' => ['sorteos.sortear'],
     ],
 
     // Para la descripción que genera permisos:sync: "Roles · Crear".
@@ -188,6 +196,7 @@ return [
         'respaldos' => 'Backups',
         'creditos' => 'Créditos',
         'comisiones' => 'Comisiones',
+        'sorteos' => 'Sorteos',
     ],
 
     'acciones' => [
@@ -248,6 +257,11 @@ return [
         'logo.quitar' => 'Quitar el logo',
         'porcentajes' => 'Cambiar porcentajes',
         'pagar' => 'Pagar',
+        'tickets' => 'Ver tickets',
+        'participantes' => 'Ver participantes',
+        'sortear' => 'Sortear premios (en vivo)',
+        'candidatos' => 'Ver tickets en juego (ruleta)',
+        'descartar' => 'Descartar ganador y volver a sortear',
     ],
 
 ];

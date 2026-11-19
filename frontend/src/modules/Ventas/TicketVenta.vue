@@ -164,6 +164,24 @@
       </div>
     </template>
 
+    <!-- Tickets de sorteo que dio esta compra (fidelización). -->
+    <template
+      v-for="sorteo in pedido.sorteos ?? []"
+      :key="sorteo.sorteo"
+    >
+      <div class="ticket__separador" />
+      <div class="ticket__centro ticket__sorteo">
+        <strong>¡Ganaste {{ sorteo.cantidad === 1 ? '1 ticket' : `${sorteo.cantidad} tickets` }}!</strong>
+        <div>{{ sorteo.sorteo }}</div>
+        <div class="ticket__sorteoNumeros">
+          {{ rangoTickets(sorteo.numeros) }}
+        </div>
+        <div class="ticket__chico">
+          Se sortea el {{ fechaCorta(sorteo.termina_el) }}. Guarda este ticket.
+        </div>
+      </div>
+    </template>
+
     <div class="ticket__separador" />
 
     <div class="ticket__centro">
@@ -188,6 +206,18 @@ const props = defineProps({
     required: true
   }
 })
+
+// "#000120 al #000124" si son seguidos (lo normal: salen juntos); si no, todos.
+function rangoTickets (numeros) {
+  if (numeros.length <= 2) return numeros.join(', ')
+  const n = numeros.map((c) => Number(c.slice(1)))
+  const seguidos = n.every((v, i) => i === 0 || v === n[i - 1] + 1)
+  return seguidos ? `${numeros[0]} al ${numeros.at(-1)}` : numeros.join(', ')
+}
+
+function fechaCorta (iso) {
+  return iso ? iso.slice(0, 10).split('-').reverse().join('/') : ''
+}
 
 const formatoFecha = new Intl.DateTimeFormat('es-PE', { dateStyle: 'short', timeStyle: 'short' })
 function formatearFecha (iso) {
@@ -278,5 +308,17 @@ const pagosCobro = computed(() => (props.pedido.pagos ?? []).filter((p) => !p.es
 .ticket__total {
   font-size: 14px;
   font-weight: 700;
+}
+
+.ticket__sorteo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket__sorteoNumeros {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 </style>

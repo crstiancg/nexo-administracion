@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
  */
 class Pedidos
 {
-    public function __construct(private Inventario $inventario, private Cajas $cajas) {}
+    public function __construct(private Inventario $inventario, private Cajas $cajas, private Sorteos $sorteos) {}
 
     /**
      * Crea o reemplaza los ítems de un pedido PENDIENTE y recalcula totales.
@@ -177,6 +177,9 @@ class Pedidos
 
             $pedido->forceFill(['estado' => Pedido::ENTREGADO, 'entregado_at' => now()])->save();
 
+            // Venta cerrada: los tickets de los sorteos abiertos (fidelización).
+            $this->sorteos->emitirPorVenta($pedido);
+
             return $pedido;
         });
     }
@@ -231,6 +234,7 @@ class Pedidos
             // Primero la plata: si no alcanza el efectivo de la caja, no se toca nada.
             $this->cajas->devolverTodo($pedido, $motivo, $usuario);
             $this->devolverStock($pedido, $usuario);
+            $this->sorteos->anularDeVenta($pedido);
 
             $pedido->forceFill([
                 'estado' => Pedido::ANULADO,

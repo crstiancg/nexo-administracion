@@ -47,6 +47,19 @@ class PedidoResource extends JsonResource
 
                 return $comprobante ? (new ComprobanteResource($comprobante))->resolve(request()) : null;
             }),
+            // Tickets de sorteo que dio esta venta (salen en el ticket impreso):
+            // [{sorteo, termina_el, cantidad, numeros: ["#000120", …]}].
+            'sorteos' => $this->whenLoaded('sorteoTickets', fn () => $this->sorteoTickets
+                ->whereNull('anulado_at')
+                ->sortBy('numero')
+                ->groupBy('sorteo_id')
+                ->map(fn ($tickets) => [
+                    'sorteo' => $tickets->first()->sorteo?->nombre,
+                    'termina_el' => $tickets->first()->sorteo?->termina_el?->toDateString(),
+                    'cantidad' => $tickets->count(),
+                    'numeros' => $tickets->map->codigo()->values(),
+                ])
+                ->values()),
             'observacion' => $this->observacion,
             // En el detalle: si el saldo se financió en cuotas.
             'credito_id' => $this->when($this->relationLoaded('items'), fn () => $this->resource->credito()->value('id')),

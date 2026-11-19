@@ -38,6 +38,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\SerieController;
+use App\Http\Controllers\SorteoController;
 use App\Http\Controllers\SeguimientoController;
 use App\Http\Controllers\TipoEquipoController;
 use App\Http\Controllers\UnidadController;
@@ -185,6 +186,9 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
             ->parameters(['cotizaciones' => 'cotizacion'])
             ->except(['destroy']);
 
+        // Sorteos de fidelización (los tickets nacen de las ventas).
+        Route::apiResource('sorteos', SorteoController::class);
+
         // Va antes del resource: si no, {pedido} captura "exportar".
         Route::get('pedidos/exportar', [PedidoController::class, 'exportar'])->name('pedidos.exportar');
 
@@ -226,6 +230,17 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('cotizaciones/{cotizacion}/excel', [CotizacionController::class, 'excel'])->name('cotizaciones.excel');
     Route::post('cotizaciones/{cotizacion}/convertir', [CotizacionController::class, 'convertir'])->name('cotizaciones.convertir');
     Route::post('cotizaciones/{cotizacion}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
+
+    Route::post('sorteos/{sorteo}/cancelar', [SorteoController::class, 'cancelar'])->name('sorteos.cancelar');
+    Route::get('sorteos/{sorteo}/tickets', [SorteoController::class, 'tickets'])->name('sorteos.tickets');
+    Route::get('sorteos/{sorteo}/participantes', [SorteoController::class, 'participantes'])->name('sorteos.participantes');
+    Route::get('sorteos/{sorteo}/excel', [SorteoController::class, 'excel'])->name('sorteos.excel');
+    // Pantalla en vivo: la ruleta anima con `candidatos`; el ganador lo elige el servidor.
+    Route::get('sorteos/{sorteo}/candidatos', [SorteoController::class, 'candidatos'])->name('sorteos.candidatos');
+    Route::post('sorteos/{sorteo}/premios/{premio}/sortear', [SorteoController::class, 'sortear'])
+        ->middleware('throttle:30,1')->scopeBindings()->name('sorteos.sortear');
+    Route::post('sorteos/{sorteo}/premios/{premio}/descartar', [SorteoController::class, 'descartar'])
+        ->scopeBindings()->name('sorteos.descartar');
 
     Route::get('ganancias', [GananciaController::class, 'index'])->name('ganancias.index');
     // Quién cambió qué y cuándo (sólo lectura).

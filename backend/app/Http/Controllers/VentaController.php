@@ -265,6 +265,7 @@ class VentaController extends Controller
             'pagos' => fn ($q) => $q->orderBy('id'),
             'pagos.usuario:id,name',
             'comprobantes' => fn ($q) => $q->latest('id'),
+            'sorteoTickets.sorteo:id,nombre,termina_el',
         ]);
 
         return (new PedidoResource($pedido))->resolve(request());

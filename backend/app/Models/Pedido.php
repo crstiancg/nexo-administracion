@@ -96,6 +96,12 @@ class Pedido extends Model
     }
 
     /** El saldo financiado en cuotas (si se dio a crédito). */
+    /** Los tickets de sorteo que dio esta venta. */
+    public function sorteoTickets(): HasMany
+    {
+        return $this->hasMany(SorteoTicket::class);
+    }
+
     public function credito(): HasOne
     {
         return $this->hasOne(Credito::class);
