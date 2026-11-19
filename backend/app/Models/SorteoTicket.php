@@ -15,6 +15,7 @@ class SorteoTicket extends Model
     protected function casts(): array
     {
         return [
+            'vendido' => 'boolean',
             'numero' => 'integer',
             'anulado_at' => 'datetime',
         ];

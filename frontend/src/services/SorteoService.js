@@ -3,7 +3,8 @@ import { descargarArchivo } from '@/utils/descargar'
 
 /**
  * Crear y editar no pasan por acá: los hace el form con useForm() de
- * Precognition. Los tickets tampoco se crean acá: nacen de las ventas.
+ * Precognition. Los tickets de regalo nacen de las ventas y las órdenes de
+ * servicio; los vendidos sueltos, de `vender`.
  */
 class SorteoService {
   static async getData (config) {
@@ -20,6 +21,12 @@ class SorteoService {
 
   static async cancelar (id) {
     return (await api.post(`api/sorteos/${id}/cancelar`)).data
+  }
+
+  // Tickets sueltos: { cliente_id, cantidad, precio, metodo, recibido, referencia }.
+  // Devuelve la venta (lista para imprimir su ticket con los números).
+  static async vender (id, venta) {
+    return (await api.post(`api/sorteos/${id}/vender`, { venta })).data
   }
 
   static async tickets (id, config) {

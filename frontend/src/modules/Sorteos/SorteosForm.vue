@@ -49,33 +49,27 @@
       />
     </div>
 
-    <!-- ── Regla de los tickets ── -->
-    <div class="sorteo-form__row">
-      <AppTextField
-        v-model="form.sorteo.monto_por_ticket"
-        label="Monto de compra por ticket (S/)"
-        icon="confirmation_number"
-        type="number"
-        min="1"
-        step="0.01"
-        class="sorteo-form__grow"
-        :hint="ejemplo"
-        :error="form.errors[`${PATH}.monto_por_ticket`]"
-        @change="form.validate(`${PATH}.monto_por_ticket`)"
+    <!-- ── Tickets ── -->
+    <p class="sorteo-form__regla">
+      <q-icon
+        name="confirmation_number"
+        size="18px"
       />
-      <AppTextField
-        v-model="form.sorteo.max_tickets_por_compra"
-        label="Máximo de tickets por compra (opcional)"
-        type="number"
-        min="1"
-        step="1"
-        placeholder="Sin tope"
-        class="sorteo-form__grow"
-        hint="Para que una compra grande no se lleve todas las chances."
-        :error="form.errors[`${PATH}.max_tickets_por_compra`]"
-        @change="form.validate(`${PATH}.max_tickets_por_compra`)"
-      />
-    </div>
+      Cada venta u orden de servicio de un cliente registrado le da <strong>1 ticket</strong>, sea cual sea el monto.
+      Además puedes vender tickets sueltos desde el sorteo, al precio que elijas.
+    </p>
+    <AppTextField
+      v-model="form.sorteo.precio_ticket"
+      label="Precio sugerido por ticket vendido (S/, opcional)"
+      icon="sell"
+      type="number"
+      min="0"
+      step="0.10"
+      placeholder="Ej.: 5.00"
+      hint="Se propone al vender tickets; en cada venta puedes poner otro precio."
+      :error="form.errors[`${PATH}.precio_ticket`]"
+      @change="form.validate(`${PATH}.precio_ticket`)"
+    />
 
     <q-toggle
       v-model="form.sorteo.un_premio_por_cliente"
@@ -171,13 +165,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useForm } from 'laravel-precognition-vue'
 import AppButton from '@/components/AppButton.vue'
 import AppTextField from '@/components/AppTextField.vue'
 import SedeService from '@/services/SedeService'
 import SorteoService from '@/services/SorteoService'
-import { formatearPrecio } from '@/utils/moneda'
 import { formSorteo, PERIODOS, periodoSugerido } from './constantes'
 
 const PATH = 'sorteo'
@@ -197,17 +190,6 @@ const form = props.id
   : useForm('post', 'api/sorteos', formSorteo)
 
 const sedes = ref([])
-
-// "Una compra de S/ 350.00 da 3 tickets."
-const ejemplo = computed(() => {
-  const monto = Number(form.sorteo.monto_por_ticket)
-  if (!(monto > 0)) return 'Cada cuántos soles de compra se da 1 ticket.'
-  const compra = monto * 3.5
-  let tickets = Math.floor(compra / monto)
-  const maximo = Number(form.sorteo.max_tickets_por_compra)
-  if (maximo > 0) tickets = Math.min(tickets, maximo)
-  return `Ej.: una compra de ${formatearPrecio(compra)} da ${tickets} ${tickets === 1 ? 'ticket' : 'tickets'}.`
-})
 
 // Al elegir mensual o trimestral se proponen las fechas del período en curso.
 function cambioPeriodo (periodo) {
@@ -230,8 +212,7 @@ onMounted(async () => {
       periodo: sorteo.periodo,
       inicia_el: sorteo.inicia_el,
       termina_el: sorteo.termina_el,
-      monto_por_ticket: sorteo.monto_por_ticket,
-      max_tickets_por_compra: sorteo.max_tickets_por_compra ?? '',
+      precio_ticket: sorteo.precio_ticket ?? '',
       un_premio_por_cliente: sorteo.un_premio_por_cliente,
       sedes: sorteo.sedes.map((s) => s.id),
       premios: sorteo.premios.map((p) => ({ descripcion: p.descripcion }))
@@ -275,6 +256,28 @@ defineExpose({ form, submit })
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+
+.sorteo-form__regla {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--app-brand-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--app-ink-2);
+
+  .q-icon {
+    margin-top: 1px;
+    color: var(--q-primary);
+  }
+
+  strong {
+    color: var(--app-ink);
+  }
 }
 
 .sorteo-form__label {

@@ -80,7 +80,7 @@ return [
         // factura, lote) y le da lote al stock que quedó sin lote.
         'inventario.corregir' => ['inventario.entradas'],
         'inventario.asignar-lote' => ['inventario.entradas'],
-        'clientes.index' => ['pedidos.store', 'pedidos.update', 'ventas.store', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-servicio.store', 'ordenes-servicio.update'],
+        'clientes.index' => ['pedidos.store', 'pedidos.update', 'ventas.store', 'sorteos.vender', 'cotizaciones.store', 'cotizaciones.update', 'ordenes-servicio.store', 'ordenes-servicio.update'],
         'clientes.show' => ['clientes.update'],
         // Quien ve la lista de clientes abre su ficha.
         'clientes.ficha' => ['clientes.index', 'clientes.show'],
@@ -262,6 +262,7 @@ return [
         'tickets' => 'Ver tickets',
         'participantes' => 'Ver participantes',
         'sortear' => 'Sortear premios (en vivo)',
+        'vender' => 'Vender tickets',
         'candidatos' => 'Ver tickets en juego (ruleta)',
         'descartar' => 'Descartar ganador y volver a sortear',
     ],

@@ -35,8 +35,8 @@ class StoreSorteoRequest extends FormRequest
                 $sorteo[$campo] = trim($sorteo[$campo]) ?: null;
             }
         }
-        if (in_array($sorteo['max_tickets_por_compra'] ?? null, ['', 0, '0'], true)) {
-            $sorteo['max_tickets_por_compra'] = null;
+        if (in_array($sorteo['precio_ticket'] ?? null, ['', 0, '0'], true)) {
+            $sorteo['precio_ticket'] = null;
         }
         $sorteo['un_premio_por_cliente'] ??= true;
         $sorteo['sedes'] ??= [];
@@ -60,8 +60,8 @@ class StoreSorteoRequest extends FormRequest
             'sorteo.periodo' => ['required', Rule::in(Sorteo::PERIODOS)],
             'sorteo.inicia_el' => ['required', 'date'],
             'sorteo.termina_el' => ['required', 'date', 'after_or_equal:sorteo.inicia_el'],
-            'sorteo.monto_por_ticket' => ['required', 'numeric', 'min:1', 'max:99999999.99', 'decimal:0,2'],
-            'sorteo.max_tickets_por_compra' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            // Sólo el sugerido al vender tickets: en cada venta se elige el precio.
+            'sorteo.precio_ticket' => ['nullable', 'numeric', 'min:0.1', 'max:99999.99', 'decimal:0,2'],
             'sorteo.un_premio_por_cliente' => ['boolean'],
             'sorteo.sedes' => ['array'],
             'sorteo.sedes.*' => ['integer', 'distinct', 'exists:sedes,id'],
@@ -79,7 +79,6 @@ class StoreSorteoRequest extends FormRequest
             'sorteo.premios.required' => 'Agrega al menos un premio.',
             'sorteo.premios.min' => 'Agrega al menos un premio.',
             'sorteo.termina_el.after_or_equal' => 'Termina el mismo día que empieza o después.',
-            'sorteo.monto_por_ticket.min' => 'Cada ticket tiene que costar al menos S/ 1 de compra.',
         ];
     }
 
@@ -94,8 +93,7 @@ class StoreSorteoRequest extends FormRequest
             'sorteo.periodo' => 'período',
             'sorteo.inicia_el' => 'inicio',
             'sorteo.termina_el' => 'cierre',
-            'sorteo.monto_por_ticket' => 'monto por ticket',
-            'sorteo.max_tickets_por_compra' => 'máximo de tickets por compra',
+            'sorteo.precio_ticket' => 'precio sugerido por ticket',
             'sorteo.sedes' => 'sedes',
             'sorteo.sedes.*' => 'sede',
             'sorteo.premios.*.descripcion' => 'premio',

@@ -237,6 +237,8 @@ Route::middleware(['auth:api', AutorizarPorRuta::ALIAS])->group(function () {
     Route::get('sorteos/{sorteo}/tickets', [SorteoController::class, 'tickets'])->name('sorteos.tickets');
     Route::get('sorteos/{sorteo}/participantes', [SorteoController::class, 'participantes'])->name('sorteos.participantes');
     Route::get('sorteos/{sorteo}/excel', [SorteoController::class, 'excel'])->name('sorteos.excel');
+    // Tickets sueltos: precio y cantidad a criterio; es una venta (canal sorteo).
+    Route::post('sorteos/{sorteo}/vender', [SorteoController::class, 'vender'])->name('sorteos.vender');
     // Pantalla en vivo: la ruleta anima con `candidatos`; el ganador lo elige el servidor.
     Route::get('sorteos/{sorteo}/candidatos', [SorteoController::class, 'candidatos'])->name('sorteos.candidatos');
     Route::post('sorteos/{sorteo}/premios/{premio}/sortear', [SorteoController::class, 'sortear'])

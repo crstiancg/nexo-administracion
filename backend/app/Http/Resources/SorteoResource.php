@@ -26,8 +26,8 @@ class SorteoResource extends JsonResource
             'periodo' => $this->periodo,
             'inicia_el' => $this->inicia_el?->toDateString(),
             'termina_el' => $this->termina_el?->toDateString(),
-            'monto_por_ticket' => $this->monto_por_ticket,
-            'max_tickets_por_compra' => $this->max_tickets_por_compra,
+            // Sugerido al vender tickets sueltos (en cada venta se elige).
+            'precio_ticket' => $this->precio_ticket,
             'un_premio_por_cliente' => $this->un_premio_por_cliente,
             // programado | abierto | por_sortear | sorteando | sorteado | cancelado
             'estado' => $this->estadoVisible(),

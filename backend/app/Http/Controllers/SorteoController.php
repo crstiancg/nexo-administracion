@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSorteoRequest;
+use App\Http\Requests\VenderTicketsRequest;
+use App\Http\Resources\PedidoResource;
 use App\Http\Resources\SorteoResource;
 use App\Models\Sorteo;
 use App\Models\SorteoPremio;
 use App\Models\SorteoTicket;
 use App\Services\Exportaciones;
 use App\Services\Sorteos;
+use App\Services\VentaTickets;
 use App\Support\Fechas;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -166,6 +169,27 @@ class SorteoController extends Controller
         ]);
     }
 
+    /**
+     * Vende tickets sueltos (precio y cantidad a criterio). Devuelve la venta
+     * lista para imprimir su ticket (con los números).
+     */
+    public function vender(VenderTicketsRequest $request, Sorteo $sorteo, VentaTickets $ventas): JsonResponse
+    {
+        $pedido = $ventas->vender($sorteo, $request->validated('venta'), $request->user());
+
+        $pedido->load([
+            'cliente',
+            'sede:id,nombre,direccion,telefono',
+            'usuario:id,name',
+            'items' => fn ($q) => $q->orderBy('id'),
+            'pagos' => fn ($q) => $q->orderBy('id'),
+            'pagos.usuario:id,name',
+            'sorteoTickets.sorteo:id,nombre,termina_el',
+        ]);
+
+        return response()->json((new PedidoResource($pedido))->resolve($request), 201);
+    }
+
     public function excel(Sorteo $sorteo, Exportaciones $exportar): StreamedResponse
     {
         $sorteo->load(['sedes:id,nombre', 'premios.ticket.cliente']);
@@ -280,6 +304,8 @@ class SorteoController extends Controller
             'pedido' => $t['pedido'] ?? null,
             'sede' => $t['sede']['nombre'] ?? null,
             'anulado' => $t['anulado_at'] !== null,
+            // Comprado (venta de tickets) o de regalo por una compra / OS.
+            'vendido' => (bool) ($t['vendido'] ?? false),
             'fecha' => $t['created_at'],
         ];
     }

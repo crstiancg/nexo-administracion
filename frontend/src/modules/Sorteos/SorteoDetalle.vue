@@ -33,6 +33,13 @@
           @click="formDialog = true"
         />
         <AppButton
+          v-if="sorteo.estado === 'abierto' && userStore.hasPermission('sorteos.vender')"
+          variant="secondary"
+          icon="confirmation_number"
+          label="Vender tickets"
+          @click="ventaDialog = true"
+        />
+        <AppButton
           v-if="userStore.hasPermission('sorteos.sortear') && ['abierto', 'por_sortear', 'sorteando', 'sorteado'].includes(sorteo.estado)"
           variant="primary"
           icon="celebration"
@@ -215,7 +222,7 @@
         row-key="cliente_id"
         :loading="cargandoParticipantes"
         :filter="filtroParticipantes"
-        no-data-label="Todavía nadie tiene tickets: salen solos con cada venta a un cliente registrado."
+        no-data-label="Todavía nadie tiene tickets: salen solos con cada venta u orden de servicio a un cliente registrado, o véndelos con “Vender tickets”."
         @request="pedirParticipantes"
       >
         <template #body-cell-nombre="props">
@@ -325,6 +332,34 @@
     </section>
 
     <AppDialog
+      v-model="ventaDialog"
+      title="Vender tickets"
+      persistent
+    >
+      <VenderTickets
+        v-if="ventaDialog"
+        ref="ventaRef"
+        :sorteo="sorteo"
+        @vendido="vendido"
+      />
+      <template #actions>
+        <AppButton
+          variant="tertiary"
+          label="Cancelar"
+          @click="ventaDialog = false"
+        />
+        <AppButton
+          variant="primary"
+          icon="point_of_sale"
+          label="Cobrar y entregar tickets"
+          :loading="ventaRef?.enviando"
+          @click="ventaRef.submit()"
+        />
+      </template>
+    </AppDialog>
+    <ImpresionTicket ref="impresionRef" />
+
+    <AppDialog
       v-model="formDialog"
       title="Editar sorteo"
       size="lg"
@@ -376,6 +411,8 @@ import { formatearFechaHora } from '@/utils/fechas'
 import { formatearPrecio } from '@/utils/moneda'
 import { enlaceWhatsappGanador, enlaceWhatsappParticipante, ESTADOS, fechaCorta, reglaDe } from './constantes'
 import SorteosForm from './SorteosForm.vue'
+import VenderTickets from './VenderTickets.vue'
+import ImpresionTicket from '@/modules/Ventas/ImpresionTicket.vue'
 
 const props = defineProps({
   id: {
@@ -399,8 +436,8 @@ onMounted(cargar)
 const aviso = computed(() => {
   const s = sorteo.value
   return {
-    programado: { icono: 'schedule', texto: `Empieza el ${fechaCorta(s.inicia_el)}: desde ese día cada venta a un cliente registrado le da tickets.` },
-    abierto: { icono: 'confirmation_number', texto: `Abierto: cada venta entregada a un cliente registrado suma tickets (salen impresos en su ticket). Se sortea desde el ${fechaCorta(s.termina_el)}.` },
+    programado: { icono: 'schedule', texto: `Empieza el ${fechaCorta(s.inicia_el)}: desde ese día cada venta u orden de servicio a un cliente registrado le da 1 ticket.` },
+    abierto: { icono: 'confirmation_number', texto: `Abierto: cada venta u orden de servicio de un cliente registrado le da 1 ticket (sale impreso en su ticket), y puedes vender más con “Vender tickets”. Se sortea desde el ${fechaCorta(s.termina_el)}.` },
     por_sortear: { icono: 'celebration', texto: 'Terminó el período: ya no entran tickets. Abre el sorteo en vivo para sacar los premios.' },
     sorteando: { icono: 'celebration', texto: 'Faltan premios por sortear. Ya no entran tickets nuevos.' },
     cancelado: { icono: 'block', texto: 'Cancelado: no entran tickets ni se sortea.' }
@@ -451,6 +488,25 @@ function eliminar () {
   })
 }
 
+// ── Venta de tickets sueltos ──
+const ventaDialog = ref(false)
+const ventaRef = ref()
+const impresionRef = ref()
+async function vendido (venta) {
+  ventaDialog.value = false
+  const numeros = venta.sorteos?.find((s) => s.sorteo === sorteo.value.nombre)?.numeros ?? []
+  await cargar()
+  participantesRef.value?.requestServerInteraction?.()
+  ticketsRef.value?.requestServerInteraction?.()
+  $q.notify({
+    type: 'positive',
+    message: `${numeros.length === 1 ? 'Ticket vendido' : `${numeros.length} tickets vendidos`} a ${venta.cliente?.nombre ?? 'el cliente'}: ${numeros.join(', ')}`,
+    position: 'top-right',
+    timeout: 6000,
+    actions: [{ label: 'Imprimir ticket', color: 'white', handler: () => impresionRef.value?.imprimir(venta) }]
+  })
+}
+
 const formDialog = ref(false)
 const formRef = ref()
 async function guardado () {
@@ -494,6 +550,7 @@ async function pedirParticipantes ({ pagination }) {
 const columnasTickets = [
   { name: 'codigo', label: 'Ticket', field: 'codigo', align: 'left', sortable: true },
   { name: 'cliente', label: 'Cliente', field: (t) => t.cliente?.nombre, align: 'left' },
+  { name: 'origen', label: 'Origen', field: (t) => (t.vendido ? 'Comprado' : 'Por compra / OS'), align: 'left' },
   { name: 'venta', label: 'Venta', field: (t) => t.pedido ? `${t.pedido.codigo} · ${formatearPrecio(t.pedido.total)}` : '—', align: 'left' },
   { name: 'sede', label: 'Sede', field: 'sede', align: 'left' },
   { name: 'fecha', label: 'Fecha', field: (t) => formatearFechaHora(t.fecha), align: 'left' }

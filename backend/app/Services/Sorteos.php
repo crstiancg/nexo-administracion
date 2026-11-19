@@ -16,9 +16,10 @@ use Illuminate\Validation\ValidationException;
 /**
  * El único lugar que crea tickets y sortea premios.
  *
- * Tickets: una venta ENTREGADA (pagada, o a crédito) de un cliente
- * registrado da 1 ticket por cada `monto_por_ticket` soles del total, en
- * cada sorteo abierto de su sede. Si la venta se anula, sus tickets también
+ * Tickets: cada venta ENTREGADA (pagada, o a crédito) de un cliente
+ * registrado, y cada orden de servicio (su cobro es una venta), da 1 ticket
+ * en cada sorteo abierto de su sede, sea cual sea el monto. Además se
+ * venden sueltos (VentaTickets): esa venta no regala otro. Si la venta se anula, sus tickets también
  * (mientras el sorteo no haya empezado a sortearse).
  *
  * Premios: cada ticket vigente es una chance (quien compró más tiene más).
@@ -35,7 +36,9 @@ class Sorteos
      */
     public function emitirPorVenta(Pedido $pedido): Collection
     {
-        if (! $pedido->cliente_id || $pedido->estado !== Pedido::ENTREGADO) {
+        // La venta de tickets ya trae los suyos (los comprados): no regala otro.
+        if (! $pedido->cliente_id || $pedido->estado !== Pedido::ENTREGADO
+            || $pedido->canal === Pedido::CANAL_SORTEO || (float) $pedido->total <= 0) {
             return collect();
         }
 
@@ -58,30 +61,38 @@ class Sorteos
                     return [];
                 }
 
-                $cantidad = $sorteo->ticketsPara((float) $pedido->total);
-                if ($cantidad < 1) {
-                    return [];
-                }
-
-                $siguiente = (int) $sorteo->tickets()->max('numero') + 1;
-                $tickets = [];
-                for ($n = 0; $n < $cantidad; $n++) {
-                    $ticket = new SorteoTicket;
-                    $ticket->forceFill([
-                        'sorteo_id' => $sorteo->id,
-                        'numero' => $siguiente + $n,
-                        'cliente_id' => $pedido->cliente_id,
-                        'pedido_id' => $pedido->id,
-                        'sede_id' => $pedido->sede_id,
-                    ])->save();
-                    $tickets[] = $ticket;
-                }
-
-                return $tickets;
+                return $this->crearTickets($sorteo, $pedido, 1, false);
             }));
         }
 
         return $emitidos;
+    }
+
+    /**
+     * Tickets con números seguidos para el cliente de un pedido. El sorteo
+     * tiene que venir bloqueado (lockForUpdate): dos ventas a la vez no sacan
+     * el mismo número.
+     *
+     * @return list<SorteoTicket>
+     */
+    public function crearTickets(Sorteo $sorteo, Pedido $pedido, int $cantidad, bool $vendido): array
+    {
+        $siguiente = (int) $sorteo->tickets()->max('numero') + 1;
+        $tickets = [];
+        for ($n = 0; $n < $cantidad; $n++) {
+            $ticket = new SorteoTicket;
+            $ticket->forceFill([
+                'sorteo_id' => $sorteo->id,
+                'numero' => $siguiente + $n,
+                'cliente_id' => $pedido->cliente_id,
+                'pedido_id' => $pedido->id,
+                'sede_id' => $pedido->sede_id,
+                'vendido' => $vendido,
+            ])->save();
+            $tickets[] = $ticket;
+        }
+
+        return $tickets;
     }
 
     /**

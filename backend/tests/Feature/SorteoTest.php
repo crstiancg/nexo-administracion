@@ -10,6 +10,7 @@ use App\Models\Sede;
 use App\Models\Sorteo;
 use App\Models\SorteoTicket;
 use App\Models\Stock;
+use App\Models\TipoEquipo;
 use App\Models\Unidad;
 use App\Models\User;
 use App\Models\Variante;
@@ -57,7 +58,7 @@ class SorteoTest extends TestCase
         (new Stock)->forceFill(['sede_id' => $this->sede->id, 'variante_id' => $this->mouse->id, 'cantidad' => 100, 'activo' => true])->save();
         $this->cliente = Cliente::create(['nombre' => 'JUAN PEREZ QUISPE', 'tipo_documento' => 'DNI', 'numero_documento' => '45678912']);
 
-        $this->usuario = $this->actuarCon('ventas.store', 'pedidos.anular', 'sorteos.index', 'sorteos.store', 'sorteos.update', 'sorteos.destroy', 'sorteos.cancelar', 'sorteos.sortear');
+        $this->usuario = $this->actuarCon('ventas.store', 'pedidos.anular', 'sorteos.index', 'sorteos.store', 'sorteos.update', 'sorteos.destroy', 'sorteos.cancelar', 'sorteos.sortear', 'sorteos.vender', 'ordenes-servicio.store', 'ordenes-servicio.estado', 'pedidos.pagos');
         $this->usuario->forceFill(['sede_id' => $this->sede->id])->save();
         app(Cajas::class)->abrir($this->sede->id, 0, $this->usuario);
     }
@@ -69,7 +70,7 @@ class SorteoTest extends TestCase
             'periodo' => 'mensual',
             'inicia_el' => Fechas::hoy()->subDays(3)->toDateString(),
             'termina_el' => Fechas::hoy()->addDays(10)->toDateString(),
-            'monto_por_ticket' => 100,
+            'precio_ticket' => 5,
             'premios' => [['descripcion' => 'Laptop'], ['descripcion' => 'Audífonos'], ['descripcion' => '']],
         ]]);
     }
@@ -96,26 +97,93 @@ class SorteoTest extends TestCase
             ->assertJsonPath('premios.1.orden', 2);
     }
 
-    public function test_una_venta_da_un_ticket_por_cada_monto_y_sale_en_el_ticket(): void
+    public function test_cada_venta_da_un_ticket_sea_cual_sea_el_monto_y_sale_en_el_ticket(): void
     {
         $this->crearSorteo();
 
-        // 7 × 50 = 350 → 3 tickets (lo que sobra no suma).
+        // 7 × 50 = 350: igual es 1 ticket.
         $this->vender(7)
             ->assertCreated()
             ->assertJsonPath('sorteos.0.sorteo', 'Sorteo de diciembre')
-            ->assertJsonPath('sorteos.0.cantidad', 3)
-            ->assertJsonPath('sorteos.0.numeros', ['#000001', '#000002', '#000003']);
+            ->assertJsonPath('sorteos.0.cantidad', 1)
+            ->assertJsonPath('sorteos.0.numeros', ['#000001']);
 
-        // La numeración sigue en la próxima venta.
-        $this->vender(2)->assertJsonPath('sorteos.0.numeros', ['#000004']);
+        // Cada compra suma otro, con la numeración seguida.
+        $this->vender(1)->assertJsonPath('sorteos.0.numeros', ['#000002']);
     }
 
-    public function test_respeta_el_maximo_por_compra(): void
+    public function test_una_orden_de_servicio_entregada_da_un_ticket(): void
     {
-        $this->crearSorteo(['max_tickets_por_compra' => 2]);
+        $this->crearSorteo();
+        $laptop = TipoEquipo::create(['nombre' => 'Laptop', 'checklist' => [], 'activo' => true]);
+        $orden = $this->postJson('/api/ordenes-servicio', ['orden' => [
+            'cliente_id' => $this->cliente->id,
+            'tipo_equipo_id' => $laptop->id,
+            'seguridad_tipo' => 'ninguno',
+            'falla' => 'No enciende',
+            'mano_obra' => 80,
+            'repuestos' => [],
+        ]])->assertCreated()->json();
+        $this->postJson("/api/pedidos/{$orden['pedido_id']}/pagos", ['pago' => ['metodo' => 'efectivo', 'monto' => 80]])->assertCreated();
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'reparado'])->assertOk();
+        $this->postJson("/api/ordenes-servicio/{$orden['id']}/estado", ['estado' => 'entregado'])->assertOk();
 
-        $this->vender(20)->assertJsonPath('sorteos.0.cantidad', 2);
+        $this->assertSame(1, SorteoTicket::query()->where('cliente_id', $this->cliente->id)->count());
+    }
+
+    public function test_vende_tickets_sueltos_al_precio_elegido_y_entran_a_la_caja(): void
+    {
+        $sorteo = $this->crearSorteo()->json('id');
+
+        $venta = $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => [
+            'cliente_id' => $this->cliente->id,
+            'cantidad' => 3,
+            'precio' => 7.5,
+            'metodo' => 'efectivo',
+            'recibido' => 30,
+        ]])
+            ->assertCreated()
+            ->assertJsonPath('canal', 'sorteo')
+            ->assertJsonPath('total', '22.50')
+            ->assertJsonPath('pagos.0.monto', '22.50')
+            ->assertJsonPath('pagos.0.vuelto', '7.50')
+            // Sólo los 3 comprados: la venta de tickets no regala otro.
+            ->assertJsonPath('sorteos.0.cantidad', 3)
+            ->assertJsonPath('sorteos.0.numeros', ['#000001', '#000002', '#000003'])
+            ->json();
+
+        $this->assertSame(3, SorteoTicket::query()->where('vendido', true)->count());
+
+        // Se anula como cualquier venta: sus tickets también.
+        $this->postJson("/api/pedidos/{$venta['id']}/anular", ['motivo' => 'Error'])->assertOk();
+        $this->assertSame(0, SorteoTicket::query()->vigentes()->count());
+    }
+
+    public function test_tickets_de_cortesia_y_validaciones_de_la_venta(): void
+    {
+        $sorteo = $this->crearSorteo()->json('id');
+
+        // A precio 0 no se cobra nada.
+        $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => ['cliente_id' => $this->cliente->id, 'cantidad' => 2, 'precio' => 0]])
+            ->assertCreated()
+            ->assertJsonPath('total', '0.00')
+            ->assertJsonPath('sorteos.0.cantidad', 2);
+
+        // Con precio, el método es obligatorio; Yape pide la operación.
+        $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => ['cliente_id' => $this->cliente->id, 'cantidad' => 1, 'precio' => 5]])
+            ->assertUnprocessable()->assertJsonValidationErrors('venta.metodo');
+        $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => ['cliente_id' => $this->cliente->id, 'cantidad' => 1, 'precio' => 5, 'metodo' => 'yape']])
+            ->assertUnprocessable()->assertJsonValidationErrors('venta.referencia');
+        $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => ['cantidad' => 1, 'precio' => 5, 'metodo' => 'efectivo']])
+            ->assertUnprocessable()->assertJsonValidationErrors('venta.cliente_id');
+    }
+
+    public function test_no_se_venden_tickets_de_un_sorteo_que_no_empezo(): void
+    {
+        $sorteo = $this->crearSorteo(['inicia_el' => Fechas::hoy()->addDay()->toDateString()])->json('id');
+
+        $this->postJson("/api/sorteos/{$sorteo}/vender", ['venta' => ['cliente_id' => $this->cliente->id, 'cantidad' => 1, 'precio' => 5, 'metodo' => 'efectivo']])
+            ->assertConflict()->assertJsonValidationErrors('venta');
     }
 
     public function test_sin_cliente_o_fuera_del_periodo_no_hay_tickets(): void
@@ -143,7 +211,7 @@ class SorteoTest extends TestCase
         $this->postJson("/api/pedidos/{$pedido}/anular", ['motivo' => 'Se arrepintió'])->assertOk();
 
         $this->assertSame(0, SorteoTicket::query()->vigentes()->count());
-        $this->assertSame(2, SorteoTicket::count());
+        $this->assertSame(1, SorteoTicket::count());
     }
 
     public function test_no_se_sortea_antes_del_ultimo_dia(): void
@@ -165,7 +233,7 @@ class SorteoTest extends TestCase
 
         $primero = $this->postJson("/api/sorteos/{$sorteo['id']}/premios/{$sorteo['premios'][0]['id']}/sortear")
             ->assertOk()
-            ->assertJsonPath('premio.participantes', 3)
+            ->assertJsonPath('premio.participantes', 2)
             ->assertJsonPath('sorteo.estado', 'sorteando')
             ->json('premio.ganador');
         $this->assertMatchesRegularExpression('/^DNI \*{4}\d{4}$/', $primero['publico']['documento']);
@@ -186,6 +254,7 @@ class SorteoTest extends TestCase
     {
         $sorteo = $this->crearSorteo(['termina_el' => Fechas::hoy()->toDateString(), 'un_premio_por_cliente' => false])->json();
         $this->vender(4);
+        $this->vender(2);
         $premio = $sorteo['premios'][0]['id'];
 
         $ganador = $this->postJson("/api/sorteos/{$sorteo['id']}/premios/{$premio}/sortear")->json('premio.ganador');
@@ -208,6 +277,8 @@ class SorteoTest extends TestCase
     {
         $sorteo = $this->crearSorteo()->json('id');
         $this->vender(6);
+        $this->vender(1);
+        $this->vender(2);
 
         $this->getJson("/api/sorteos/{$sorteo}/participantes")
             ->assertOk()

@@ -23,10 +23,10 @@ export function fechaCorta (iso) {
   return iso ? iso.slice(0, 10).split('-').reverse().join('/') : ''
 }
 
-/** "S/ 100.00 de compra = 1 ticket (máx. 5 por compra)" */
+/** "1 ticket por compra u OS · ticket a S/ 5.00" */
 export function reglaDe (sorteo) {
-  const maximo = sorteo.max_tickets_por_compra ? ` (máx. ${sorteo.max_tickets_por_compra} por compra)` : ''
-  return `${formatearPrecio(sorteo.monto_por_ticket)} de compra = 1 ticket${maximo}`
+  const precio = Number(sorteo.precio_ticket) > 0 ? ` · ticket a ${formatearPrecio(sorteo.precio_ticket)}` : ''
+  return `1 ticket por compra u OS${precio}`
 }
 
 /** Fecha local YYYY-MM-DD corrida `dias` días (no UTC). */
@@ -58,8 +58,8 @@ export function formSorteo () {
       bases: '',
       periodo: 'mensual',
       ...periodoSugerido('mensual'),
-      monto_por_ticket: '100',
-      max_tickets_por_compra: '',
+      // Sugerido al vender tickets sueltos (en cada venta se puede cambiar).
+      precio_ticket: '',
       un_premio_por_cliente: true,
       // Vacío = participan todas las sedes.
       sedes: [],
@@ -73,7 +73,7 @@ export function enlaceWhatsappParticipante (sorteo, participante) {
   const nombre = participante.nombre?.split(' ')[0] ?? ''
   const tickets = participante.tickets === 1 ? '1 ticket' : `${participante.tickets} tickets`
   const mensaje = `Hola ${nombre}, ya tienes ${tickets} para el ${sorteo.nombre}. ` +
-    `El sorteo es el ${fechaCorta(sorteo.termina_el)}: por cada ${formatearPrecio(sorteo.monto_por_ticket)} de compra sumas otro. ¡Mucha suerte!\n— ${TIENDA.nombre}`
+    `El sorteo es el ${fechaCorta(sorteo.termina_el)}: cada compra o servicio técnico te suma otro, y también puedes comprar más tickets en tienda. ¡Mucha suerte!\n— ${TIENDA.nombre}`
   return `https://wa.me/${numeroWhatsapp(participante.telefono) ?? ''}?text=${encodeURIComponent(mensaje)}`
 }
 

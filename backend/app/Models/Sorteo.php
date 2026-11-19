@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * "programado" antes de empezar y "por sortear" después de terminar. Los
  * tickets y los premios cambian sólo por App\Services\Sorteos.
  */
-#[Fillable(['nombre', 'bases', 'periodo', 'inicia_el', 'termina_el', 'monto_por_ticket', 'max_tickets_por_compra', 'un_premio_por_cliente'])]
+#[Fillable(['nombre', 'bases', 'periodo', 'inicia_el', 'termina_el', 'precio_ticket', 'un_premio_por_cliente'])]
 class Sorteo extends Model
 {
     public const ABIERTO = 'abierto';
@@ -33,8 +33,7 @@ class Sorteo extends Model
         return [
             'inicia_el' => 'date',
             'termina_el' => 'date',
-            'monto_por_ticket' => 'decimal:2',
-            'max_tickets_por_compra' => 'integer',
+            'precio_ticket' => 'decimal:2',
             'un_premio_por_cliente' => 'boolean',
             'sorteado_at' => 'datetime',
         ];
@@ -67,17 +66,12 @@ class Sorteo extends Model
             && $this->termina_el->lte(Fechas::hoy());
     }
 
-    /** Cuántos tickets da una compra de `$total` soles. */
-    public function ticketsPara(float $total): int
+    /** ¿Participa esta sede? Sin sedes elegidas, participan todas. */
+    public function participaSede(?int $sedeId): bool
     {
-        $monto = (float) $this->monto_por_ticket;
-        if ($monto <= 0) {
-            return 0;
-        }
-        // + 0.00001: 300.00 / 100 no debe dar 2.9999.
-        $cantidad = (int) floor($total / $monto + 0.00001);
+        $sedes = $this->relationLoaded('sedes') ? $this->sedes : $this->sedes()->get();
 
-        return $this->max_tickets_por_compra ? min($cantidad, $this->max_tickets_por_compra) : $cantidad;
+        return $sedes->isEmpty() || $sedes->contains('id', $sedeId);
     }
 
     public function sedes(): BelongsToMany

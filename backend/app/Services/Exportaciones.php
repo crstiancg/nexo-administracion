@@ -350,8 +350,7 @@ class Exportaciones
     {
         $libro = new Spreadsheet;
         $periodo = $sorteo->inicia_el->format('d/m/Y').' al '.$sorteo->termina_el->format('d/m/Y');
-        $regla = 'S/ '.number_format((float) $sorteo->monto_por_ticket, 2).' de compra = 1 ticket'
-            .($sorteo->max_tickets_por_compra ? " (máx. {$sorteo->max_tickets_por_compra} por compra)" : '');
+        $regla = '1 ticket por cada compra u orden de servicio, más los tickets vendidos';
         $encabezado = function (Worksheet $hoja, string $titulo) use ($sorteo, $periodo, $regla) {
             $hoja->setCellValue('A1', "{$sorteo->nombre} — {$titulo}")->getStyle('A1')->getFont()->setBold(true)->setSize(14);
             $hoja->setCellValue('A2', "Del {$periodo} · {$regla}");

@@ -44,7 +44,8 @@ class Comisiones
 
         $ventas = Pedido::query()
             ->whereIn('estado', [Pedido::CONFIRMADO, Pedido::ENTREGADO])
-            ->where('canal', '!=', Pedido::CANAL_SERVICIO)
+            // Los tickets de sorteo no son venta del vendedor.
+            ->whereNotIn('canal', [Pedido::CANAL_SERVICIO, Pedido::CANAL_SORTEO])
             ->whereBetween('confirmado_at', [$inicio, $fin])
             ->whereNotNull('user_id')
             ->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))

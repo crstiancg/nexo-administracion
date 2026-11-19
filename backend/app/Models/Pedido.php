@@ -43,9 +43,13 @@ class Pedido extends Model
         'cotizacion' => 'Cotización',
         // El cobro de una orden de servicio: se gestiona desde la orden.
         'servicio' => 'Servicio técnico',
+        // Tickets de un sorteo vendidos sueltos: se venden desde el sorteo.
+        'sorteo' => 'Sorteo',
     ];
 
     public const CANAL_SERVICIO = 'servicio';
+
+    public const CANAL_SORTEO = 'sorteo';
 
     /**
      * El desglose del IGV sigue al total, se guarde por donde se guarde.
