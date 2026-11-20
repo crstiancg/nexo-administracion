@@ -119,6 +119,16 @@ class OrdenServicio extends Model
         return $this->belongsTo(Pedido::class);
     }
 
+    /**
+     * El adelanto: el pago que dejó el cliente al recibir el equipo (o al
+     * editar la orden). Se corrige sólo mientras siga abierta la caja en la
+     * que entró; los demás abonos se registran desde el detalle.
+     */
+    public function anticipoPago(): BelongsTo
+    {
+        return $this->belongsTo(Pago::class, 'anticipo_pago_id');
+    }
+
     /** Fotos del equipo (al recibirlo, durante la reparación, al entregarlo). */
     public function archivos(): MorphMany
     {

@@ -194,6 +194,88 @@ class OrdenServicioTest extends TestCase
             ->assertJsonCount(0, 'repuestos');
     }
 
+    public function test_al_editar_se_registra_el_adelanto(): void
+    {
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $this->abrirCaja($user);
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload())->json('id');
+
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'anticipo' => ['metodo' => 'yape', 'monto' => 40, 'referencia' => '778899'],
+        ]))->assertOk()
+            ->assertJsonPath('pagado', '40.00')
+            ->assertJsonPath('anticipo.monto', '40.00')
+            ->assertJsonPath('anticipo.referencia', '778899')
+            ->assertJsonPath('anticipo.corregible', true);
+    }
+
+    public function test_el_mismo_dia_se_corrige_el_adelanto_sin_descuadrar_la_caja(): void
+    {
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $this->abrirCaja($user);
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload([
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => 50],
+        ]))->json('id');
+
+        // Volvió y deja 70 en vez de 50.
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => 70],
+        ]))->assertOk()
+            ->assertJsonPath('pagado', '70.00')
+            ->assertJsonPath('anticipo.monto', '70.00');
+
+        // Los pagos no se editan: el de 50 se devolvió y entró uno de 70.
+        $pedido = OrdenServicio::findOrFail($id)->pedido;
+        $this->assertSame(['50.00', '-50.00', '70.00'], $pedido->pagos()->orderBy('id')->pluck('monto')->all());
+
+        $caja = app(Cajas::class)->actual($this->sede->id);
+        $this->assertEquals(70, app(Cajas::class)->resumen($caja)['efectivo_esperado']);
+
+        // Guardar otra vez lo mismo no registra nada.
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => '70.00'],
+        ]))->assertOk();
+        $this->assertSame(3, $pedido->pagos()->count());
+
+        // Y se puede quitar (se devuelve todo).
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'anticipo' => ['metodo' => null, 'monto' => '', 'referencia' => ''],
+        ]))->assertOk()
+            ->assertJsonPath('pagado', '0.00')
+            ->assertJsonPath('anticipo', null);
+    }
+
+    public function test_cerrada_la_caja_el_adelanto_ya_no_se_corrige(): void
+    {
+        $user = $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.update');
+        $this->abrirCaja($user);
+        $id = $this->postJson('/api/ordenes-servicio', $this->payload([
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => 50],
+        ]))->json('id');
+
+        $cajas = app(Cajas::class);
+        $cajas->cerrar($cajas->actual($this->sede->id), 50, null, $user);
+        $this->abrirCaja($user);
+
+        $this->getJson("/api/ordenes-servicio/{$id}")
+            ->assertJsonPath('anticipo.monto', '50.00')
+            ->assertJsonPath('anticipo.corregible', false);
+
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => 70],
+        ]))->assertConflict()
+            ->assertJsonValidationErrors('anticipo');
+
+        // Con el mismo adelanto (o sin mandarlo) el resto de la orden se edita igual.
+        $this->putJson("/api/ordenes-servicio/{$id}", $this->payload([
+            'diagnostico' => 'Fuente quemada',
+            'anticipo' => ['metodo' => 'efectivo', 'monto' => '50.00', 'referencia' => ''],
+        ]))->assertOk()
+            ->assertJsonPath('diagnostico', 'Fuente quemada')
+            ->assertJsonPath('pagado', '50.00');
+        $this->assertSame(1, OrdenServicio::findOrFail($id)->pedido->pagos()->count());
+    }
+
     public function test_no_se_entrega_con_saldo_pendiente_y_no_descuenta_nada(): void
     {
         $this->recepcion('ordenes-servicio.store', 'ordenes-servicio.estado');

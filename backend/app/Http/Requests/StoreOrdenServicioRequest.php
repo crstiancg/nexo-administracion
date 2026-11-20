@@ -6,6 +6,7 @@ use App\Models\Cotizacion;
 use App\Models\OrdenServicio;
 use App\Models\Pago;
 use App\Models\Vale;
+use App\Services\OrdenesServicio;
 use App\Support\Cantidades;
 use App\Support\Sedes;
 use Closure;
@@ -45,6 +46,12 @@ class StoreOrdenServicioRequest extends FormRequest
         }
         if (is_array($orden['anticipo'] ?? null) && is_string($orden['anticipo']['referencia'] ?? null)) {
             $orden['anticipo']['referencia'] = trim($orden['anticipo']['referencia']) ?: null;
+        }
+
+        // Editando, el form manda el adelanto que ya tiene: si no cambió no se
+        // valida ni se toca (aunque su caja ya esté cerrada).
+        if (is_array($orden['anticipo'] ?? null) && $this->anticipoSinCambios($orden['anticipo'])) {
+            unset($orden['anticipo']);
         }
 
         $this->merge(['orden' => $orden]);
@@ -96,11 +103,14 @@ class StoreOrdenServicioRequest extends FormRequest
             $rules["orden.repuestos.{$i}.precio_unitario"] = ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
         }
 
-        // El adelanto sólo al recibir el equipo; después se abona desde la orden.
+        // El adelanto: al recibir el equipo o al editar la orden (registrarlo
+        // o corregirlo el mismo día, ver OrdenesServicio::guardarAnticipo).
         // Elegir el método o poner un monto ya es dar un adelanto: se piden los
-        // dos (y el n° de operación si el método lo lleva).
+        // dos (y el n° de operación si el método lo lleva). Sin los dos, editando,
+        // es quitar el que tenía.
+        $rules['orden.anticipo'] = ['sometimes', 'array'];
         $conAdelanto = filled($this->input('orden.anticipo.metodo')) || (float) $this->input('orden.anticipo.monto', 0) > 0;
-        if ($this->isMethod('post') && $conAdelanto) {
+        if ($conAdelanto) {
             $rules['orden.anticipo.metodo'] = ['required', Rule::in(array_keys(Pago::METODOS))];
             $rules['orden.anticipo.monto'] = ['required', 'numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2', $this->anticipoNoMayorAlTotal()];
             $rules['orden.anticipo.recibido'] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
@@ -140,10 +150,41 @@ class StoreOrdenServicioRequest extends FormRequest
                 $total -= $vale->descuentoSobre($manoObra);
             }
 
-            if ((float) $value > round($total, 2)) {
+            // Editando: lo abonado aparte del adelanto (que se reemplaza) ya cubre parte.
+            $otrosPagos = 0.0;
+            if ($orden = $this->ordenEditada()) {
+                $otrosPagos = (float) ($orden->pedido?->pagado() ?? 0) - (float) ($orden->anticipoPago?->monto ?? 0);
+            }
+
+            if ($otrosPagos > 0 && (float) $value > round($total - $otrosPagos, 2)) {
+                $fail('El adelanto no puede ser mayor que lo que falta pagar (S/ '.number_format(max(0, $total - $otrosPagos), 2).').');
+            } elseif ((float) $value > round($total, 2)) {
                 $fail('El adelanto no puede ser mayor que el total de la orden.');
             }
         };
+    }
+
+    private function ordenEditada(): ?OrdenServicio
+    {
+        $orden = $this->route('orden');
+
+        return $orden instanceof OrdenServicio ? $orden : null;
+    }
+
+    /** Editando, ¿el adelanto que manda el form es el mismo que ya tiene la orden? */
+    private function anticipoSinCambios(array $anticipo): bool
+    {
+        $orden = $this->ordenEditada();
+        if (! $orden) {
+            return false;
+        }
+
+        $actual = $orden->anticipoPago;
+        if (! $actual) {
+            return blank($anticipo['metodo'] ?? null) && (float) ($anticipo['monto'] ?? 0) <= 0;
+        }
+
+        return OrdenesServicio::mismoAnticipo($actual, $anticipo);
     }
 
     private function cotizacionConvertible(): Closure

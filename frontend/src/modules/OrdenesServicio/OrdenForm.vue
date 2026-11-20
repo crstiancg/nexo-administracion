@@ -421,13 +421,24 @@
 
       <div class="orden-form__pie">
         <div class="orden-form__grow orden-form__anticipo">
-          <template v-if="!props.id">
+          <!-- Cerrada la caja en que entró, el adelanto ya no se toca (el arqueo lo contó). -->
+          <div v-if="anticipoBloqueado">
+            <h4 class="orden-form__subtitulo">
+              Adelanto
+            </h4>
+            <p class="orden-form__nota">
+              <strong>{{ formatearPrecio(anticipoActual.monto) }}</strong>
+              en {{ anticipoActual.metodo_label }} · {{ formatearFechaHora(anticipoActual.fecha) }}.
+              Ya no se corrige porque la caja de ese día se cerró. Los abonos se registran desde el detalle de la orden.
+            </p>
+          </div>
+          <template v-else>
             <div>
               <h4 class="orden-form__subtitulo">
                 Adelanto <span class="orden-form__opcional">(opcional)</span>
               </h4>
               <p class="orden-form__nota">
-                Lo que deja el cliente al recibir el equipo. Entra a la caja abierta de tu sede.
+                {{ notaAdelanto }}
               </p>
             </div>
             <div class="orden-form__adelanto">
@@ -502,13 +513,14 @@
                 />
               </div>
             </div>
+            <p
+              v-if="form.errors.anticipo"
+              class="orden-form__error"
+              role="alert"
+            >
+              {{ form.errors.anticipo }}
+            </p>
           </template>
-          <p
-            v-else
-            class="orden-form__nota"
-          >
-            Los abonos se registran desde el detalle de la orden.
-          </p>
         </div>
 
         <dl class="orden-form__totales">
@@ -612,6 +624,7 @@ import CotizacionService from '@/services/CotizacionService'
 import OrdenServicioService from '@/services/OrdenServicioService'
 import TipoEquipoService from '@/services/TipoEquipoService'
 import { useUserStore } from '@/stores/user-store'
+import { formatearFechaHora } from '@/utils/fechas'
 import { formatearPrecio } from '@/utils/moneda'
 import formOrden, { checklistPara } from './FormOrden'
 import { GARANTIAS, SEGURIDAD } from './constantes'
@@ -726,6 +739,18 @@ const total = computed(() => totalRepuestos.value + numero(form.orden.mano_obra)
 const montoAdelantoRef = ref()
 const pideOperacion = computed(() => CON_OPERACION.includes(form.orden.anticipo.metodo))
 
+// Editando: el adelanto que ya tiene. Se corrige (el backend devuelve el
+// anterior y cobra el nuevo) sólo mientras siga abierta la caja en que entró.
+const anticipoActual = ref(null)
+const anticipoBloqueado = computed(() => Boolean(anticipoActual.value && !anticipoActual.value.corregible))
+const notaAdelanto = computed(() => {
+  if (!props.id) return 'Lo que deja el cliente al recibir el equipo. Entra a la caja abierta de tu sede.'
+  if (anticipoActual.value) return 'Puedes corregirlo mientras la caja de hoy siga abierta: se devuelve el anterior y se cobra el nuevo.'
+  return 'Lo que deja el cliente ahora. Entra a la caja abierta de tu sede.'
+})
+// Al cargar la orden se llena el método: no es el usuario eligiéndolo.
+let cargandoAdelanto = false
+
 watch(() => form.orden.anticipo.metodo, async (metodo, anterior) => {
   if (!metodo) {
     form.orden.anticipo.monto = ''
@@ -734,7 +759,7 @@ watch(() => form.orden.anticipo.metodo, async (metodo, anterior) => {
   }
   if (!CON_OPERACION.includes(metodo)) form.orden.anticipo.referencia = ''
   // Recién elegido: el cursor va al monto.
-  if (!anterior) {
+  if (!anterior && !cargandoAdelanto) {
     await nextTick()
     montoAdelantoRef.value?.focus()
   }
@@ -764,6 +789,8 @@ onMounted(async () => {
 
   const orden = await OrdenServicioService.get(props.id)
   cliente.value = orden.cliente
+  anticipoActual.value = orden.anticipo ?? null
+  cargandoAdelanto = true
   // Un tipo o marca desactivados después siguen visibles en su orden.
   if (orden.tipo_equipo && !tipos.value.some((t) => t.id === orden.tipo_equipo_id)) tipos.value.push(orden.tipo_equipo)
   if (orden.marca && !marcas.value.some((m) => m.id === orden.marca_id)) marcas.value.push(orden.marca)
@@ -793,9 +820,15 @@ onMounted(async () => {
         variante: item.variante,
         cantidad: String(item.cantidad),
         precio_unitario: item.precio_unitario
-      }))
+      })),
+      // Si no cambia, el backend no lo toca (ni lo valida).
+      anticipo: orden.anticipo
+        ? { metodo: orden.anticipo.metodo, monto: orden.anticipo.monto, referencia: orden.anticipo.referencia ?? '' }
+        : { metodo: null, monto: '', referencia: '' }
     }
   })
+  await nextTick()
+  cargandoAdelanto = false
 })
 
 // ── Desde una cotización ──
@@ -833,8 +866,8 @@ async function desdeCotizacion (id) {
   if (garantia) form.orden.garantia_dias = garantia.value
 }
 
-// El adelanto sin monto (o al editar) no se valida ni se cobra: el backend
-// sólo lo toma al crear y con monto.
+// El adelanto sin método ni monto no se cobra; editando, si no cambió, el
+// backend no lo toca, y si cambió lo corrige (o lo quita) en la caja de hoy.
 async function submit () {
   try {
     const respuesta = await form.submit()

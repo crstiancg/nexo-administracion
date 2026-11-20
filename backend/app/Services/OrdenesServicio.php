@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cotizacion;
 use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
+use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\User;
 use App\Models\Vale;
@@ -110,13 +111,84 @@ class OrdenesServicio
                 $cotizacion->forceFill(['estado' => Cotizacion::CONVERTIDA, 'orden_servicio_id' => $orden->id])->save();
             }
 
-            // El adelanto entra a la caja abierta, como cualquier cobro.
-            if ($nueva && (float) ($datos['anticipo']['monto'] ?? 0) > 0) {
-                $this->cajas->cobrar($pedido, $datos['anticipo'], $usuario);
+            // El adelanto entra a la caja abierta, como cualquier cobro. Sin
+            // la clave `anticipo` (no vino o no cambió) no se toca.
+            if (array_key_exists('anticipo', $datos)) {
+                $this->guardarAnticipo($orden, $pedido, (array) $datos['anticipo'], $usuario);
             }
 
             return $orden->refresh();
         });
+    }
+
+    /**
+     * Registra el adelanto o lo corrige. Los pagos no se editan: corregirlo
+     * es devolver el anterior y cobrar el nuevo, y sólo mientras siga abierta
+     * la caja del día en que entró (después el arqueo ya contó ese dinero).
+     *
+     * @param  array{metodo?: string|null, monto?: mixed, recibido?: mixed, referencia?: string|null}  $anticipo
+     */
+    private function guardarAnticipo(OrdenServicio $orden, Pedido $pedido, array $anticipo, User $usuario): void
+    {
+        // Bloqueada: dos "Guardar" seguidos no devuelven dos veces el mismo adelanto.
+        $actualId = OrdenServicio::query()->whereKey($orden->id)->lockForUpdate()->value('anticipo_pago_id');
+        $actual = $actualId ? Pago::find($actualId) : null;
+        $quiere = round((float) ($anticipo['monto'] ?? 0), 2) > 0 && filled($anticipo['metodo'] ?? null);
+
+        if (! $actual && ! $quiere) {
+            return;
+        }
+        if ($actual && $quiere && self::mismoAnticipo($actual, $anticipo)) {
+            return;
+        }
+
+        if ($actual && ! $actual->corregiblePor($usuario)) {
+            $dia = $actual->created_at->copy()->setTimezone(config('app.zona_negocio'))->format('d/m');
+            throw ValidationException::withMessages([
+                'anticipo' => "El adelanto del {$dia} ya no se corrige: la caja de ese día se cerró. Registra un abono desde el detalle de la orden.",
+            ])->status(409);
+        }
+
+        try {
+            $this->reemplazarAnticipo($orden, $pedido, $actual, $quiere ? $anticipo : null, $usuario);
+        } catch (ValidationException $e) {
+            // Los errores de la caja (`pago.monto`, `pago.recibido`) se ven en el campo del adelanto.
+            $errores = [];
+            foreach ($e->errors() as $campo => $mensajes) {
+                $errores[str_starts_with($campo, 'pago.') ? 'orden.anticipo.'.substr($campo, 5) : $campo] = $mensajes;
+            }
+            throw ValidationException::withMessages($errores)->status($e->status);
+        }
+    }
+
+    /**
+     * Devuelve el adelanto actual (si hay) y cobra el nuevo (si hay), en la
+     * caja abierta de la sede.
+     *
+     * @param  array<string, mixed>|null  $nuevo
+     */
+    private function reemplazarAnticipo(OrdenServicio $orden, Pedido $pedido, ?Pago $actual, ?array $nuevo, User $usuario): void
+    {
+        if ($actual) {
+            $this->cajas->devolver($pedido, [
+                'metodo' => $actual->metodo,
+                'monto' => (float) $actual->monto,
+                'motivo' => $nuevo
+                    ? "Adelanto de {$orden->codigo} corregido a S/ ".number_format((float) $nuevo['monto'], 2)
+                    : "Adelanto de {$orden->codigo} quitado",
+            ], $usuario);
+        }
+
+        $pago = $nuevo ? $this->cajas->cobrar($pedido, $nuevo, $usuario) : null;
+        $orden->forceFill(['anticipo_pago_id' => $pago?->id])->save();
+    }
+
+    /** Mismo método, monto y n° de operación: no hay nada que corregir. */
+    public static function mismoAnticipo(Pago $pago, array $anticipo): bool
+    {
+        return $pago->metodo === ($anticipo['metodo'] ?? null)
+            && round((float) $pago->monto, 2) === round((float) ($anticipo['monto'] ?? 0), 2)
+            && ($pago->referencia ?: null) === (($anticipo['referencia'] ?? null) ?: null);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\EstadoOrden;
 use App\Models\OrdenServicio;
+use App\Models\Pago;
 use App\Support\Permisos;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -85,6 +86,16 @@ class OrdenServicioResource extends JsonResource
                 fn () => PedidoItemResource::collection($pedido->items->whereNotNull('variante_id')->values()),
             ),
             'pagos' => $this->when($pedido?->relationLoaded('pagos'), fn () => PagoResource::collection($pedido->pagos)),
+            // El adelanto y si quien mira todavía puede corregirlo (su caja sigue abierta).
+            'anticipo' => $this->whenLoaded('anticipoPago', fn () => $this->anticipoPago ? [
+                'id' => $this->anticipoPago->id,
+                'metodo' => $this->anticipoPago->metodo,
+                'metodo_label' => Pago::METODOS[$this->anticipoPago->metodo] ?? $this->anticipoPago->metodo,
+                'monto' => $this->anticipoPago->monto,
+                'referencia' => $this->anticipoPago->referencia,
+                'fecha' => $this->anticipoPago->created_at?->toIso8601String(),
+                'corregible' => $this->editable() && $this->anticipoPago->corregiblePor($request->user()),
+            ] : null),
             'comprobante' => $this->when($pedido?->relationLoaded('comprobantes'), function () use ($pedido) {
                 $comprobante = $pedido->comprobanteVigente() ?? $pedido->comprobantes->first();
 

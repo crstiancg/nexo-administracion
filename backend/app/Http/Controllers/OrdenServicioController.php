@@ -174,6 +174,7 @@ class OrdenServicioController extends Controller
             'pedido.items.variante.color:id,nombre,hexadecimal',
             'pedido.pagos' => fn ($q) => $q->orderBy('id'),
             'pedido.pagos.usuario:id,name',
+            'anticipoPago.caja',
             'pedido.comprobantes' => fn ($q) => $q->latest('id'),
             'valeAplicado.ordenOrigen:id,codigo',
             'valeGenerado.ordenUso:id,codigo',

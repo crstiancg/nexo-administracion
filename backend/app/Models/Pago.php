@@ -61,6 +61,23 @@ class Pago extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * Si todavía se puede corregir (devolverlo y cobrar otro monto): sólo
+     * mientras siga abierta la caja del día en que entró, y desde su sede.
+     * Cerrada la caja, el arqueo ya contó ese dinero y no se toca.
+     */
+    public function corregiblePor(?User $usuario): bool
+    {
+        $caja = $this->caja;
+
+        return $caja !== null
+            && $usuario !== null
+            && $caja->estaAbierta()
+            && ! $caja->esDeOtroDia()
+            && $usuario->sede_id !== null
+            && (int) $caja->sede_id === (int) $usuario->sede_id;
+    }
+
     public function esDevolucion(): bool
     {
         return (float) $this->monto < 0;
