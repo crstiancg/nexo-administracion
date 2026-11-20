@@ -36,6 +36,16 @@ return [
         'token' => env('APIS_NET_PE_TOKEN'),
     ],
 
+    // API de Deltron (proveedor mayorista). Las credenciales van SÓLO en el
+    // .env del servidor. Deltron sólo acepta llamadas desde las IPs
+    // autorizadas en su panel (IPv4 del servidor de producción), así que se
+    // llama siempre desde el backend, nunca desde el frontend.
+    'deltron' => [
+        'base_url' => env('DELTRON_BASE_URL'),
+        'key' => env('DELTRON_API_KEY'),
+        'secret' => env('DELTRON_API_SECRET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
